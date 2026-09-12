@@ -129,7 +129,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     duasVias,
     clinicaEndereco: clinica?.endereco ?? "",
     clinicaContato: `${clinica?.telefone ?? ""} · ${clinica?.site ?? ""}`,
-    dataAssinatura: new Date().toLocaleString("pt-BR"),
+    dataAssinatura: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
     assinaturaImagemBytes,
     cpfAssinante: dadosCertificado.cpf,
     numeroSerieCertificado: dadosCertificado.numeroSerie,

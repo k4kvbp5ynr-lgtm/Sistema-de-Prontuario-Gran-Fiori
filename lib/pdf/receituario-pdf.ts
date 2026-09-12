@@ -197,10 +197,10 @@ export async function gerarReceituarioPDF(dados: DadosReceituario): Promise<Uint
 
       if (imagemAssinatura) {
         const larguraImg = 130;
-        const alturaImg = Math.min((imagemAssinatura.height / imagemAssinatura.width) * larguraImg, 55);
+        const alturaImg = Math.min((imagemAssinatura.height / imagemAssinatura.width) * larguraImg, caixaAltura - 16);
         pagina.drawImage(imagemAssinatura, {
-          x: caixaX + (caixaLargura - larguraImg) / 2,
-          y: caixaY + caixaAltura + 4,
+          x: caixaX - larguraImg - 16,
+          y: caixaY + (caixaAltura - alturaImg) / 2,
           width: larguraImg,
           height: alturaImg,
         });
