@@ -1,0 +1,43 @@
+import { createClient } from "@/lib/supabase/server";
+import NovoPacienteForm from "./novo-paciente-form";
+
+export default async function PacientesPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: pacientes, error } = await supabase
+    .from("pacientes")
+    .select("id, nome, cpf, criado_em")
+    .order("criado_em", { ascending: false });
+
+  return (
+    <div className="container">
+      <h1>Pacientes</h1>
+      <p>Logado como: {user?.email}</p>
+
+      <NovoPacienteForm />
+
+      {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pacientes?.map((p) => (
+            <tr key={p.id}>
+              <td>{p.nome}</td>
+              <td>{p.cpf ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
