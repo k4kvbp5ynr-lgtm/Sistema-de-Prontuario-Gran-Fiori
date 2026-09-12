@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import SeletorPaciente from "../pacientes/seletor-paciente";
 
 const HORA_INICIO = 8;
 const HORA_FIM = 21;
@@ -389,17 +390,10 @@ export default function AgendaCalendario() {
               </select>
 
               {tiposEvento.find((t) => t.id === tipoEventoId)?.requer_paciente !== false && (
-                <>
+                <div style={{ marginBottom: 12 }}>
                   <label>Paciente</label>
-                  <select value={pacienteId} onChange={(e) => setPacienteId(e.target.value)} style={{ padding: 8, width: "100%", marginBottom: 12 }}>
-                    <option value="">Selecione</option>
-                    {pacientes.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nome}
-                      </option>
-                    ))}
-                  </select>
-                </>
+                  <SeletorPaciente pacientes={pacientes} value={pacienteId} onChange={setPacienteId} />
+                </div>
               )}
 
               {tiposEvento.find((t) => t.id === tipoEventoId)?.requer_paciente === false && (
