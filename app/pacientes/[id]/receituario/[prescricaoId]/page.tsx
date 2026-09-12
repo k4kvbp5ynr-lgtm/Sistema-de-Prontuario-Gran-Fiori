@@ -98,32 +98,11 @@ export default async function VisualizarReceitaPage({
         </div>
         <hr style={{ border: "none", borderTop: "1px solid #cbb992", marginBottom: 16 }} />
 
-        {duasVias ? (
-          <>
-            {/* Identificação do emitente (caixa, exigida no formulário oficial) */}
-            <div
-              style={{
-                border: "1px solid #999",
-                borderRadius: 4,
-                padding: 12,
-                marginBottom: 16,
-                fontSize: "0.85rem",
-              }}
-            >
-              <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Identificação do emitente</p>
-              <p style={{ margin: "2px 0" }}>
-                <b>Nome completo:</b> {profissional?.nome ?? "—"}
-              </p>
-              <p style={{ margin: "2px 0" }}>
-                <b>Registro:</b> {profissional?.registro_classe ?? "—"}
-                {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
-              </p>
-              <p style={{ margin: "2px 0" }}>
-                <b>Endereço completo e telefone:</b> {clinica?.endereco} — {clinica?.telefone}
-              </p>
-            </div>
-          </>
-        ) : (
+        {duasVias && (
+          <hr style={{ border: "none", borderTop: "1px solid #cbb992", margin: "0 0 16px" }} />
+        )}
+
+        {!duasVias && (
           <>
             <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
               {profissional?.nome?.toUpperCase()}

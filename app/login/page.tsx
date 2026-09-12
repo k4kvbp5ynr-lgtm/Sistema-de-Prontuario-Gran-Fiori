@@ -29,8 +29,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/pacientes");
     router.refresh();
+    window.location.href = "/pacientes";
   }
 
   return (
