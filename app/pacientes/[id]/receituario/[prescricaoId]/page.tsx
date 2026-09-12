@@ -98,21 +98,13 @@ export default async function VisualizarReceitaPage({
         </div>
         <hr style={{ border: "none", borderTop: "1px solid #cbb992", marginBottom: 16 }} />
 
-        {duasVias && (
-          <hr style={{ border: "none", borderTop: "1px solid #cbb992", margin: "0 0 16px" }} />
-        )}
-
-        {!duasVias && (
-          <>
-            <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
-              {profissional?.nome?.toUpperCase()}
-            </p>
-            <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#555", marginTop: 4 }}>
-              {profissional?.registro_classe}
-              {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
-            </p>
-          </>
-        )}
+        <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
+          {profissional?.nome?.toUpperCase()}
+        </p>
+        <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#555", marginTop: 4 }}>
+          {profissional?.registro_classe}
+          {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
+        </p>
 
         {/* Paciente / Data */}
         <div
