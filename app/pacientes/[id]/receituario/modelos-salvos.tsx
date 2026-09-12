@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 const CATEGORIAS: Record<string, string> = {
   medicacao: "Medicação",
   pedido_exame: "Pedido de exame",
-  orientacao_pos_procedimento: "Orientação pós-procedimento",
+  orientacao_pos_procedimento: "Orientações para procedimentos (pré e pós)",
   atestado_padrao: "Atestado padrão",
   pacote_exames: "Pacote de exames",
 };
