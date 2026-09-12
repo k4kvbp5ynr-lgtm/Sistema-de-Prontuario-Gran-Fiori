@@ -44,6 +44,43 @@ export default function GestaoEquipe() {
   const [corAgenda, setCorAgenda] = useState("#7a5a2f");
   const [salvando, setSalvando] = useState(false);
 
+  // criar novo usuário direto pelo sistema
+  const [mostrarCriarUsuario, setMostrarCriarUsuario] = useState(false);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [criandoUsuario, setCriandoUsuario] = useState(false);
+  const [erroCriarUsuario, setErroCriarUsuario] = useState<string | null>(null);
+
+  async function criarUsuario(e: React.FormEvent) {
+    e.preventDefault();
+    setErroCriarUsuario(null);
+    setCriandoUsuario(true);
+
+    try {
+      const resposta = await fetch("/api/equipe/criar-usuario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: novoEmail, senha: novaSenha }),
+      });
+      const dados = await resposta.json().catch(() => ({}));
+
+      if (!resposta.ok) {
+        setErroCriarUsuario(dados.erro ?? "Erro ao criar usuário.");
+        setCriandoUsuario(false);
+        return;
+      }
+
+      setNovoEmail("");
+      setNovaSenha("");
+      setMostrarCriarUsuario(false);
+      setCriandoUsuario(false);
+      carregar();
+    } catch {
+      setErroCriarUsuario("Erro de conexão.");
+      setCriandoUsuario(false);
+    }
+  }
+
   async function carregar() {
     setCarregando(true);
     const { data: pend, error: erroPend } = await supabase.rpc("usuarios_pendentes");
@@ -285,11 +322,45 @@ export default function GestaoEquipe() {
         </tbody>
       </table>
 
+      <h2 style={{ fontSize: "1.1rem", marginTop: 32 }}>Adicionar novo membro à equipe</h2>
+
+      {!mostrarCriarUsuario ? (
+        <button type="button" onClick={() => setMostrarCriarUsuario(true)}>
+          + Criar novo usuário
+        </button>
+      ) : (
+        <form onSubmit={criarUsuario} style={{ maxWidth: 380, marginBottom: 16 }}>
+          {erroCriarUsuario && <p className="erro">{erroCriarUsuario}</p>}
+          <label>E-mail</label>
+          <input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} required />
+          <label>Senha temporária</label>
+          <input
+            type="text"
+            value={novaSenha}
+            onChange={(e) => setNovaSenha(e.target.value)}
+            placeholder="Mínimo 6 caracteres"
+            required
+          />
+          <p style={{ fontSize: "0.8rem", color: "#666" }}>
+            Depois de criado, o login aparece logo abaixo em "Logins pendentes" pra você completar o cadastro.
+            Passe essa senha pra pessoa e peça pra trocar assim que entrar.
+          </p>
+          <button type="submit" disabled={criandoUsuario} style={{ marginRight: 8 }}>
+            {criandoUsuario ? "Criando..." : "Criar login"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMostrarCriarUsuario(false)}
+            style={{ background: "transparent", color: "#666" }}
+          >
+            Cancelar
+          </button>
+        </form>
+      )}
+
       <h2 style={{ fontSize: "1.1rem", marginTop: 32 }}>Logins pendentes de cadastro</h2>
       <p style={{ fontSize: "0.85rem", color: "#666" }}>
-        Para adicionar alguém à equipe: primeiro crie o login da pessoa no Supabase
-        (Authentication → Users → Add user). Depois de criado, o login aparece aqui
-        pra você completar o cadastro (nome, perfil, registro de classe).
+        Logins criados (por aqui ou direto no Supabase) que ainda não têm perfil completo aparecem abaixo.
       </p>
 
       {pendentes.length === 0 && <p>Nenhum login pendente no momento.</p>}
