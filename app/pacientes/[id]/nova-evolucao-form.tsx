@@ -16,9 +16,23 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
   const [diagnostico, setDiagnostico] = useState("");
   const [conduta, setConduta] = useState("");
   const [arquivos, setArquivos] = useState<File[]>([]);
+  const [arquivoTemp, setArquivoTemp] = useState<File | null>(null);
 
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  function adicionarArquivo() {
+    if (!arquivoTemp) return;
+    setArquivos((atual) => [...atual, arquivoTemp]);
+    setArquivoTemp(null);
+    // limpa o input de arquivo visualmente
+    const input = document.getElementById("input-arquivo-consulta") as HTMLInputElement | null;
+    if (input) input.value = "";
+  }
+
+  function removerArquivo(index: number) {
+    setArquivos((atual) => atual.filter((_, i) => i !== index));
+  }
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -141,6 +155,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
     setDiagnostico("");
     setConduta("");
     setArquivos([]);
+    setArquivoTemp(null);
     router.refresh();
   }
 
@@ -207,17 +222,42 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
 
       <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
       <label>Anexar exame(s) desta consulta (opcional)</label>
-      <input
-        type="file"
-        accept=".pdf,image/*"
-        multiple
-        onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
-        style={{ marginBottom: 4 }}
-      />
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <input
+          id="input-arquivo-consulta"
+          type="file"
+          accept=".pdf,image/*"
+          onChange={(e) => setArquivoTemp(e.target.files?.[0] ?? null)}
+        />
+        <button type="button" onClick={adicionarArquivo} disabled={!arquivoTemp}>
+          Adicionar à consulta
+        </button>
+      </div>
+
       {arquivos.length > 0 && (
-        <p style={{ fontSize: "0.85rem", color: "#555", marginBottom: 12 }}>
-          {arquivos.length} arquivo(s) selecionado(s): {arquivos.map((f) => f.name).join(", ")}
-        </p>
+        <ul style={{ listStyle: "none", padding: 0, marginBottom: 12 }}>
+          {arquivos.map((f, i) => (
+            <li
+              key={i}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "4px 0",
+                fontSize: "0.9rem",
+              }}
+            >
+              <span>📎 {f.name}</span>
+              <button
+                type="button"
+                onClick={() => removerArquivo(i)}
+                style={{ background: "transparent", color: "#b3261e", padding: "2px 8px" }}
+              >
+                remover
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       <button type="submit" disabled={salvando}>
