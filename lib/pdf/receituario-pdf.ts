@@ -99,5 +99,5 @@ export async function gerarReceituarioPDF(dados: DadosReceituario): Promise<Uint
     color: rgb(0.4, 0.4, 0.4),
   });
 
-  return pdf.save();
+  return pdf.save({ useObjectStreams: false });
 }
