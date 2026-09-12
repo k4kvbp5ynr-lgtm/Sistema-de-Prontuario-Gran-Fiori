@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ModelosSalvos from "./modelos-salvos";
 
 export default function NovaPrescricaoForm({ pacienteId }: { pacienteId: string }) {
   const router = useRouter();
@@ -64,6 +65,13 @@ export default function NovaPrescricaoForm({ pacienteId }: { pacienteId: string 
         <option value="controle_especial">Controle especial (dupla via)</option>
         <option value="antibiotico">Antibiótico (dupla via)</option>
       </select>
+
+      <ModelosSalvos
+        conteudoAtual={conteudo}
+        onInserir={(texto) =>
+          setConteudo((atual) => (atual.trim() ? atual + "\n" + texto : texto))
+        }
+      />
 
       <textarea
         placeholder={
