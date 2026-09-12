@@ -4,8 +4,32 @@ import { gerarReceituarioPDF } from "@/lib/pdf/receituario-pdf";
 import { plainAddPlaceholder } from "@signpdf/placeholder-plain";
 import { SignPdf } from "@signpdf/signpdf";
 import { P12Signer } from "@signpdf/signer-p12";
+import forge from "node-forge";
 
 export const runtime = "nodejs";
+
+function extrairDadosCertificado(p12Buffer: Buffer, senha: string) {
+  const p12Asn1 = forge.asn1.fromDer(p12Buffer.toString("binary"));
+  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha);
+
+  const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
+  const certBag = bags[forge.pki.oids.certBag]?.[0];
+  const cert = certBag?.cert;
+
+  if (!cert) {
+    throw new Error("Certificado não encontrado no arquivo.");
+  }
+
+  const cn = cert.subject.getField("CN")?.value ?? "";
+  // Certificados e-CPF da ICP-Brasil usam o padrão "NOME COMPLETO:CPF" no campo CN
+  const partesCn = cn.split(":");
+  const cpf = partesCn.length > 1 ? partesCn[partesCn.length - 1] : null;
+
+  return {
+    cpf,
+    numeroSerie: cert.serialNumber,
+  };
+}
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +49,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ erro: "Sessão expirada. Faça login novamente." }, { status: 401 });
   }
 
-  // 1. Busca os dados do receituário (RLS garante que só quem tem permissão consegue)
   const { data: prescricao, error: erroPrescricao } = await supabase
     .from("prescricoes")
     .select("id, conteudo, criado_em, paciente_id, profissional_id, subtipo_receita")
@@ -37,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const [{ data: paciente }, { data: profissional }, { data: template }, { data: clinica }] = await Promise.all([
-    supabase.from("pacientes").select("nome").eq("id", prescricao.paciente_id).single(),
+    supabase.from("pacientes").select("nome, cpf, endereco").eq("id", prescricao.paciente_id).single(),
     supabase.from("usuarios").select("nome, registro_classe, rqe, certificado_path, assinatura_path").eq("id", user.id).single(),
     supabase
       .from("templates_documento")
@@ -56,7 +79,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     );
   }
 
-  // 2. Baixa o certificado (.pfx) do usuário logado (RLS garante que só o dono acessa)
   const { data: certificadoArquivo, error: erroCertificado } = await supabase.storage
     .from("certificados")
     .download(profissional.certificado_path);
@@ -67,22 +89,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const p12Buffer = Buffer.from(await certificadoArquivo.arrayBuffer());
 
-  // 2.1 Baixa a imagem da assinatura pessoal (se o usuário tiver enviado uma)
+  // Extrai CPF e número de série do certificado ANTES de gerar o PDF, para exibir no carimbo visível.
+  // Isso também serve como primeira checagem de senha — se a senha estiver errada, falha aqui.
+  let dadosCertificado: { cpf: string | null; numeroSerie: string };
+  try {
+    dadosCertificado = extrairDadosCertificado(p12Buffer, senha);
+  } catch (erro: any) {
+    return NextResponse.json(
+      { erro: "Não foi possível ler o certificado. Verifique se a senha está correta." },
+      { status: 400 }
+    );
+  }
+
   let assinaturaImagemBytes: Buffer | null = null;
   if (profissional.assinatura_path) {
-    const { data: arquivoAssinatura } = await supabase.storage
-      .from("assinaturas")
-      .download(profissional.assinatura_path);
+    const { data: arquivoAssinatura } = await supabase.storage.from("assinaturas").download(profissional.assinatura_path);
     if (arquivoAssinatura) {
       assinaturaImagemBytes = Buffer.from(await arquivoAssinatura.arrayBuffer());
     }
   }
 
-  // 3. Gera o PDF do receituário
   const rotulos: Record<string, string> = {
     controle_especial: "RECEITUÁRIO DE CONTROLE ESPECIAL",
     antibiotico: "RECEITUÁRIO PARA ANTIBIÓTICO",
   };
+  const duasVias = prescricao.subtipo_receita === "controle_especial" || prescricao.subtipo_receita === "antibiotico";
 
   const pdfBytes = await gerarReceituarioPDF({
     profissionalNome: profissional.nome,
@@ -90,16 +121,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     registroClasse: profissional.registro_classe ?? "",
     rqe: profissional.rqe,
     pacienteNome: paciente?.nome ?? "—",
+    pacienteEndereco: paciente?.endereco,
+    pacienteCpf: paciente?.cpf,
     data: new Date(prescricao.criado_em).toLocaleDateString("pt-BR"),
     conteudo: prescricao.conteudo,
     rotuloTipo: rotulos[prescricao.subtipo_receita ?? ""] ?? null,
+    duasVias,
     clinicaEndereco: clinica?.endereco ?? "",
     clinicaContato: `${clinica?.telefone ?? ""} · ${clinica?.site ?? ""}`,
     dataAssinatura: new Date().toLocaleString("pt-BR"),
     assinaturaImagemBytes,
+    cpfAssinante: dadosCertificado.cpf,
+    numeroSerieCertificado: dadosCertificado.numeroSerie,
   });
 
-  // 4. Assina digitalmente com o certificado A1 (padrão PAdES)
   try {
     const pdfComEspaco = plainAddPlaceholder({
       pdfBuffer: Buffer.from(pdfBytes),
