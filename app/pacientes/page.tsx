@@ -18,9 +18,14 @@ export default async function PacientesPage() {
       <h1>Pacientes</h1>
       <p>Logado como: {user?.email}</p>
 
-      <p>
+      <p style={{ display: "flex", gap: 12 }}>
         <Link href="/pacientes/novo">
           <button type="button">Novo paciente</button>
+        </Link>
+        <Link href="/equipe">
+          <button type="button" style={{ background: "#555" }}>
+            Gerenciar equipe
+          </button>
         </Link>
       </p>
 
