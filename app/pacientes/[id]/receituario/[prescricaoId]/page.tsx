@@ -84,9 +84,23 @@ export default async function VisualizarReceitaPage({
           </p>
         )}
 
+        {/* Cabeçalho com logo — aparece sempre */}
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
+          <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
+          <div>
+            <h1 style={{ fontSize: "1.5rem", margin: 0, letterSpacing: 1 }}>
+              {profissional?.nome ?? "—"}
+            </h1>
+            <p style={{ margin: 0, color: "#a07a3f", fontSize: "0.85rem", letterSpacing: 1 }}>
+              {template?.titulo_especialidade ?? ""}
+            </p>
+          </div>
+        </div>
+        <hr style={{ border: "none", borderTop: "1px solid #cbb992", marginBottom: 16 }} />
+
         {duasVias ? (
           <>
-            {/* Identificação do emitente (caixa) */}
+            {/* Identificação do emitente (caixa, exigida no formulário oficial) */}
             <div
               style={{
                 border: "1px solid #999",
@@ -110,21 +124,6 @@ export default async function VisualizarReceitaPage({
             </div>
           </>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
-            <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
-            <div>
-              <h1 style={{ fontSize: "1.5rem", margin: 0, letterSpacing: 1 }}>
-                {profissional?.nome ?? "—"}
-              </h1>
-              <p style={{ margin: 0, color: "#a07a3f", fontSize: "0.85rem", letterSpacing: 1 }}>
-                {template?.titulo_especialidade ?? ""}
-              </p>
-            </div>
-          </div>
-        )}
-        <hr style={{ border: "none", borderTop: "1px solid #cbb992", marginBottom: 16 }} />
-
-        {!duasVias && (
           <>
             <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
               {profissional?.nome?.toUpperCase()}
