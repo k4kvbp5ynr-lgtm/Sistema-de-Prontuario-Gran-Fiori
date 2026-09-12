@@ -72,7 +72,7 @@ export default async function VisualizarReceitaPage({
               fontWeight: "bold",
               letterSpacing: 1,
               marginBottom: 16,
-              fontSize: "0.9rem",
+              fontSize: "1rem",
             }}
           >
             {rotulo}
@@ -84,27 +84,57 @@ export default async function VisualizarReceitaPage({
           </p>
         )}
 
-        {/* Cabeçalho */}
-        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
-          <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
-          <div>
-            <h1 style={{ fontSize: "1.5rem", margin: 0, letterSpacing: 1 }}>
-              {profissional?.nome ?? "—"}
-            </h1>
-            <p style={{ margin: 0, color: "#a07a3f", fontSize: "0.85rem", letterSpacing: 1 }}>
-              {template?.titulo_especialidade ?? ""}
-            </p>
+        {duasVias ? (
+          <>
+            {/* Identificação do emitente (caixa) */}
+            <div
+              style={{
+                border: "1px solid #999",
+                borderRadius: 4,
+                padding: 12,
+                marginBottom: 16,
+                fontSize: "0.85rem",
+              }}
+            >
+              <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Identificação do emitente</p>
+              <p style={{ margin: "2px 0" }}>
+                <b>Nome completo:</b> {profissional?.nome ?? "—"}
+              </p>
+              <p style={{ margin: "2px 0" }}>
+                <b>Registro:</b> {profissional?.registro_classe ?? "—"}
+                {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
+              </p>
+              <p style={{ margin: "2px 0" }}>
+                <b>Endereço completo e telefone:</b> {clinica?.endereco} — {clinica?.telefone}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
+            <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
+            <div>
+              <h1 style={{ fontSize: "1.5rem", margin: 0, letterSpacing: 1 }}>
+                {profissional?.nome ?? "—"}
+              </h1>
+              <p style={{ margin: 0, color: "#a07a3f", fontSize: "0.85rem", letterSpacing: 1 }}>
+                {template?.titulo_especialidade ?? ""}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
         <hr style={{ border: "none", borderTop: "1px solid #cbb992", marginBottom: 16 }} />
 
-        <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
-          {profissional?.nome?.toUpperCase()}
-        </p>
-        <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#555", marginTop: 4 }}>
-          {profissional?.registro_classe}
-          {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
-        </p>
+        {!duasVias && (
+          <>
+            <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
+              {profissional?.nome?.toUpperCase()}
+            </p>
+            <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#555", marginTop: 4 }}>
+              {profissional?.registro_classe}
+              {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
+            </p>
+          </>
+        )}
 
         {/* Paciente / Data */}
         <div
@@ -141,16 +171,65 @@ export default async function VisualizarReceitaPage({
         </div>
 
         {/* Corpo */}
-        <div style={{ minHeight: 300, whiteSpace: "pre-wrap", fontSize: "1rem", lineHeight: 1.6 }}>
+        <div style={{ minHeight: duasVias ? 180 : 300, whiteSpace: "pre-wrap", fontSize: "1rem", lineHeight: 1.6 }}>
           {conteudoPrescricao}
         </div>
 
-        {/* Assinatura */}
-        <div style={{ marginTop: 64, textAlign: "right" }}>
-          <div style={{ borderTop: "1px solid #999", display: "inline-block", paddingTop: 4 }}>
-            Assinatura e carimbo
+        {duasVias ? (
+          <>
+            {/* Identificação do comprador e do fornecedor (preenchimento manual na farmácia) */}
+            <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
+              <div
+                style={{
+                  flex: 1,
+                  border: "1px solid #999",
+                  borderRadius: 4,
+                  padding: 12,
+                  fontSize: "0.8rem",
+                }}
+              >
+                <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Identificação do comprador</p>
+                <p style={{ margin: "10px 0 2px", borderBottom: "1px solid #ccc" }}>Nome:</p>
+                <p style={{ margin: "10px 0 2px", borderBottom: "1px solid #ccc" }}>
+                  Identificação: &nbsp;&nbsp;&nbsp; Órgão emissor:
+                </p>
+                <p style={{ margin: "10px 0 2px", borderBottom: "1px solid #ccc" }}>Endereço:</p>
+                <p style={{ margin: "10px 0 2px", borderBottom: "1px solid #ccc" }}>
+                  Cidade: &nbsp;&nbsp;&nbsp; UF:
+                </p>
+                <p style={{ margin: "10px 0 2px", borderBottom: "1px solid #ccc" }}>Telefone:</p>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  border: "1px solid #999",
+                  borderRadius: 4,
+                  padding: 12,
+                  fontSize: "0.8rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Identificação do fornecedor</p>
+                <div>
+                  <p style={{ margin: "24px 0 2px", borderBottom: "1px solid #ccc" }}>
+                    Assinatura do farmacêutico:
+                  </p>
+                  <p style={{ margin: "16px 0 2px", borderBottom: "1px solid #ccc" }}>
+                    Data: ___ / ___ / ___
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div style={{ marginTop: 64, textAlign: "right" }}>
+            <div style={{ borderTop: "1px solid #999", display: "inline-block", paddingTop: 4 }}>
+              Assinatura e carimbo
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Rodapé */}
         <hr style={{ border: "none", borderTop: "1px solid #cbb992", margin: "32px 0 12px" }} />
