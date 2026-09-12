@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Rotas que exigem login. Tudo que não estiver aqui (ex: /login) fica livre.
-const ROTAS_PROTEGIDAS = ["/pacientes", "/equipe", "/procedimentos", "/agenda", "/tipos-evento"];
+const ROTAS_PROTEGIDAS = ["/pacientes", "/equipe", "/procedimentos", "/agenda", "/tipos-evento", "/configuracoes"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

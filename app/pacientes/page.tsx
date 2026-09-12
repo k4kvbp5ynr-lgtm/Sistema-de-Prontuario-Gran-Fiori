@@ -41,6 +41,11 @@ export default async function PacientesPage() {
             Gerenciar equipe
           </button>
         </Link>
+        <Link href="/configuracoes">
+          <button type="button" style={{ background: "#3d3d3d" }}>
+            Configurações
+          </button>
+        </Link>
       </p>
 
       {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
