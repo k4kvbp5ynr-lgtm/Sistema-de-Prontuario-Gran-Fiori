@@ -8,6 +8,7 @@ export default function NovaPrescricaoForm({ pacienteId }: { pacienteId: string 
   const router = useRouter();
   const supabase = createClient();
   const [conteudo, setConteudo] = useState("");
+  const [subtipo, setSubtipo] = useState("simples");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -32,6 +33,7 @@ export default function NovaPrescricaoForm({ pacienteId }: { pacienteId: string 
         paciente_id: pacienteId,
         profissional_id: user.id,
         tipo: "receituario",
+        subtipo_receita: subtipo,
         conteudo,
       })
       .select()
@@ -51,6 +53,18 @@ export default function NovaPrescricaoForm({ pacienteId }: { pacienteId: string 
     <form onSubmit={salvar} className="container" style={{ padding: "24px 0" }}>
       <h1>Nova prescrição</h1>
       {erro && <p className="erro">{erro}</p>}
+
+      <label>Tipo de receita</label>
+      <select
+        value={subtipo}
+        onChange={(e) => setSubtipo(e.target.value)}
+        style={{ marginBottom: 16, padding: 8, width: "100%" }}
+      >
+        <option value="simples">Simples</option>
+        <option value="controle_especial">Controle especial (dupla via)</option>
+        <option value="antibiotico">Antibiótico (dupla via)</option>
+      </select>
+
       <textarea
         placeholder={
           "Escreva aqui o conteúdo da prescrição.\nEx:\nDipirona 500mg — 1 comprimido a cada 6h se dor, por 3 dias"

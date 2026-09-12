@@ -11,7 +11,7 @@ export default async function VisualizarReceitaPage({
 
   const { data: prescricao } = await supabase
     .from("prescricoes")
-    .select("id, conteudo, criado_em, paciente_id, profissional_id")
+    .select("id, conteudo, criado_em, paciente_id, profissional_id, subtipo_receita")
     .eq("id", prescricaoId)
     .single();
 
@@ -43,19 +43,46 @@ export default async function VisualizarReceitaPage({
 
   const dataFormatada = new Date(prescricao.criado_em).toLocaleDateString("pt-BR");
 
-  return (
-    <div style={{ background: "#f2ede4", minHeight: "100vh", padding: "32px 0" }}>
+  const rotulos: Record<string, string> = {
+    simples: "",
+    controle_especial: "RECEITUÁRIO DE CONTROLE ESPECIAL",
+    antibiotico: "RECEITUÁRIO PARA ANTIBIÓTICO",
+  };
+  const rotulo = rotulos[prescricao.subtipo_receita ?? "simples"] ?? "";
+  const duasVias = prescricao.subtipo_receita === "controle_especial" || prescricao.subtipo_receita === "antibiotico";
+
+  function Folha({ viaLabel }: { viaLabel?: string }) {
+    return (
       <div
         className="folha-receituario"
         style={{
           maxWidth: 720,
-          margin: "0 auto",
+          margin: "0 auto 32px",
           background: "white",
           padding: "48px 56px",
           fontFamily: "Georgia, 'Times New Roman', serif",
           color: "#1a1a1a",
         }}
       >
+        {rotulo && (
+          <p
+            style={{
+              textAlign: "center",
+              fontWeight: "bold",
+              letterSpacing: 1,
+              marginBottom: 16,
+              fontSize: "0.9rem",
+            }}
+          >
+            {rotulo}
+          </p>
+        )}
+        {viaLabel && (
+          <p style={{ textAlign: "right", fontSize: "0.75rem", color: "#888", margin: 0 }}>
+            {viaLabel}
+          </p>
+        )}
+
         {/* Cabeçalho */}
         <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
           <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
@@ -117,6 +144,19 @@ export default async function VisualizarReceitaPage({
           {clinica?.telefone} · {clinica?.site} · {clinica?.instagram}
         </p>
       </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "#f2ede4", minHeight: "100vh", padding: "32px 0" }}>
+      {duasVias ? (
+        <>
+          <Folha viaLabel="1ª via — Farmácia" />
+          <Folha viaLabel="2ª via — Paciente" />
+        </>
+      ) : (
+        <Folha />
+      )}
 
       <div style={{ textAlign: "center" }}>
         <BotaoImprimir />
@@ -126,7 +166,7 @@ export default async function VisualizarReceitaPage({
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
-          .folha-receituario { box-shadow: none !important; padding: 0 !important; }
+          .folha-receituario { box-shadow: none !important; padding: 24px 56px !important; page-break-after: always; }
         }
       `}</style>
     </div>
