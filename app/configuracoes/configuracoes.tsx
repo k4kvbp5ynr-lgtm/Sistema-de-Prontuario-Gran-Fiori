@@ -13,6 +13,12 @@ export default function Configuracoes() {
   const [salvandoAssinatura, setSalvandoAssinatura] = useState(false);
   const [erroAssinatura, setErroAssinatura] = useState<string | null>(null);
 
+  // certificado digital A1
+  const [certificadoPath, setCertificadoPath] = useState<string | null>(null);
+  const [novoCertificado, setNovoCertificado] = useState<File | null>(null);
+  const [salvandoCertificado, setSalvandoCertificado] = useState(false);
+  const [erroCertificado, setErroCertificado] = useState<string | null>(null);
+
   // BirdID (só admin)
   const [ehAdmin, setEhAdmin] = useState(false);
   const [clientId, setClientId] = useState("");
@@ -30,7 +36,7 @@ export default function Configuracoes() {
 
     const { data: meuUsuario } = await supabase
       .from("usuarios")
-      .select("assinatura_path")
+      .select("assinatura_path, certificado_path")
       .eq("id", user.id)
       .single();
 
@@ -40,6 +46,10 @@ export default function Configuracoes() {
         .from("assinaturas")
         .createSignedUrl(meuUsuario.assinatura_path, 300);
       if (data) setAssinaturaUrl(data.signedUrl);
+    }
+
+    if (meuUsuario?.certificado_path) {
+      setCertificadoPath(meuUsuario.certificado_path);
     }
 
     const { data: birdid, error } = await supabase.from("birdid_config").select("*").eq("id", 1).single();
@@ -94,6 +104,43 @@ export default function Configuracoes() {
     carregar();
   }
 
+  async function salvarCertificado(e: React.FormEvent) {
+    e.preventDefault();
+    if (!novoCertificado) return;
+    setErroCertificado(null);
+    setSalvandoCertificado(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setErroCertificado("Sessão expirada.");
+      setSalvandoCertificado(false);
+      return;
+    }
+
+    const caminho = `${user.id}/certificado_${Date.now()}_${novoCertificado.name}`;
+
+    const { error: erroUpload } = await supabase.storage.from("certificados").upload(caminho, novoCertificado);
+    if (erroUpload) {
+      setErroCertificado("Erro ao enviar: " + erroUpload.message);
+      setSalvandoCertificado(false);
+      return;
+    }
+
+    const { error: erroFuncao } = await supabase.rpc("atualizar_meu_certificado", { p_caminho: caminho });
+
+    setSalvandoCertificado(false);
+
+    if (erroFuncao) {
+      setErroCertificado("Erro ao salvar: " + erroFuncao.message);
+      return;
+    }
+
+    setNovoCertificado(null);
+    carregar();
+  }
+
   async function salvarBirdid(e: React.FormEvent) {
     e.preventDefault();
     setErroBirdid(null);
@@ -140,6 +187,32 @@ export default function Configuracoes() {
         <input type="file" accept="image/*" onChange={(e) => setNovaAssinatura(e.target.files?.[0] ?? null)} />
         <button type="submit" disabled={!novaAssinatura || salvandoAssinatura} style={{ marginTop: 8 }}>
           {salvandoAssinatura ? "Enviando..." : "Salvar assinatura"}
+        </button>
+      </form>
+
+      <h2 style={{ fontSize: "1.1rem" }}>Certificado digital (A1)</h2>
+      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+        Envie seu certificado A1 (arquivo .pfx ou .p12) comprado em qualquer Autoridade Certificadora
+        credenciada pela ICP-Brasil. Ele fica guardado de forma privada — só você tem acesso, nem outros
+        colegas nem o administrador conseguem ver. <b>A senha do certificado nunca é salva aqui</b> — você
+        digita ela só na hora de assinar um documento, cada vez.
+      </p>
+
+      {certificadoPath && (
+        <p style={{ fontSize: "0.85rem", color: "#4a7a4a", marginBottom: 8 }}>
+          ✓ Certificado enviado ({certificadoPath.split("_").slice(2).join("_")})
+        </p>
+      )}
+
+      <form onSubmit={salvarCertificado} style={{ marginBottom: 32 }}>
+        {erroCertificado && <p className="erro">{erroCertificado}</p>}
+        <input
+          type="file"
+          accept=".pfx,.p12"
+          onChange={(e) => setNovoCertificado(e.target.files?.[0] ?? null)}
+        />
+        <button type="submit" disabled={!novoCertificado || salvandoCertificado} style={{ marginTop: 8 }}>
+          {salvandoCertificado ? "Enviando..." : certificadoPath ? "Substituir certificado" : "Salvar certificado"}
         </button>
       </form>
 
