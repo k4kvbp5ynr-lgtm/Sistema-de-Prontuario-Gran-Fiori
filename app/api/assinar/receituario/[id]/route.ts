@@ -147,12 +147,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const signer = new P12Signer(p12Buffer, { passphrase: senha });
     const pdfAssinado = await new SignPdf().sign(pdfComEspaco, signer);
 
-    return new NextResponse(new Uint8Array(pdfAssinado), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="receituario_assinado.pdf"`,
-      },
-    });
+    // Guarda uma cópia do PDF assinado e gera um link temporário para compartilhar com o paciente
+    const caminhoDocumento = `${prescricao.paciente_id}/${prescricao.id}_${Date.now()}.pdf`;
+
+    const { error: erroUpload } = await supabase.storage
+      .from("documentos-assinados")
+      .upload(caminhoDocumento, pdfAssinado, { contentType: "application/pdf" });
+
+    if (erroUpload) {
+      return NextResponse.json(
+        { erro: "Documento assinado, mas houve erro ao gerar o link: " + erroUpload.message },
+        { status: 500 }
+      );
+    }
+
+    const { data: linkAssinado, error: erroLink } = await supabase.storage
+      .from("documentos-assinados")
+      .createSignedUrl(caminhoDocumento, 60 * 60 * 24 * 7); // válido por 7 dias
+
+    if (erroLink || !linkAssinado) {
+      return NextResponse.json({ erro: "Documento assinado, mas houve erro ao gerar o link." }, { status: 500 });
+    }
+
+    return NextResponse.json({ url: linkAssinado.signedUrl });
   } catch (erro: any) {
     return NextResponse.json(
       { erro: "Não foi possível assinar. Verifique se a senha do certificado está correta. Detalhe: " + erro.message },
