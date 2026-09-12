@@ -19,6 +19,9 @@ export default async function PacientesPage() {
       <p>Logado como: {user?.email}</p>
 
       <p style={{ display: "flex", gap: 12 }}>
+        <Link href="/agenda">
+          <button type="button">Agenda</button>
+        </Link>
         <Link href="/pacientes/novo">
           <button type="button">Novo paciente</button>
         </Link>
