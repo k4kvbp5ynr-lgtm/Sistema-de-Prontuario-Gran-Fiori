@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Pendente = { id: string; email: string; criado_em: string };
@@ -31,8 +31,9 @@ export default function GestaoEquipe() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [erro, setErro] = useState<string | null>(null);
 
-  // formulário de completar cadastro
+  // formulário de completar cadastro / editar
   const [idSelecionado, setIdSelecionado] = useState<string | null>(null);
+  const [editandoUsuarioId, setEditandoUsuarioId] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [perfil, setPerfil] = useState("recepcao");
   const [registroClasse, setRegistroClasse] = useState("");
@@ -68,6 +69,7 @@ export default function GestaoEquipe() {
   }, []);
 
   function abrirFormulario(id: string, emailSugerido: string) {
+    setEditandoUsuarioId(null);
     setIdSelecionado(id);
     setNome("");
     setPerfil("recepcao");
@@ -76,6 +78,47 @@ export default function GestaoEquipe() {
     setEspecialidade("");
     setAdminExtra(false);
     setErro(null);
+  }
+
+  function abrirEdicao(usuario: Usuario) {
+    setIdSelecionado(null);
+    setEditandoUsuarioId(usuario.id);
+    setNome(usuario.nome);
+    setPerfil(usuario.perfil);
+    setRegistroClasse(usuario.registro_classe ?? "");
+    setRqe(usuario.rqe ?? "");
+    setEspecialidade(usuario.especialidade ?? "");
+    setAdminExtra(usuario.admin_extra);
+    setErro(null);
+  }
+
+  async function salvarEdicao(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editandoUsuarioId) return;
+    setErro(null);
+    setSalvando(true);
+
+    const { error } = await supabase
+      .from("usuarios")
+      .update({
+        nome,
+        perfil,
+        registro_classe: registroClasse || null,
+        rqe: rqe || null,
+        especialidade: especialidade || null,
+        admin_extra: adminExtra,
+      })
+      .eq("id", editandoUsuarioId);
+
+    setSalvando(false);
+
+    if (error) {
+      setErro("Erro ao salvar: " + error.message);
+      return;
+    }
+
+    setEditandoUsuarioId(null);
+    carregar();
   }
 
   async function completarCadastro(e: React.FormEvent) {
@@ -138,21 +181,80 @@ export default function GestaoEquipe() {
         </thead>
         <tbody>
           {usuarios.map((u) => (
-            <tr key={u.id}>
-              <td>{u.nome}</td>
-              <td>{PERFIS[u.perfil] ?? u.perfil}</td>
-              <td>
-                {u.registro_classe}
-                {u.rqe ? ` · ${u.rqe}` : ""}
-              </td>
-              <td>{u.admin_extra || u.perfil === "admin" ? "Sim" : "—"}</td>
-              <td>{u.ativo ? "Ativo" : "Inativo"}</td>
-              <td>
-                <button type="button" onClick={() => alternarAtivo(u)} style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
-                  {u.ativo ? "Desativar" : "Reativar"}
-                </button>
-              </td>
-            </tr>
+            <Fragment key={u.id}>
+              <tr>
+                <td>{u.nome}</td>
+                <td>{PERFIS[u.perfil] ?? u.perfil}</td>
+                <td>
+                  {u.registro_classe}
+                  {u.rqe ? ` · ${u.rqe}` : ""}
+                </td>
+                <td>{u.admin_extra || u.perfil === "admin" ? "Sim" : "—"}</td>
+                <td>{u.ativo ? "Ativo" : "Inativo"}</td>
+                <td style={{ display: "flex", gap: 6 }}>
+                  <button type="button" onClick={() => abrirEdicao(u)} style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
+                    Editar
+                  </button>
+                  <button type="button" onClick={() => alternarAtivo(u)} style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
+                    {u.ativo ? "Desativar" : "Reativar"}
+                  </button>
+                </td>
+              </tr>
+              {editandoUsuarioId === u.id && (
+                <tr>
+                  <td colSpan={6}>
+                    <form onSubmit={salvarEdicao} style={{ margin: "8px 0", maxWidth: 420 }}>
+                      {erro && <p className="erro">{erro}</p>}
+                      <label>Nome completo</label>
+                      <input value={nome} onChange={(e) => setNome(e.target.value)} required />
+
+                      <label>Perfil</label>
+                      <select
+                        value={perfil}
+                        onChange={(e) => setPerfil(e.target.value)}
+                        style={{ padding: 8, width: "100%", marginBottom: 12 }}
+                      >
+                        {Object.entries(PERFIS).map(([chave, label]) => (
+                          <option key={chave} value={chave}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <label>Registro de classe (CRM/CREFITO/COREN)</label>
+                      <input value={registroClasse} onChange={(e) => setRegistroClasse(e.target.value)} />
+
+                      <label>RQE (se houver)</label>
+                      <input value={rqe} onChange={(e) => setRqe(e.target.value)} />
+
+                      <label>Especialidade</label>
+                      <input value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} />
+
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={adminExtra}
+                          onChange={(e) => setAdminExtra(e.target.checked)}
+                          style={{ width: "auto" }}
+                        />
+                        Também terá poderes de administrador
+                      </label>
+
+                      <button type="submit" disabled={salvando} style={{ marginTop: 12, marginRight: 8 }}>
+                        {salvando ? "Salvando..." : "Salvar alterações"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditandoUsuarioId(null)}
+                        style={{ background: "transparent", color: "#666" }}
+                      >
+                        Cancelar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>
