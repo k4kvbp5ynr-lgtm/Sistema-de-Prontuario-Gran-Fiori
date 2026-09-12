@@ -22,6 +22,11 @@ export default async function PacientesPage() {
         <Link href="/pacientes/novo">
           <button type="button">Novo paciente</button>
         </Link>
+        <Link href="/procedimentos">
+          <button type="button" style={{ background: "#8a6d3b" }}>
+            Procedimentos
+          </button>
+        </Link>
         <Link href="/equipe">
           <button type="button" style={{ background: "#555" }}>
             Gerenciar equipe

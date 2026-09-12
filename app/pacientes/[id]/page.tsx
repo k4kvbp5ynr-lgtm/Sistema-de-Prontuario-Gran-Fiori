@@ -3,6 +3,7 @@ import NovaEvolucaoForm from "./nova-evolucao-form";
 import AnexosExames from "./anexos-exames";
 import BotaoAbrirAnexo from "./botao-abrir-anexo";
 import CadastroPaciente from "./cadastro-paciente";
+import ProcedimentosPaciente from "./procedimentos-paciente";
 
 export default async function DetalhePacientePage({
   params,
@@ -50,6 +51,8 @@ export default async function DetalhePacientePage({
   return (
     <div className="container">
       <CadastroPaciente paciente={paciente} />
+
+      <ProcedimentosPaciente pacienteId={paciente.id} />
 
       <NovaEvolucaoForm pacienteId={paciente.id} />
 

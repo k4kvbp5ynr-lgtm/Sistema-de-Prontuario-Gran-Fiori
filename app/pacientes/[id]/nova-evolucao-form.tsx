@@ -224,6 +224,12 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
       <Link href={`/pacientes/${pacienteId}/receituario/novo`}>
         <button type="button">Nova prescrição</button>
       </Link>
+      {" "}
+      <Link href={`/pacientes/${pacienteId}/relatorio/novo`}>
+        <button type="button" style={{ background: "#8a6d3b" }}>
+          Novo relatório médico
+        </button>
+      </Link>
 
       <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
       <label>Anexar exame(s) desta consulta (opcional)</label>
