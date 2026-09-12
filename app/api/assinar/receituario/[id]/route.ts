@@ -93,6 +93,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       reason: "Documento assinado digitalmente",
       contactInfo: profissional.nome,
       name: profissional.nome,
+      location: clinica?.endereco ?? "Brasil",
     });
 
     const signer = new P12Signer(p12Buffer, { passphrase: senha });
