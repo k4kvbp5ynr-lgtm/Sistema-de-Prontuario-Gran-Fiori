@@ -50,6 +50,7 @@ export default async function VisualizarReceitaPage({
   };
   const rotulo = rotulos[prescricao.subtipo_receita ?? "simples"] ?? "";
   const duasVias = prescricao.subtipo_receita === "controle_especial" || prescricao.subtipo_receita === "antibiotico";
+  const conteudoPrescricao = prescricao.conteudo;
 
   function Folha({ viaLabel }: { viaLabel?: string }) {
     return (
@@ -125,7 +126,7 @@ export default async function VisualizarReceitaPage({
 
         {/* Corpo */}
         <div style={{ minHeight: 300, whiteSpace: "pre-wrap", fontSize: "1rem", lineHeight: 1.6 }}>
-          {prescricao.conteudo}
+          {conteudoPrescricao}
         </div>
 
         {/* Assinatura */}
