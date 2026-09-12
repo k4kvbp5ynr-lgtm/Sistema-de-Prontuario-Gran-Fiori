@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import BuscaPacientes from "./busca-pacientes";
 
 export default async function PacientesPage() {
   const supabase = await createClient();
@@ -44,24 +45,7 @@ export default async function PacientesPage() {
 
       {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
 
-      <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>CPF</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pacientes?.map((p) => (
-            <tr key={p.id}>
-              <td>
-                <Link href={`/pacientes/${p.id}`}>{p.nome}</Link>
-              </td>
-              <td>{p.cpf ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <BuscaPacientes pacientes={pacientes ?? []} />
     </div>
   );
 }
