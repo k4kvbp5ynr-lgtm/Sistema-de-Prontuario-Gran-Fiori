@@ -11,7 +11,7 @@ export default async function DetalhePacientePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: paciente } = await supabase
+  const { data: paciente, error: erroPaciente } = await supabase
     .from("pacientes")
     .select("id, nome, cpf, data_nascimento")
     .eq("id", id)
@@ -37,6 +37,11 @@ export default async function DetalhePacientePage({
     return (
       <div className="container">
         <p>Paciente não encontrado (ou você não tem permissão para ver este registro).</p>
+        {erroPaciente && (
+          <p style={{ fontSize: "0.85rem", color: "#999" }}>
+            Detalhe técnico (me envie isso): {erroPaciente.message}
+          </p>
+        )}
       </div>
     );
   }

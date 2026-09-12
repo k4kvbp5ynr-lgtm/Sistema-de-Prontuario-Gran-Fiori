@@ -15,7 +15,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
   const [observacoes, setObservacoes] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
   const [conduta, setConduta] = useState("");
-  const [arquivos, setArquivos] = useState<FileList | null>(null);
+  const [arquivos, setArquivos] = useState<File[]>([]);
 
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -89,8 +89,9 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
     }
 
     // 4. Envia os anexos de exame desta consulta (se houver), já vinculados ao encontro
-    if (arquivos && arquivos.length > 0) {
-      for (const arquivo of Array.from(arquivos)) {
+    const falhas: string[] = [];
+    if (arquivos.length > 0) {
+      for (const arquivo of arquivos) {
         const caminho = `${pacienteId}/${encontro.id}/${Date.now()}_${arquivo.name}`;
 
         const { error: erroUpload } = await supabase.storage
@@ -98,7 +99,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
           .upload(caminho, arquivo);
 
         if (erroUpload) {
-          setErro("Consulta salva, mas houve erro ao anexar '" + arquivo.name + "': " + erroUpload.message);
+          falhas.push(`${arquivo.name} (upload: ${erroUpload.message})`);
           continue;
         }
 
@@ -108,7 +109,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
           ? "imagem"
           : "outro";
 
-        await supabase.from("anexos_exames").insert({
+        const { error: erroInsert } = await supabase.from("anexos_exames").insert({
           paciente_id: pacienteId,
           encontro_id: encontro.id,
           enviado_por: user.id,
@@ -116,10 +117,21 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
           tipo,
           caminho_storage: caminho,
         });
+
+        if (erroInsert) {
+          falhas.push(`${arquivo.name} (registro: ${erroInsert.message})`);
+        }
       }
     }
 
     setSalvando(false);
+
+    if (falhas.length > 0) {
+      setErro(
+        `Consulta salva. Mas ${falhas.length} de ${arquivos.length} anexo(s) falharam: ` +
+          falhas.join("; ")
+      );
+    }
 
     // Limpa o formulário
     setMotivo("");
@@ -128,7 +140,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
     setObservacoes("");
     setDiagnostico("");
     setConduta("");
-    setArquivos(null);
+    setArquivos([]);
     router.refresh();
   }
 
@@ -199,9 +211,14 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
         type="file"
         accept=".pdf,image/*"
         multiple
-        onChange={(e) => setArquivos(e.target.files)}
-        style={{ marginBottom: 12 }}
+        onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
+        style={{ marginBottom: 4 }}
       />
+      {arquivos.length > 0 && (
+        <p style={{ fontSize: "0.85rem", color: "#555", marginBottom: 12 }}>
+          {arquivos.length} arquivo(s) selecionado(s): {arquivos.map((f) => f.name).join(", ")}
+        </p>
+      )}
 
       <button type="submit" disabled={salvando}>
         {salvando ? "Salvando..." : "Salvar consulta"}
