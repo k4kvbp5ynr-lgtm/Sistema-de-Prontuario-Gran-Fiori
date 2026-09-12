@@ -25,6 +25,7 @@ export default function AnexosExames({ pacienteId }: { pacienteId: string }) {
       .from("anexos_exames")
       .select("id, nome_arquivo, tipo, descricao, caminho_storage, criado_em")
       .eq("paciente_id", pacienteId)
+      .is("encontro_id", null)
       .order("criado_em", { ascending: false });
     setAnexos(data ?? []);
   }
@@ -103,7 +104,7 @@ export default function AnexosExames({ pacienteId }: { pacienteId: string }) {
 
   return (
     <div style={{ marginTop: 24, marginBottom: 32 }}>
-      <h2 style={{ fontSize: "1.1rem" }}>Anexos de exames</h2>
+      <h2 style={{ fontSize: "1.1rem" }}>Exames avulsos (sem consulta específica)</h2>
 
       <form onSubmit={enviar} style={{ marginBottom: 16 }}>
         {erro && <p className="erro">{erro}</p>}

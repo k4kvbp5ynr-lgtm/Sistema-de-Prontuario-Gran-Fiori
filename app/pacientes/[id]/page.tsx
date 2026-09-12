@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import NovaEvolucaoForm from "./nova-evolucao-form";
 import AnexosExames from "./anexos-exames";
+import BotaoAbrirAnexo from "./botao-abrir-anexo";
 
 export default async function DetalhePacientePage({
   params,
@@ -16,7 +17,7 @@ export default async function DetalhePacientePage({
     .eq("id", id)
     .single();
 
-  // Busca o histórico: encontros -> evoluções -> diagnóstico/conduta
+  // Busca o histórico: encontros -> evoluções -> diagnóstico/conduta -> anexos
   const { data: encontros } = await supabase
     .from("encontros")
     .select(
@@ -25,7 +26,8 @@ export default async function DetalhePacientePage({
       evolucoes (
         id, motivo_consulta, anamnese, exame_fisico, observacoes,
         evolucoes_diagnostico ( diagnostico_cid, conduta )
-      )
+      ),
+      anexos_exames ( id, nome_arquivo, caminho_storage )
     `
     )
     .eq("paciente_id", id)
@@ -77,6 +79,27 @@ export default async function DetalhePacientePage({
               ))}
             </div>
           ))}
+          {enc.anexos_exames?.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <b>Exames desta consulta:</b>
+              <ul style={{ listStyle: "none", padding: 0, margin: "4px 0 0" }}>
+                {enc.anexos_exames.map((a: any) => (
+                  <li
+                    key={a.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "4px 0",
+                    }}
+                  >
+                    <span>{a.nome_arquivo}</span>
+                    <BotaoAbrirAnexo caminho={a.caminho_storage} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ))}
     </div>

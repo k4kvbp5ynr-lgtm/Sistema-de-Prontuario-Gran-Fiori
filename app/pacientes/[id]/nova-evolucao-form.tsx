@@ -15,6 +15,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
   const [observacoes, setObservacoes] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
   const [conduta, setConduta] = useState("");
+  const [arquivos, setArquivos] = useState<FileList | null>(null);
 
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -81,12 +82,44 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
       conduta,
     });
 
-    setSalvando(false);
-
     if (erroDiagnostico) {
       setErro("Evolução salva, mas houve erro no diagnóstico: " + erroDiagnostico.message);
+      setSalvando(false);
       return;
     }
+
+    // 4. Envia os anexos de exame desta consulta (se houver), já vinculados ao encontro
+    if (arquivos && arquivos.length > 0) {
+      for (const arquivo of Array.from(arquivos)) {
+        const caminho = `${pacienteId}/${encontro.id}/${Date.now()}_${arquivo.name}`;
+
+        const { error: erroUpload } = await supabase.storage
+          .from("exames")
+          .upload(caminho, arquivo);
+
+        if (erroUpload) {
+          setErro("Consulta salva, mas houve erro ao anexar '" + arquivo.name + "': " + erroUpload.message);
+          continue;
+        }
+
+        const tipo = arquivo.type.includes("pdf")
+          ? "pdf"
+          : arquivo.type.includes("image")
+          ? "imagem"
+          : "outro";
+
+        await supabase.from("anexos_exames").insert({
+          paciente_id: pacienteId,
+          encontro_id: encontro.id,
+          enviado_por: user.id,
+          nome_arquivo: arquivo.name,
+          tipo,
+          caminho_storage: caminho,
+        });
+      }
+    }
+
+    setSalvando(false);
 
     // Limpa o formulário
     setMotivo("");
@@ -95,6 +128,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
     setObservacoes("");
     setDiagnostico("");
     setConduta("");
+    setArquivos(null);
     router.refresh();
   }
 
@@ -157,6 +191,16 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
         onChange={(e) => setConduta(e.target.value)}
         rows={3}
         style={{ width: "100%", marginBottom: 12, padding: 8 }}
+      />
+
+      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
+      <label>Anexar exame(s) desta consulta (opcional)</label>
+      <input
+        type="file"
+        accept=".pdf,image/*"
+        multiple
+        onChange={(e) => setArquivos(e.target.files)}
+        style={{ marginBottom: 12 }}
       />
 
       <button type="submit" disabled={salvando}>
