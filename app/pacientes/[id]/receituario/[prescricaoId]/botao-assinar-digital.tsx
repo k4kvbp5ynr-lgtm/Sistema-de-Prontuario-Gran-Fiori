@@ -106,6 +106,21 @@ export default function BotaoAssinarDigital({ prescricaoId }: { prescricaoId: st
                     : "Seu navegador não deixou copiar automaticamente — copie o link abaixo manualmente."}
                 </p>
                 <input readOnly value={linkGerado} onClick={(e) => (e.target as HTMLInputElement).select()} style={{ fontSize: "0.8rem" }} />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(linkGerado);
+                      setLinkCopiado(true);
+                    } catch {
+                      // se ainda assim falhar, o campo acima continua selecionável manualmente
+                    }
+                  }}
+                  title="Copiar link"
+                  style={{ marginTop: 4, fontSize: "0.8rem", padding: "4px 10px" }}
+                >
+                  📋 Copiar link
+                </button>
                 <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
                   <a href={linkGerado} target="_blank" rel="noreferrer">
                     <button type="button">Abrir/baixar PDF</button>
