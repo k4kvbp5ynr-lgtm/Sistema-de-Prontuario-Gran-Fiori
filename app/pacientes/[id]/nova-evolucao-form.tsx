@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string }) {
@@ -219,6 +220,10 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
         rows={3}
         style={{ width: "100%", marginBottom: 12, padding: 8 }}
       />
+
+      <Link href={`/pacientes/${pacienteId}/receituario/novo`}>
+        <button type="button">Nova prescrição</button>
+      </Link>
 
       <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
       <label>Anexar exame(s) desta consulta (opcional)</label>

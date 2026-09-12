@@ -25,7 +25,7 @@ export default async function VisualizarReceitaPage({
 
   const [{ data: paciente }, { data: profissional }, { data: template }, { data: clinica }] =
     await Promise.all([
-      supabase.from("pacientes").select("nome").eq("id", prescricao.paciente_id).single(),
+      supabase.from("pacientes").select("nome, cpf, endereco, data_nascimento").eq("id", prescricao.paciente_id).single(),
       supabase
         .from("usuarios")
         .select("nome, registro_classe, rqe")
@@ -109,19 +109,35 @@ export default async function VisualizarReceitaPage({
         {/* Paciente / Data */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
             marginTop: 32,
             marginBottom: 32,
             fontSize: "0.95rem",
           }}
         >
-          <span>
-            <b>Paciente:</b> {paciente?.nome ?? "—"}
-          </span>
-          <span>
-            <b>Data:</b> {dataFormatada}
-          </span>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>
+              <b>Paciente:</b> {paciente?.nome ?? "—"}
+            </span>
+            <span>
+              <b>Data:</b> {dataFormatada}
+            </span>
+          </div>
+          {duasVias && (
+            <div style={{ marginTop: 4, fontSize: "0.9rem" }}>
+              <p style={{ margin: "2px 0" }}>
+                <b>Endereço:</b> {paciente?.endereco || "________________________________"}
+              </p>
+              <p style={{ margin: "2px 0" }}>
+                <b>CPF:</b> {paciente?.cpf || "—"}{" "}
+                {paciente?.data_nascimento && (
+                  <>
+                    &nbsp;·&nbsp;<b>Nascimento:</b>{" "}
+                    {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")}
+                  </>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Corpo */}
