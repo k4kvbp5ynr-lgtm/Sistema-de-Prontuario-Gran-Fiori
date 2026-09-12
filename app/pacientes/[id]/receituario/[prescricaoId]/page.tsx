@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import BotaoImprimir from "./botao-imprimir";
+import BotaoAssinarDigital from "./botao-assinar-digital";
 
 export default async function VisualizarReceitaPage({
   params,
@@ -226,6 +227,7 @@ export default async function VisualizarReceitaPage({
 
       <div style={{ textAlign: "center" }}>
         <BotaoImprimir />
+        <BotaoAssinarDigital prescricaoId={prescricao.id} />
       </div>
 
       <style>{`
