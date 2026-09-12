@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import NovaEvolucaoForm from "./nova-evolucao-form";
 import AnexosExames from "./anexos-exames";
 import BotaoAbrirAnexo from "./botao-abrir-anexo";
@@ -50,6 +51,11 @@ export default async function DetalhePacientePage({
     <div className="container">
       <h1>{paciente.nome}</h1>
       <p>CPF: {paciente.cpf ?? "—"}</p>
+      <p>
+        <Link href={`/pacientes/${paciente.id}/receituario/novo`}>
+          <button type="button">Nova prescrição</button>
+        </Link>
+      </p>
 
       <NovaEvolucaoForm pacienteId={paciente.id} />
 
