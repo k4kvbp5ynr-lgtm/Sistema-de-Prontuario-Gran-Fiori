@@ -1,0 +1,56 @@
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+import BuscaPacientes from "./busca-pacientes";
+
+export default async function PacientesPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: pacientes, error } = await supabase
+    .from("pacientes")
+    .select("id, nome, cpf, criado_em")
+    .order("criado_em", { ascending: false });
+
+  return (
+    <div className="container">
+      <h1>Pacientes</h1>
+      <p>Logado como: {user?.email}</p>
+
+      <p style={{ display: "flex", gap: 12 }}>
+        <Link href="/agenda">
+          <button type="button">Agenda</button>
+        </Link>
+        <Link href="/tipos-evento">
+          <button type="button" style={{ background: "#6b7a8a" }}>
+            Tipos de evento
+          </button>
+        </Link>
+        <Link href="/pacientes/novo">
+          <button type="button">Novo paciente</button>
+        </Link>
+        <Link href="/procedimentos">
+          <button type="button" style={{ background: "#8a6d3b" }}>
+            Procedimentos
+          </button>
+        </Link>
+        <Link href="/equipe">
+          <button type="button" style={{ background: "#555" }}>
+            Gerenciar equipe
+          </button>
+        </Link>
+        <Link href="/configuracoes">
+          <button type="button" style={{ background: "#3d3d3d" }}>
+            Configurações
+          </button>
+        </Link>
+      </p>
+
+      {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
+
+      <BuscaPacientes pacientes={pacientes ?? []} />
+    </div>
+  );
+}
