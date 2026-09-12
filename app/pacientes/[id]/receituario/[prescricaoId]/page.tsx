@@ -26,7 +26,7 @@ export default async function VisualizarReceitaPage({
 
   const [{ data: paciente }, { data: profissional }, { data: template }, { data: clinica }] =
     await Promise.all([
-      supabase.from("pacientes").select("nome, cpf, endereco, data_nascimento").eq("id", prescricao.paciente_id).single(),
+      supabase.from("pacientes").select("nome, cpf, endereco, data_nascimento, telefone").eq("id", prescricao.paciente_id).single(),
       supabase
         .from("usuarios")
         .select("nome, registro_classe, rqe")
@@ -227,7 +227,11 @@ export default async function VisualizarReceitaPage({
 
       <div style={{ textAlign: "center" }}>
         <BotaoImprimir />
-        <BotaoAssinarDigital prescricaoId={prescricao.id} />
+        <BotaoAssinarDigital
+          prescricaoId={prescricao.id}
+          pacienteNome={paciente?.nome ?? ""}
+          pacienteTelefone={paciente?.telefone ?? null}
+        />
       </div>
 
       <style>{`

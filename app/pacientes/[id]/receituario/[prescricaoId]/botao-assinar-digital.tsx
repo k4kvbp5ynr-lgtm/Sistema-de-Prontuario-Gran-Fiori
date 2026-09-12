@@ -2,9 +2,25 @@
 
 import { useState } from "react";
 
-export default function BotaoAssinarDigital({ prescricaoId }: { prescricaoId: string }) {
+function montarLinkWhatsapp(telefone: string, pacienteNome: string, url: string) {
+  const somenteDigitos = telefone.replace(/\D/g, "");
+  const comCodigoPais = somenteDigitos.startsWith("55") ? somenteDigitos : `55${somenteDigitos}`;
+  const mensagem = `Olá, ${pacienteNome}! Segue sua receita: ${url}`;
+  return `https://wa.me/${comCodigoPais}?text=${encodeURIComponent(mensagem)}`;
+}
+
+export default function BotaoAssinarDigital({
+  prescricaoId,
+  pacienteNome,
+  pacienteTelefone,
+}: {
+  prescricaoId: string;
+  pacienteNome: string;
+  pacienteTelefone: string | null;
+}) {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [senha, setSenha] = useState("");
+  const [enviarWhatsapp, setEnviarWhatsapp] = useState(false);
   const [assinando, setAssinando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
@@ -39,6 +55,10 @@ export default function BotaoAssinarDigital({ prescricaoId }: { prescricaoId: st
         setLinkCopiado(true);
       } catch {
         // Se o navegador bloquear a cópia automática, o link ainda fica visível pra copiar manualmente
+      }
+
+      if (enviarWhatsapp && pacienteTelefone) {
+        window.open(montarLinkWhatsapp(pacienteTelefone, pacienteNome, dados.url), "_blank");
       }
 
       setAssinando(false);
@@ -83,6 +103,23 @@ export default function BotaoAssinarDigital({ prescricaoId }: { prescricaoId: st
                 </p>
                 {erro && <p className="erro">{erro}</p>}
                 <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} autoFocus required />
+
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "0.85rem" }}>
+                  <input
+                    type="checkbox"
+                    checked={enviarWhatsapp}
+                    onChange={(e) => setEnviarWhatsapp(e.target.checked)}
+                    disabled={!pacienteTelefone}
+                    style={{ width: "auto" }}
+                  />
+                  📲 Abrir WhatsApp Web já com a mensagem pronta para o paciente
+                </label>
+                {!pacienteTelefone && (
+                  <p style={{ fontSize: "0.75rem", color: "#b3261e", margin: "4px 0 0" }}>
+                    Esse paciente não tem telefone cadastrado — edite o cadastro dele para usar essa opção.
+                  </p>
+                )}
+
                 <button type="submit" disabled={assinando} style={{ marginTop: 12, marginRight: 8 }}>
                   {assinando ? "Assinando..." : "Assinar"}
                 </button>
@@ -101,7 +138,9 @@ export default function BotaoAssinarDigital({ prescricaoId }: { prescricaoId: st
                   {linkCopiado ? "Assinado! Link copiado ✓" : "Assinado!"}
                 </h2>
                 <p style={{ fontSize: "0.85rem", color: "#666" }}>
-                  {linkCopiado
+                  {enviarWhatsapp && pacienteTelefone
+                    ? "O WhatsApp Web deve ter aberto numa nova aba com a mensagem pronta — é só clicar em enviar."
+                    : linkCopiado
                     ? "É só colar (Ctrl+V ou Cmd+V) direto na conversa do WhatsApp com o paciente. O link vale por 7 dias."
                     : "Seu navegador não deixou copiar automaticamente — copie o link abaixo manualmente."}
                 </p>
