@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const [{ data: paciente }, { data: profissional }, { data: template }, { data: clinica }] = await Promise.all([
     supabase.from("pacientes").select("nome").eq("id", prescricao.paciente_id).single(),
-    supabase.from("usuarios").select("nome, registro_classe, rqe, certificado_path").eq("id", user.id).single(),
+    supabase.from("usuarios").select("nome, registro_classe, rqe, certificado_path, assinatura_path").eq("id", user.id).single(),
     supabase
       .from("templates_documento")
       .select("titulo_especialidade")
@@ -67,6 +67,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const p12Buffer = Buffer.from(await certificadoArquivo.arrayBuffer());
 
+  // 2.1 Baixa a imagem da assinatura pessoal (se o usuário tiver enviado uma)
+  let assinaturaImagemBytes: Buffer | null = null;
+  if (profissional.assinatura_path) {
+    const { data: arquivoAssinatura } = await supabase.storage
+      .from("assinaturas")
+      .download(profissional.assinatura_path);
+    if (arquivoAssinatura) {
+      assinaturaImagemBytes = Buffer.from(await arquivoAssinatura.arrayBuffer());
+    }
+  }
+
   // 3. Gera o PDF do receituário
   const rotulos: Record<string, string> = {
     controle_especial: "RECEITUÁRIO DE CONTROLE ESPECIAL",
@@ -84,6 +95,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     rotuloTipo: rotulos[prescricao.subtipo_receita ?? ""] ?? null,
     clinicaEndereco: clinica?.endereco ?? "",
     clinicaContato: `${clinica?.telefone ?? ""} · ${clinica?.site ?? ""}`,
+    dataAssinatura: new Date().toLocaleString("pt-BR"),
+    assinaturaImagemBytes,
   });
 
   // 4. Assina digitalmente com o certificado A1 (padrão PAdES)
