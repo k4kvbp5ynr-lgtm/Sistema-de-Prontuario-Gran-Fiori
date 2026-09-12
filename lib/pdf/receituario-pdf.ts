@@ -52,7 +52,7 @@ export async function gerarReceituarioPDF(dados: DadosReceituario): Promise<Uint
   const fonteNormal = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteNegrito = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-  let logoImagem = null;
+  let logoImagem: any = null;
   try {
     const logoBytes = fs.readFileSync(path.join(process.cwd(), "public", "logo.png"));
     logoImagem = await pdf.embedPng(logoBytes);
