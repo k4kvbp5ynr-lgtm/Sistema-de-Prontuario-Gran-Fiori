@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import NovaEvolucaoForm from "./nova-evolucao-form";
 import AnexosExames from "./anexos-exames";
 import BotaoAbrirAnexo from "./botao-abrir-anexo";
+import CadastroPaciente from "./cadastro-paciente";
 
 export default async function DetalhePacientePage({
   params,
@@ -13,7 +14,7 @@ export default async function DetalhePacientePage({
 
   const { data: paciente, error: erroPaciente } = await supabase
     .from("pacientes")
-    .select("id, nome, cpf, data_nascimento")
+    .select("id, nome, cpf, data_nascimento, sexo, endereco, telefone, email, foto_path")
     .eq("id", id)
     .single();
 
@@ -48,8 +49,7 @@ export default async function DetalhePacientePage({
 
   return (
     <div className="container">
-      <h1>{paciente.nome}</h1>
-      <p>CPF: {paciente.cpf ?? "—"}</p>
+      <CadastroPaciente paciente={paciente} />
 
       <NovaEvolucaoForm pacienteId={paciente.id} />
 

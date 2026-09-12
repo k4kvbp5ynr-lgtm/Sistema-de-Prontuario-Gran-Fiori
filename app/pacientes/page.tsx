@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import NovoPacienteForm from "./novo-paciente-form";
 
 export default async function PacientesPage() {
   const supabase = await createClient();
@@ -19,7 +18,11 @@ export default async function PacientesPage() {
       <h1>Pacientes</h1>
       <p>Logado como: {user?.email}</p>
 
-      <NovoPacienteForm />
+      <p>
+        <Link href="/pacientes/novo">
+          <button type="button">Novo paciente</button>
+        </Link>
+      </p>
 
       {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
 
