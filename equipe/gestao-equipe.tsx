@@ -13,6 +13,7 @@ type Usuario = {
   especialidade: string | null;
   admin_extra: boolean;
   ativo: boolean;
+  cor_agenda: string;
 };
 
 const PERFIS: Record<string, string> = {
@@ -40,6 +41,7 @@ export default function GestaoEquipe() {
   const [rqe, setRqe] = useState("");
   const [especialidade, setEspecialidade] = useState("");
   const [adminExtra, setAdminExtra] = useState(false);
+  const [corAgenda, setCorAgenda] = useState("#7a5a2f");
   const [salvando, setSalvando] = useState(false);
 
   async function carregar() {
@@ -56,7 +58,7 @@ export default function GestaoEquipe() {
 
     const { data: users } = await supabase
       .from("usuarios")
-      .select("id, nome, perfil, registro_classe, rqe, especialidade, admin_extra, ativo")
+      .select("id, nome, perfil, registro_classe, rqe, especialidade, admin_extra, ativo, cor_agenda")
       .order("nome");
 
     setUsuarios(users ?? []);
@@ -77,6 +79,7 @@ export default function GestaoEquipe() {
     setRqe("");
     setEspecialidade("");
     setAdminExtra(false);
+    setCorAgenda("#7a5a2f");
     setErro(null);
   }
 
@@ -89,6 +92,7 @@ export default function GestaoEquipe() {
     setRqe(usuario.rqe ?? "");
     setEspecialidade(usuario.especialidade ?? "");
     setAdminExtra(usuario.admin_extra);
+    setCorAgenda(usuario.cor_agenda ?? "#7a5a2f");
     setErro(null);
   }
 
@@ -107,6 +111,7 @@ export default function GestaoEquipe() {
         rqe: rqe || null,
         especialidade: especialidade || null,
         admin_extra: adminExtra,
+        cor_agenda: corAgenda,
       })
       .eq("id", editandoUsuarioId);
 
@@ -135,6 +140,7 @@ export default function GestaoEquipe() {
       rqe: rqe || null,
       especialidade: especialidade || null,
       admin_extra: adminExtra,
+      cor_agenda: corAgenda,
     });
 
     setSalvando(false);
@@ -175,6 +181,7 @@ export default function GestaoEquipe() {
             <th>Perfil</th>
             <th>Registro</th>
             <th>Admin</th>
+            <th>Cor</th>
             <th>Status</th>
             <th></th>
           </tr>
@@ -190,6 +197,17 @@ export default function GestaoEquipe() {
                   {u.rqe ? ` · ${u.rqe}` : ""}
                 </td>
                 <td>{u.admin_extra || u.perfil === "admin" ? "Sim" : "—"}</td>
+                <td>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      background: u.cor_agenda ?? "#7a5a2f",
+                    }}
+                  />
+                </td>
                 <td>{u.ativo ? "Ativo" : "Inativo"}</td>
                 <td style={{ display: "flex", gap: 6 }}>
                   <button type="button" onClick={() => abrirEdicao(u)} style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
@@ -202,7 +220,7 @@ export default function GestaoEquipe() {
               </tr>
               {editandoUsuarioId === u.id && (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <form onSubmit={salvarEdicao} style={{ margin: "8px 0", maxWidth: 420 }}>
                       {erro && <p className="erro">{erro}</p>}
                       <label>Nome completo</label>
@@ -229,6 +247,14 @@ export default function GestaoEquipe() {
 
                       <label>Especialidade</label>
                       <input value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} />
+
+                      <label>Cor na agenda</label>
+                      <input
+                        type="color"
+                        value={corAgenda}
+                        onChange={(e) => setCorAgenda(e.target.value)}
+                        style={{ width: 60, height: 36, padding: 2, marginBottom: 8 }}
+                      />
 
                       <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                         <input
@@ -305,6 +331,14 @@ export default function GestaoEquipe() {
 
                 <label>Especialidade</label>
                 <input value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} />
+
+                <label>Cor na agenda</label>
+                <input
+                  type="color"
+                  value={corAgenda}
+                  onChange={(e) => setCorAgenda(e.target.value)}
+                  style={{ width: 60, height: 36, padding: 2, marginBottom: 8 }}
+                />
 
                 <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                   <input

@@ -10,16 +10,20 @@ const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 type Agendamento = {
   id: string;
-  paciente_id: string;
+  paciente_id: string | null;
+  profissional_id: string;
   data_hora: string;
   duracao_minutos: number;
-  tipo_atendimento: string;
+  tipo_evento_id: string | null;
+  titulo_livre: string | null;
   status: string;
   observacao: string | null;
-  pacientes: { nome: string };
+  pacientes: { nome: string } | null;
 };
 
 type Paciente = { id: string; nome: string };
+type Usuario = { id: string; nome: string; cor_agenda: string };
+type TipoEvento = { id: string; nome: string; requer_paciente: boolean };
 
 function inicioDaSemana(data: Date) {
   const d = new Date(data);
@@ -28,26 +32,23 @@ function inicioDaSemana(data: Date) {
   return new Date(d.setDate(diff));
 }
 
-const CORES_STATUS: Record<string, string> = {
-  agendado: "#d9c48f",
-  confirmado: "#7a5a2f",
-  realizado: "#4a7a4a",
-  cancelado: "#999",
-  faltou: "#b3261e",
-};
-
 export default function AgendaCalendario() {
   const supabase = createClient();
   const [semanaBase, setSemanaBase] = useState(() => inicioDaSemana(new Date()));
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [usuariosAgenda, setUsuariosAgenda] = useState<Usuario[]>([]);
+  const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
   const [linkFeed, setLinkFeed] = useState<string | null>(null);
+  const [meuId, setMeuId] = useState<string | null>(null);
 
   // formulário de novo agendamento
   const [slotSelecionado, setSlotSelecionado] = useState<{ dia: Date; hora: number } | null>(null);
+  const [profissionalId, setProfissionalId] = useState("");
   const [pacienteId, setPacienteId] = useState("");
+  const [tipoEventoId, setTipoEventoId] = useState("");
+  const [tituloLivre, setTituloLivre] = useState("");
   const [duracao, setDuracao] = useState(30);
-  const [tipoAtendimento, setTipoAtendimento] = useState("consulta");
   const [observacao, setObservacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -68,7 +69,9 @@ export default function AgendaCalendario() {
 
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, paciente_id, data_hora, duracao_minutos, tipo_atendimento, status, observacao, pacientes ( nome )")
+      .select(
+        "id, paciente_id, profissional_id, data_hora, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, pacientes ( nome )"
+      )
       .gte("data_hora", inicio.toISOString())
       .lt("data_hora", fim.toISOString())
       .order("data_hora");
@@ -87,42 +90,59 @@ export default function AgendaCalendario() {
       .select("id, nome")
       .order("nome")
       .then(({ data }) => setPacientes(data ?? []));
+
+    supabase
+      .from("usuarios")
+      .select("id, nome, cor_agenda")
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => setUsuariosAgenda(data ?? []));
+
+    supabase
+      .from("tipos_evento")
+      .select("id, nome, requer_paciente")
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => setTiposEvento(data ?? []));
+
+    supabase.auth.getUser().then(({ data }) => setMeuId(data.user?.id ?? null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function abrirNovoSlot(dia: Date, hora: number) {
     setSlotSelecionado({ dia, hora });
+    setProfissionalId(meuId ?? "");
     setPacienteId("");
+    setTipoEventoId("");
+    setTituloLivre("");
     setDuracao(30);
-    setTipoAtendimento("consulta");
     setObservacao("");
     setErro(null);
   }
 
   async function salvarAgendamento(e: React.FormEvent) {
     e.preventDefault();
-    if (!slotSelecionado || !pacienteId) return;
-    setErro(null);
-    setSalvando(true);
+    if (!slotSelecionado || !profissionalId || !tipoEventoId) return;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setErro("Sessão expirada.");
-      setSalvando(false);
+    const tipoSelecionado = tiposEvento.find((t) => t.id === tipoEventoId);
+    if (tipoSelecionado?.requer_paciente && !pacienteId) {
+      setErro("Esse tipo de evento exige selecionar um paciente.");
       return;
     }
+
+    setErro(null);
+    setSalvando(true);
 
     const dataHora = new Date(slotSelecionado.dia);
     dataHora.setHours(slotSelecionado.hora, 0, 0, 0);
 
     const { error } = await supabase.from("agendamentos").insert({
-      paciente_id: pacienteId,
-      profissional_id: user.id,
+      paciente_id: tipoSelecionado?.requer_paciente ? pacienteId : null,
+      profissional_id: profissionalId,
       data_hora: dataHora.toISOString(),
       duracao_minutos: duracao,
-      tipo_atendimento: tipoAtendimento,
+      tipo_evento_id: tipoEventoId,
+      titulo_livre: tipoSelecionado?.requer_paciente ? null : tituloLivre || null,
       observacao: observacao || null,
     });
 
@@ -208,6 +228,15 @@ export default function AgendaCalendario() {
         </div>
       )}
 
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12, fontSize: "0.85rem" }}>
+        {usuariosAgenda.map((u) => (
+          <span key={u.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 12, height: 12, borderRadius: "50%", background: u.cor_agenda, display: "inline-block" }} />
+            {u.nome}
+          </span>
+        ))}
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "50px repeat(6, 1fr)", border: "1px solid #e5e0d8" }}>
         <div></div>
         {dias.map((d, i) => (
@@ -271,6 +300,10 @@ export default function AgendaCalendario() {
               const d = new Date(a.data_hora);
               const topo = (d.getHours() + d.getMinutes() / 60 - HORA_INICIO) * ALTURA_HORA;
               const altura = (a.duracao_minutos / 60) * ALTURA_HORA;
+              const profissional = usuariosAgenda.find((u) => u.id === a.profissional_id);
+              const tipoEvento = tiposEvento.find((t) => t.id === a.tipo_evento_id);
+              const rotulo = a.pacientes?.nome ?? a.titulo_livre ?? tipoEvento?.nome ?? "Evento";
+              const cancelado = a.status === "cancelado";
               return (
                 <div
                   key={a.id}
@@ -284,17 +317,19 @@ export default function AgendaCalendario() {
                     height: Math.max(altura, 20),
                     left: 2,
                     right: 2,
-                    background: CORES_STATUS[a.status] ?? "#d9c48f",
+                    background: profissional?.cor_agenda ?? "#7a5a2f",
                     color: "white",
                     borderRadius: 4,
                     padding: "2px 6px",
                     fontSize: "0.75rem",
                     overflow: "hidden",
                     cursor: "pointer",
+                    opacity: cancelado ? 0.4 : 1,
+                    textDecoration: cancelado ? "line-through" : "none",
                   }}
                 >
-                  {d.getHours().toString().padStart(2, "0")}:{d.getMinutes().toString().padStart(2, "0")} —{" "}
-                  {a.pacientes?.nome}
+                  {d.getHours().toString().padStart(2, "0")}:{d.getMinutes().toString().padStart(2, "0")} — {rotulo}
+                  {a.status === "faltou" && " (faltou)"}
                 </div>
               );
             })}
@@ -327,23 +362,52 @@ export default function AgendaCalendario() {
             </h2>
             <form onSubmit={salvarAgendamento}>
               {erro && <p className="erro">{erro}</p>}
-              <label>Paciente</label>
-              <select value={pacienteId} onChange={(e) => setPacienteId(e.target.value)} required style={{ padding: 8, width: "100%", marginBottom: 12 }}>
+
+              <label>Profissional</label>
+              <select value={profissionalId} onChange={(e) => setProfissionalId(e.target.value)} required style={{ padding: 8, width: "100%", marginBottom: 12 }}>
                 <option value="">Selecione</option>
-                {pacientes.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nome}
+                {usuariosAgenda.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nome}
                   </option>
                 ))}
               </select>
 
-              <label>Tipo de atendimento</label>
-              <select value={tipoAtendimento} onChange={(e) => setTipoAtendimento(e.target.value)} style={{ padding: 8, width: "100%", marginBottom: 12 }}>
-                <option value="consulta">Consulta</option>
-                <option value="procedimento">Procedimento</option>
-                <option value="revisao">Revisão</option>
-                <option value="outro">Outro</option>
+              <label>Tipo de evento</label>
+              <select
+                value={tipoEventoId}
+                onChange={(e) => setTipoEventoId(e.target.value)}
+                required
+                style={{ padding: 8, width: "100%", marginBottom: 12 }}
+              >
+                <option value="">Selecione</option>
+                {tiposEvento.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome}
+                  </option>
+                ))}
               </select>
+
+              {tiposEvento.find((t) => t.id === tipoEventoId)?.requer_paciente !== false && (
+                <>
+                  <label>Paciente</label>
+                  <select value={pacienteId} onChange={(e) => setPacienteId(e.target.value)} style={{ padding: 8, width: "100%", marginBottom: 12 }}>
+                    <option value="">Selecione</option>
+                    {pacientes.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nome}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+
+              {tiposEvento.find((t) => t.id === tipoEventoId)?.requer_paciente === false && (
+                <>
+                  <label>Título/descrição</label>
+                  <input value={tituloLivre} onChange={(e) => setTituloLivre(e.target.value)} placeholder="Ex: Feriado - Natal" />
+                </>
+              )}
 
               <label>Duração (minutos)</label>
               <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} style={{ padding: 8, width: "100%", marginBottom: 12 }}>
@@ -385,9 +449,13 @@ export default function AgendaCalendario() {
           onClick={() => setDetalheId(null)}
         >
           <div style={{ background: "white", borderRadius: 8, padding: 24, maxWidth: 380, width: "90%" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>{agendamentoDetalhe.pacientes?.nome}</h2>
+            <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>
+              {agendamentoDetalhe.pacientes?.nome ?? agendamentoDetalhe.titulo_livre ?? "Evento"}
+            </h2>
             <p style={{ fontSize: "0.9rem" }}>
-              {new Date(agendamentoDetalhe.data_hora).toLocaleString("pt-BR")} · {agendamentoDetalhe.tipo_atendimento} ·{" "}
+              {usuariosAgenda.find((u) => u.id === agendamentoDetalhe.profissional_id)?.nome} ·{" "}
+              {new Date(agendamentoDetalhe.data_hora).toLocaleString("pt-BR")} ·{" "}
+              {tiposEvento.find((t) => t.id === agendamentoDetalhe.tipo_evento_id)?.nome} ·{" "}
               {agendamentoDetalhe.duracao_minutos} min
             </p>
             {agendamentoDetalhe.observacao && <p style={{ fontSize: "0.9rem" }}>{agendamentoDetalhe.observacao}</p>}

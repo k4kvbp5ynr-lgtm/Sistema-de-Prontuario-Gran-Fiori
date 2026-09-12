@@ -22,6 +22,11 @@ export default async function PacientesPage() {
         <Link href="/agenda">
           <button type="button">Agenda</button>
         </Link>
+        <Link href="/tipos-evento">
+          <button type="button" style={{ background: "#6b7a8a" }}>
+            Tipos de evento
+          </button>
+        </Link>
         <Link href="/pacientes/novo">
           <button type="button">Novo paciente</button>
         </Link>
