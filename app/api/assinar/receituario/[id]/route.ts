@@ -99,7 +99,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const signer = new P12Signer(p12Buffer, { passphrase: senha });
     const pdfAssinado = await new SignPdf().sign(pdfComEspaco, signer);
 
-    return new NextResponse(pdfAssinado, {
+    return new NextResponse(new Uint8Array(pdfAssinado), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="receituario_assinado.pdf"`,
