@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import NovoPacienteForm from "./novo-paciente-form";
 
 export default async function PacientesPage() {
@@ -32,7 +33,9 @@ export default async function PacientesPage() {
         <tbody>
           {pacientes?.map((p) => (
             <tr key={p.id}>
-              <td>{p.nome}</td>
+              <td>
+                <Link href={`/pacientes/${p.id}`}>{p.nome}</Link>
+              </td>
               <td>{p.cpf ?? "—"}</td>
             </tr>
           ))}
