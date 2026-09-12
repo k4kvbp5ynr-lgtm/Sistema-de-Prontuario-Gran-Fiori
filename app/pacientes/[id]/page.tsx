@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import NovaEvolucaoForm from "./nova-evolucao-form";
+import AnexosExames from "./anexos-exames";
 
 export default async function DetalhePacientePage({
   params,
@@ -44,6 +45,8 @@ export default async function DetalhePacientePage({
       <p>CPF: {paciente.cpf ?? "—"}</p>
 
       <NovaEvolucaoForm pacienteId={paciente.id} />
+
+      <AnexosExames pacienteId={paciente.id} />
 
       <h2 style={{ fontSize: "1.1rem" }}>Histórico</h2>
       {(!encontros || encontros.length === 0) && <p>Nenhuma consulta registrada ainda.</p>}
