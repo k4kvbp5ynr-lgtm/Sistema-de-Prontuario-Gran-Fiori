@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import BuscaPacientes from "./busca-pacientes";
+import BotaoSair from "./botao-sair";
 
 export default async function PacientesPage() {
   const supabase = await createClient();
@@ -46,6 +47,7 @@ export default async function PacientesPage() {
             Configurações
           </button>
         </Link>
+        <BotaoSair />
       </p>
 
       {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
