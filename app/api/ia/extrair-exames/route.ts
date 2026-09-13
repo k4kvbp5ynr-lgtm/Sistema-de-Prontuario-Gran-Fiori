@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     .select("id, nome, categoria, valor_ideal_mulheres_texto, valor_ideal_homens_texto")
     .eq("ativo", true);
 
-  const listaReferencia = (marcadores ?? [])
+  const listaReferencia = (Array.isArray(marcadores) ? marcadores : [])
     .map(
       (m) =>
         `id: ${m.id} | nome: ${m.nome} | categoria: ${m.categoria} | ideal mulheres: ${m.valor_ideal_mulheres_texto} | ideal homens: ${m.valor_ideal_homens_texto}`
@@ -145,7 +145,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const exames = (blocoFerramenta.input?.exames ?? []).map((item: any) => ({
+    const examesRaw = blocoFerramenta.input?.exames;
+    const exames = (Array.isArray(examesRaw) ? examesRaw : []).map((item: any) => ({
       ...item,
       marcador_id: item.marcador_id || null,
       observacao_conversao: item.observacao_conversao || null,

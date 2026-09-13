@@ -170,6 +170,9 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
         maxRefFinal: item.max_referencia_livre ?? "",
       }));
       setItensExtraidos(itens);
+      if (itens.length === 0) {
+        setErroExtracao("A IA não identificou nenhum exame neste PDF. Confira se o arquivo tem texto selecionável (não é uma foto/scan de baixa qualidade) e tente de novo.");
+      }
     } catch {
       setErroExtracao("Erro de conexão com a IA.");
     }
