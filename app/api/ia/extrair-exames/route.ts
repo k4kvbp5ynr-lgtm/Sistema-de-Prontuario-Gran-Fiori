@@ -7,11 +7,20 @@ const SYSTEM_PROMPT = `Você extrai dados de laudos de exames laboratoriais (PDF
 
 REGRAS OBRIGATÓRIAS:
 1. Extraia APENAS exames que estejam explicitamente escritos no documento, com o valor numérico exato que aparece. NUNCA invente, estime ou complete um valor que não esteja no documento.
-2. Cada laboratório usa nomenclatura e unidades de medida diferentes para o mesmo exame. Você recebeu uma lista de marcadores de referência do sistema (com o nome padronizado e a faixa de valores ideais, que já indica a unidade padrão usada). Para cada exame do laudo:
-   - Tente identificar a qual marcador da lista de referência ele corresponde (mesmo que o nome esteja abreviado ou por extenso, ex: "Hb" = "Hemoglobina", "TGO" = "AST").
-   - Se as unidades forem diferentes entre o laudo e a referência, converta o valor para a mesma unidade da referência, e explique a conversão em observacao_conversao.
-   - Se não conseguir identificar com confiança a qual marcador da lista corresponde, deixe marcador_id vazio, mas ainda assim preencha nome_extraido_do_laudo.
-3. Use a ferramenta registrar_exames_extraidos para reportar todos os exames encontrados no documento.`;
+
+2. CONVERSÃO DE UNIDADE — PASSO A PASSO OBRIGATÓRIO, é o ponto mais importante e mais propenso a erro:
+   a. Identifique a unidade usada no laudo (unidade_original) — ela quase sempre aparece ao lado do valor no PDF.
+   b. Identifique a unidade implícita na faixa de referência do sistema (ela aparece dentro do texto de "ideal mulheres"/"ideal homens" que você recebeu, ex: "12 a 16 g/dL").
+   c. Se as duas unidades forem DIFERENTES (ex: mg/dL vs mmol/L, µg/dL vs nmol/L, UI/L vs U/L com fator diferente, etc.), você DEVE calcular matematicamente o valor convertido usando o fator de conversão correto — nunca copie o valor original para valor_convertido nesse caso. Mostre a conta feita em observacao_conversao (ex: "150 mg/dL × 0,0555 = 8,3 mmol/L").
+   d. Se as unidades forem IGUAIS (ou equivalentes), valor_convertido = valor_original, e observacao_conversao pode ficar vazio.
+   e. Se você não tiver certeza do fator de conversão correto para um par de unidades, NÃO invente um fator — deixe valor_convertido igual ao valor_original e escreva em observacao_conversao: "unidade diferente da referência (LAUDO) vs (SISTEMA) — conversão não realizada, confirme manualmente." Isso é preferível a uma conversão errada.
+   Esse passo é crítico: uma conversão errada ou ausente faz um resultado normal aparecer como alterado (ou vice-versa), o que é um erro clínico grave.
+
+3. Tente identificar a qual marcador da lista de referência do sistema cada exame corresponde (mesmo que o nome esteja abreviado ou por extenso, ex: "Hb" = "Hemoglobina", "TGO" = "AST").
+
+4. Se NÃO conseguir identificar com confiança a qual marcador da lista o exame corresponde: deixe marcador_id vazio, mas preencha nome_extraido_do_laudo, unidade_original, e também min_referencia_livre e max_referencia_livre com a faixa de referência que aparece IMPRESSA NO PRÓPRIO LAUDO para esse exame (não converta nesse caso, pois não há referência do sistema para comparar — apenas reporte a referência do laudo como está).
+
+5. Use a ferramenta registrar_exames_extraidos para reportar todos os exames encontrados no documento.`;
 
 const TOOL_REGISTRAR_EXAMES = {
   name: "registrar_exames_extraidos",
@@ -28,8 +37,10 @@ const TOOL_REGISTRAR_EXAMES = {
             marcador_id: { type: "string", description: "uuid do marcador de referência correspondente, ou string vazia se não identificado" },
             valor_original: { type: "number" },
             unidade_original: { type: "string" },
-            valor_convertido: { type: "number", description: "valor já convertido pra unidade de referência (igual ao original se não precisou converter)" },
-            observacao_conversao: { type: "string", description: "explicação da conversão de unidade, ou string vazia se não houve conversão" },
+            valor_convertido: { type: "number", description: "valor já convertido pra unidade de referência (igual ao original se não precisou converter, ou se a conversão não pôde ser feita com segurança)" },
+            observacao_conversao: { type: "string", description: "explicação/conta da conversão de unidade, ou string vazia se não houve conversão" },
+            min_referencia_livre: { type: "number", description: "valor mínimo da faixa de referência impressa no próprio laudo (só quando marcador_id não foi identificado)" },
+            max_referencia_livre: { type: "number", description: "valor máximo da faixa de referência impressa no próprio laudo (só quando marcador_id não foi identificado)" },
             data_exame: { type: "string", description: "data de coleta no formato YYYY-MM-DD, ou string vazia se não encontrada" },
           },
           required: ["nome_extraido_do_laudo", "valor_original", "valor_convertido"],
@@ -139,6 +150,8 @@ export async function POST(request: NextRequest) {
       marcador_id: item.marcador_id || null,
       observacao_conversao: item.observacao_conversao || null,
       data_exame: item.data_exame || null,
+      min_referencia_livre: item.min_referencia_livre ?? null,
+      max_referencia_livre: item.max_referencia_livre ?? null,
     }));
 
     return NextResponse.json({ exames });

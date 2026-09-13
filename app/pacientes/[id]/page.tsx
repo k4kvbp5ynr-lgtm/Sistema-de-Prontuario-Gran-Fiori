@@ -55,9 +55,7 @@ export default async function DetalhePacientePage({
 
       <ProcedimentosPaciente pacienteId={paciente.id} />
 
-      <div id="exames-laboratoriais">
-        <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} />
-      </div>
+      <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} />
 
       <NovaEvolucaoForm pacienteId={paciente.id} />
 

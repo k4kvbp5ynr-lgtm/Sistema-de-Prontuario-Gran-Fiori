@@ -23,23 +23,34 @@ type Marcador = {
 
 type Resultado = {
   id: string;
-  marcador_id: string;
+  marcador_id: string | null;
+  nome_livre: string | null;
   valor: number;
   data_exame: string;
   status: string | null;
+  min_referencia_livre: number | null;
+  max_referencia_livre: number | null;
+  unidade: string | null;
 };
 
+// dentro = verde (normal) · acima = vermelho · abaixo = amarelo
 const CORES_STATUS: Record<string, string> = {
-  abaixo: "#b3261e",
   dentro: "#4a7a4a",
   acima: "#b3261e",
+  abaixo: "#b8860b",
+};
+const FUNDO_STATUS: Record<string, string> = {
+  dentro: "#e8f2e8",
+  acima: "#fbe8e6",
+  abaixo: "#faf1d9",
 };
 
 export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { pacienteId: string; sexoPaciente: string | null }) {
   const supabase = createClient();
+  const [aberto, setAberto] = useState(false);
   const [marcadores, setMarcadores] = useState<Marcador[]>([]);
   const [resultados, setResultados] = useState<Resultado[]>([]);
-  const [marcadorExpandido, setMarcadorExpandido] = useState<string | null>(null);
+  const [linhaExpandida, setLinhaExpandida] = useState<string | null>(null);
 
   const [buscaMarcador, setBuscaMarcador] = useState("");
   const [marcadorSelecionado, setMarcadorSelecionado] = useState<Marcador | null>(null);
@@ -49,11 +60,13 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  // extração automática via IA
   const [extraindo, setExtraindo] = useState(false);
   const [erroExtracao, setErroExtracao] = useState<string | null>(null);
   const [itensExtraidos, setItensExtraidos] = useState<any[]>([]);
   const [salvandoExtraidos, setSalvandoExtraidos] = useState(false);
+
+  const [sugestaoLivre, setSugestaoLivre] = useState<Record<string, string>>({});
+  const [buscandoSugestaoLivre, setBuscandoSugestaoLivre] = useState<string | null>(null);
 
   async function carregar() {
     const { data: mData } = await supabase
@@ -67,23 +80,27 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
 
     const { data: rData } = await supabase
       .from("resultados_exames_paciente")
-      .select("id, marcador_id, valor, data_exame, status")
+      .select("id, marcador_id, nome_livre, valor, data_exame, status, min_referencia_livre, max_referencia_livre, unidade")
       .eq("paciente_id", pacienteId)
       .order("data_exame", { ascending: true });
     setResultados(rData ?? []);
   }
 
   useEffect(() => {
-    carregar();
+    if (aberto) carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pacienteId]);
+  }, [pacienteId, aberto]);
 
-  function calcularStatus(m: Marcador, v: number): string {
-    const min = sexoPaciente === "masculino" ? m.min_homens : m.min_mulheres;
-    const max = sexoPaciente === "masculino" ? m.max_homens : m.max_mulheres;
+  function calcularStatus(min: number | null, max: number | null, v: number): string {
     if (min != null && v < min) return "abaixo";
     if (max != null && v > max) return "acima";
     return "dentro";
+  }
+
+  function calcularStatusMarcador(m: Marcador, v: number): string {
+    const min = sexoPaciente === "masculino" ? m.min_homens : m.min_mulheres;
+    const max = sexoPaciente === "masculino" ? m.max_homens : m.max_mulheres;
+    return calcularStatus(min, max, v);
   }
 
   async function salvarResultado(e: React.FormEvent) {
@@ -102,7 +119,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     }
 
     const valorNum = parseFloat(valor.replace(",", "."));
-    const status = calcularStatus(marcadorSelecionado, valorNum);
+    const status = calcularStatusMarcador(marcadorSelecionado, valorNum);
 
     const { error } = await supabase.from("resultados_exames_paciente").insert({
       paciente_id: pacienteId,
@@ -149,6 +166,8 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
         incluir: true,
         valorFinal: item.valor_convertido ?? item.valor_original,
         dataFinal: item.data_exame || new Date().toISOString().slice(0, 10),
+        minRefFinal: item.min_referencia_livre ?? "",
+        maxRefFinal: item.max_referencia_livre ?? "",
       }));
       setItensExtraidos(itens);
     } catch {
@@ -172,22 +191,42 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
       return;
     }
 
-    const paraSalvar = itensExtraidos.filter((item) => item.incluir && item.marcador_id && item.valorFinal);
+    const paraSalvar = itensExtraidos.filter((item) => item.incluir && item.valorFinal);
 
     for (const item of paraSalvar) {
-      const marcador = marcadores.find((m) => m.id === item.marcador_id);
       const valorNum = parseFloat(String(item.valorFinal).replace(",", "."));
-      const status = marcador ? calcularStatus(marcador, valorNum) : null;
 
-      await supabase.from("resultados_exames_paciente").insert({
-        paciente_id: pacienteId,
-        marcador_id: item.marcador_id,
-        valor: valorNum,
-        data_exame: item.dataFinal,
-        status,
-        registrado_por: user.id,
-        extraido_por_ia: true,
-      });
+      if (item.marcador_id) {
+        const marcador = marcadores.find((m) => m.id === item.marcador_id);
+        const status = marcador ? calcularStatusMarcador(marcador, valorNum) : null;
+        await supabase.from("resultados_exames_paciente").insert({
+          paciente_id: pacienteId,
+          marcador_id: item.marcador_id,
+          valor: valorNum,
+          data_exame: item.dataFinal,
+          status,
+          registrado_por: user.id,
+          extraido_por_ia: true,
+          unidade: item.unidade_original || null,
+        });
+      } else {
+        const minRef = item.minRefFinal !== "" ? parseFloat(String(item.minRefFinal).replace(",", ".")) : null;
+        const maxRef = item.maxRefFinal !== "" ? parseFloat(String(item.maxRefFinal).replace(",", ".")) : null;
+        const status = calcularStatus(minRef, maxRef, valorNum);
+        await supabase.from("resultados_exames_paciente").insert({
+          paciente_id: pacienteId,
+          marcador_id: null,
+          nome_livre: item.nome_extraido_do_laudo,
+          valor: valorNum,
+          data_exame: item.dataFinal,
+          status,
+          registrado_por: user.id,
+          extraido_por_ia: true,
+          unidade: item.unidade_original || null,
+          min_referencia_livre: minRef,
+          max_referencia_livre: maxRef,
+        });
+      }
     }
 
     setSalvandoExtraidos(false);
@@ -195,275 +234,408 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     carregar();
   }
 
-  const ultimoPorMarcador = new Map<string, Resultado>();
-  for (const r of resultados) {
-    const atual = ultimoPorMarcador.get(r.marcador_id);
-    if (!atual || r.data_exame >= atual.data_exame) ultimoPorMarcador.set(r.marcador_id, r);
+  async function pedirSugestaoLivre(chave: string, nome: string, ultimo: Resultado) {
+    setBuscandoSugestaoLivre(chave);
+    try {
+      const resposta = await fetch("/api/ia/interpretar-exame-livre", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nomeExame: nome,
+          valor: ultimo.valor,
+          unidade: ultimo.unidade,
+          minReferencia: ultimo.min_referencia_livre,
+          maxReferencia: ultimo.max_referencia_livre,
+          status: ultimo.status,
+          sexoPaciente,
+        }),
+      });
+      const dados = await resposta.json();
+      if (resposta.ok) {
+        setSugestaoLivre((atual) => ({ ...atual, [chave]: dados.sugestao }));
+      } else {
+        setSugestaoLivre((atual) => ({ ...atual, [chave]: "Erro: " + (dados.erro ?? "não foi possível gerar sugestão.") }));
+      }
+    } catch {
+      setSugestaoLivre((atual) => ({ ...atual, [chave]: "Erro de conexão." }));
+    }
+    setBuscandoSugestaoLivre(null);
   }
-
-  const marcadoresComResultado = marcadores.filter((m) => ultimoPorMarcador.has(m.id));
-  const categorias = Array.from(new Set(marcadoresComResultado.map((m) => m.categoria || "Outros")));
 
   const marcadoresFiltrados = buscaMarcador.trim()
     ? marcadores.filter((m) => m.nome.toLowerCase().includes(buscaMarcador.toLowerCase())).slice(0, 10)
     : [];
 
+  // Monta as linhas (marcadores da base + exames "livres" fora da base) e as colunas (datas distintas)
+  type Linha = { chave: string; label: string; categoria: string; marcador: Marcador | null; porData: Map<string, Resultado> };
+  const linhasMap = new Map<string, Linha>();
+
+  for (const r of resultados) {
+    const chave = r.marcador_id ?? `livre:${r.nome_livre}`;
+    if (!linhasMap.has(chave)) {
+      const marcador = r.marcador_id ? marcadores.find((m) => m.id === r.marcador_id) ?? null : null;
+      linhasMap.set(chave, {
+        chave,
+        label: marcador?.nome ?? r.nome_livre ?? "—",
+        categoria: marcador?.categoria ?? "Não identificados (sem base no sistema)",
+        marcador,
+        porData: new Map(),
+      });
+    }
+    linhasMap.get(chave)!.porData.set(r.data_exame, r);
+  }
+
+  const linhas = Array.from(linhasMap.values());
+  const categorias = Array.from(new Set(linhas.map((l) => l.categoria)));
+  const datas = Array.from(new Set(resultados.map((r) => r.data_exame))).sort();
+
   return (
     <div
+      id="exames-laboratoriais"
       style={{
         border: "1px solid #e5e0d8",
         borderRadius: 8,
-        padding: 16,
         marginBottom: 20,
         background: "#fbfaf7",
+        overflow: "hidden",
       }}
     >
-      <p style={{ fontWeight: "bold", margin: "0 0 8px" }}>Exames laboratoriais (análises clínicas)</p>
+      <button
+        type="button"
+        onClick={() => setAberto((a) => !a)}
+        style={{
+          width: "100%",
+          textAlign: "left",
+          background: "#7a5a2f",
+          color: "white",
+          padding: 14,
+          fontWeight: "bold",
+          fontSize: "1rem",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+        {aberto ? "▾" : "▸"} Exames de análises clínicas {resultados.length > 0 && `(${linhas.length} marcadores)`}
+      </button>
 
-      <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
-        <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
-          🤖 Extrair resultados de um PDF automaticamente (IA)
-        </p>
-        <input
-          type="file"
-          accept=".pdf"
-          disabled={extraindo}
-          onChange={(e) => {
-            const arquivo = e.target.files?.[0];
-            if (arquivo) extrairComIA(arquivo);
-          }}
-        />
-        {extraindo && (
-          <p style={{ fontSize: "0.85rem", fontWeight: "bold" }}>
-            ⏳ Lendo o PDF e identificando os exames... isso pode levar até 1-2 minutos. Não feche nem recarregue esta
-            página, só aguarde.
-          </p>
-        )}
-        {erroExtracao && <p className="erro">{erroExtracao}</p>}
-
-        {itensExtraidos.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <p style={{ fontSize: "0.85rem", color: "#666" }}>
-              Revise antes de salvar — a IA pode errar a identificação do marcador ou a conversão de unidade.
+      {aberto && (
+        <div style={{ padding: 16 }}>
+          <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
+            <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
+              🤖 Extrair resultados de um PDF automaticamente (IA)
             </p>
-            <table>
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Extraído do laudo</th>
-                  <th>Marcador do sistema</th>
-                  <th>Valor</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {itensExtraidos.map((item, i) => (
-                  <tr key={i}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={item.incluir}
-                        onChange={(e) => atualizarItemExtraido(i, "incluir", e.target.checked)}
-                      />
-                    </td>
-                    <td style={{ fontSize: "0.8rem" }}>
-                      {item.nome_extraido_do_laudo}
-                      {item.observacao_conversao && (
-                        <><br /><span style={{ color: "#888" }}>{item.observacao_conversao}</span></>
-                      )}
-                    </td>
-                    <td>
-                      <select
-                        value={item.marcador_id ?? ""}
-                        onChange={(e) => atualizarItemExtraido(i, "marcador_id", e.target.value || null)}
-                        style={{ fontSize: "0.8rem", padding: 4 }}
-                      >
-                        <option value="">— não identificado —</option>
-                        {marcadores.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.nome}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        value={item.valorFinal}
-                        onChange={(e) => atualizarItemExtraido(i, "valorFinal", e.target.value)}
-                        style={{ width: 70, padding: 4, fontSize: "0.8rem" }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="date"
-                        value={item.dataFinal}
-                        onChange={(e) => atualizarItemExtraido(i, "dataFinal", e.target.value)}
-                        style={{ padding: 4, fontSize: "0.8rem" }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <button type="button" onClick={salvarItensExtraidos} disabled={salvandoExtraidos} style={{ marginTop: 8 }}>
-              {salvandoExtraidos ? "Salvando..." : "Salvar resultados selecionados"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={salvarResultado} style={{ marginBottom: 16 }}>
-        {erro && <p className="erro">{erro}</p>}
-
-        <div style={{ position: "relative", marginBottom: 8 }}>
-          <input
-            placeholder="Buscar marcador (ex: Hemoglobina, TSH, Ferritina...)"
-            value={marcadorSelecionado ? marcadorSelecionado.nome : buscaMarcador}
-            onChange={(e) => {
-              setBuscaMarcador(e.target.value);
-              setMarcadorSelecionado(null);
-              setMostrarLista(true);
-            }}
-            onFocus={() => setMostrarLista(true)}
-          />
-          {mostrarLista && marcadoresFiltrados.length > 0 && (
-            <ul
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                right: 0,
-                background: "white",
-                border: "1px solid #e5e0d8",
-                borderRadius: 6,
-                listStyle: "none",
-                margin: 0,
-                padding: 4,
-                maxHeight: 220,
-                overflowY: "auto",
-                zIndex: 20,
+            <input
+              type="file"
+              accept=".pdf"
+              disabled={extraindo}
+              onChange={(e) => {
+                const arquivo = e.target.files?.[0];
+                if (arquivo) extrairComIA(arquivo);
               }}
-            >
-              {marcadoresFiltrados.map((m) => (
-                <li
-                  key={m.id}
-                  onClick={() => {
-                    setMarcadorSelecionado(m);
-                    setBuscaMarcador(m.nome);
-                    setMostrarLista(false);
-                  }}
-                  style={{ padding: "8px 10px", cursor: "pointer", fontSize: "0.9rem" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#fbfaf7")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  {m.nome} <span style={{ color: "#999", fontSize: "0.8rem" }}>({m.categoria})</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            />
+            {extraindo && (
+              <p style={{ fontSize: "0.85rem", fontWeight: "bold" }}>
+                ⏳ Lendo o PDF e identificando os exames... isso pode levar até 1-2 minutos. Não feche nem recarregue
+                esta página, só aguarde.
+              </p>
+            )}
+            {erroExtracao && <p className="erro">{erroExtracao}</p>}
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <input placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} style={{ flex: 1 }} />
-          <input type="date" value={dataExame} onChange={(e) => setDataExame(e.target.value)} style={{ flex: 1 }} />
-        </div>
-
-        <button type="submit" disabled={!marcadorSelecionado || !valor || salvando} style={{ marginTop: 8 }}>
-          {salvando ? "Salvando..." : "Lançar resultado"}
-        </button>
-      </form>
-
-      {categorias.length === 0 && <p style={{ fontSize: "0.9rem", color: "#888" }}>Nenhum resultado lançado ainda.</p>}
-
-      {categorias.map((cat) => (
-        <div key={cat} style={{ marginBottom: 12 }}>
-          <p style={{ fontWeight: "bold", fontSize: "0.85rem", color: "#7a5a2f", margin: "8px 0 4px" }}>{cat}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Marcador</th>
-                <th>Valor</th>
-                <th>Data</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {marcadoresComResultado
-                .filter((m) => (m.categoria || "Outros") === cat)
-                .map((m) => {
-                  const ultimo = ultimoPorMarcador.get(m.id)!;
-                  const historico = resultados
-                    .filter((r) => r.marcador_id === m.id)
-                    .map((r) => ({ data: r.data_exame, valor: r.valor }));
-                  const expandido = marcadorExpandido === m.id;
-                  return (
-                    <React.Fragment key={m.id}>
-                      <tr>
-                        <td>{m.nome}</td>
-                        <td>{ultimo.valor}</td>
-                        <td>{new Date(ultimo.data_exame + "T00:00:00").toLocaleDateString("pt-BR")}</td>
-                        <td style={{ color: CORES_STATUS[ultimo.status ?? "dentro"], fontWeight: "bold" }}>
-                          {ultimo.status ?? "—"}
+            {itensExtraidos.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <p style={{ fontSize: "0.85rem", color: "#666" }}>
+                  Revise antes de salvar. Itens sem marcador identificado usam a referência impressa no próprio laudo
+                  (edite se necessário).
+                </p>
+                <table>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Extraído do laudo</th>
+                      <th>Marcador do sistema</th>
+                      <th>Valor</th>
+                      <th>Ref. mín/máx (se fora da base)</th>
+                      <th>Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itensExtraidos.map((item, i) => (
+                      <tr key={i}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={item.incluir}
+                            onChange={(e) => atualizarItemExtraido(i, "incluir", e.target.checked)}
+                          />
+                        </td>
+                        <td style={{ fontSize: "0.8rem" }}>
+                          {item.nome_extraido_do_laudo}
+                          {item.observacao_conversao && (
+                            <>
+                              <br />
+                              <span style={{ color: "#888" }}>{item.observacao_conversao}</span>
+                            </>
+                          )}
                         </td>
                         <td>
-                          <button
-                            type="button"
-                            onClick={() => setMarcadorExpandido(expandido ? null : m.id)}
-                            style={{ fontSize: "0.75rem", padding: "3px 8px" }}
+                          <select
+                            value={item.marcador_id ?? ""}
+                            onChange={(e) => atualizarItemExtraido(i, "marcador_id", e.target.value || null)}
+                            style={{ fontSize: "0.8rem", padding: 4 }}
                           >
-                            {expandido ? "Fechar" : "Ver evolução"}
-                          </button>
+                            <option value="">— não identificado —</option>
+                            {marcadores.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.nome}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            value={item.valorFinal}
+                            onChange={(e) => atualizarItemExtraido(i, "valorFinal", e.target.value)}
+                            style={{ width: 70, padding: 4, fontSize: "0.8rem" }}
+                          />
+                        </td>
+                        <td>
+                          {!item.marcador_id && (
+                            <span style={{ display: "flex", gap: 4 }}>
+                              <input
+                                placeholder="mín"
+                                value={item.minRefFinal}
+                                onChange={(e) => atualizarItemExtraido(i, "minRefFinal", e.target.value)}
+                                style={{ width: 50, padding: 4, fontSize: "0.8rem" }}
+                              />
+                              <input
+                                placeholder="máx"
+                                value={item.maxRefFinal}
+                                onChange={(e) => atualizarItemExtraido(i, "maxRefFinal", e.target.value)}
+                                style={{ width: 50, padding: 4, fontSize: "0.8rem" }}
+                              />
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <input
+                            type="date"
+                            value={item.dataFinal}
+                            onChange={(e) => atualizarItemExtraido(i, "dataFinal", e.target.value)}
+                            style={{ padding: 4, fontSize: "0.8rem" }}
+                          />
                         </td>
                       </tr>
-                      {expandido && (
-                        <tr>
-                          <td colSpan={5} style={{ background: "white", padding: 12 }}>
-                            {historico.length > 1 ? (
-                              <ResponsiveContainer width="100%" height={180}>
-                                <LineChart data={historico}>
-                                  <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={11} />
-                                  <YAxis fontSize={11} domain={["auto", "auto"]} />
-                                  <Tooltip labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} />
-                                  <Line type="monotone" dataKey="valor" stroke="#7a5a2f" strokeWidth={2} dot />
-                                </LineChart>
-                              </ResponsiveContainer>
-                            ) : (
-                              <p style={{ fontSize: "0.85rem", color: "#888" }}>
-                                Só há um resultado lançado ainda — a evolução aparece a partir do segundo.
-                              </p>
-                            )}
-                            <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
-                              <p style={{ margin: "4px 0" }}>
-                                <b>Significado:</b> {m.significado}
-                              </p>
-                              <p style={{ margin: "4px 0" }}>
-                                <b>Interpretação ({ultimo.status}):</b>{" "}
-                                {ultimo.status === "acima"
-                                  ? m.interpretacao_acima
-                                  : ultimo.status === "abaixo"
-                                  ? m.interpretacao_abaixo
-                                  : m.interpretacao_dentro}
-                              </p>
-                              <p style={{ margin: "4px 0" }}>
-                                <b>Conduta sugerida:</b>{" "}
-                                {ultimo.status === "acima"
-                                  ? m.conduta_acima
-                                  : ultimo.status === "abaixo"
-                                  ? m.conduta_abaixo
-                                  : m.conduta_dentro}
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-            </tbody>
-          </table>
+                    ))}
+                  </tbody>
+                </table>
+                <button type="button" onClick={salvarItensExtraidos} disabled={salvandoExtraidos} style={{ marginTop: 8 }}>
+                  {salvandoExtraidos ? "Salvando..." : "Salvar resultados selecionados"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={salvarResultado} style={{ marginBottom: 16 }}>
+            {erro && <p className="erro">{erro}</p>}
+
+            <div style={{ position: "relative", marginBottom: 8 }}>
+              <input
+                placeholder="Lançar manualmente: buscar marcador (ex: Hemoglobina, TSH...)"
+                value={marcadorSelecionado ? marcadorSelecionado.nome : buscaMarcador}
+                onChange={(e) => {
+                  setBuscaMarcador(e.target.value);
+                  setMarcadorSelecionado(null);
+                  setMostrarLista(true);
+                }}
+                onFocus={() => setMostrarLista(true)}
+              />
+              {mostrarLista && marcadoresFiltrados.length > 0 && (
+                <ul
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    background: "white",
+                    border: "1px solid #e5e0d8",
+                    borderRadius: 6,
+                    listStyle: "none",
+                    margin: 0,
+                    padding: 4,
+                    maxHeight: 220,
+                    overflowY: "auto",
+                    zIndex: 20,
+                  }}
+                >
+                  {marcadoresFiltrados.map((m) => (
+                    <li
+                      key={m.id}
+                      onClick={() => {
+                        setMarcadorSelecionado(m);
+                        setBuscaMarcador(m.nome);
+                        setMostrarLista(false);
+                      }}
+                      style={{ padding: "8px 10px", cursor: "pointer", fontSize: "0.9rem" }}
+                    >
+                      {m.nome} <span style={{ color: "#999", fontSize: "0.8rem" }}>({m.categoria})</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <input placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} style={{ flex: 1 }} />
+              <input type="date" value={dataExame} onChange={(e) => setDataExame(e.target.value)} style={{ flex: 1 }} />
+            </div>
+
+            <button type="submit" disabled={!marcadorSelecionado || !valor || salvando} style={{ marginTop: 8 }}>
+              {salvando ? "Salvando..." : "Lançar resultado"}
+            </button>
+          </form>
+
+          <div style={{ display: "flex", gap: 16, fontSize: "0.8rem", marginBottom: 12 }}>
+            <span><span style={{ display: "inline-block", width: 12, height: 12, background: CORES_STATUS.dentro, borderRadius: 2 }} /> Normal</span>
+            <span><span style={{ display: "inline-block", width: 12, height: 12, background: CORES_STATUS.acima, borderRadius: 2 }} /> Acima do normal</span>
+            <span><span style={{ display: "inline-block", width: 12, height: 12, background: CORES_STATUS.abaixo, borderRadius: 2 }} /> Abaixo do normal</span>
+          </div>
+
+          {linhas.length === 0 && <p style={{ fontSize: "0.9rem", color: "#888" }}>Nenhum resultado lançado ainda.</p>}
+
+          {categorias.map((cat) => (
+            <div key={cat} style={{ marginBottom: 16, overflowX: "auto" }}>
+              <p style={{ fontWeight: "bold", fontSize: "0.85rem", color: "#7a5a2f", margin: "8px 0 4px" }}>{cat}</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Marcador</th>
+                    {datas.map((d) => (
+                      <th key={d} style={{ whiteSpace: "nowrap" }}>
+                        {new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
+                      </th>
+                    ))}
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {linhas
+                    .filter((l) => l.categoria === cat)
+                    .map((linha) => {
+                      const expandida = linhaExpandida === linha.chave;
+                      const resultadosOrdenados = datas.map((d) => linha.porData.get(d)).filter(Boolean) as Resultado[];
+                      const ultimo = resultadosOrdenados[resultadosOrdenados.length - 1];
+                      return (
+                        <React.Fragment key={linha.chave}>
+                          <tr>
+                            <td>{linha.label}</td>
+                            {datas.map((d) => {
+                              const r = linha.porData.get(d);
+                              return (
+                                <td
+                                  key={d}
+                                  style={{
+                                    textAlign: "center",
+                                    background: r?.status ? FUNDO_STATUS[r.status] : undefined,
+                                    color: r?.status ? CORES_STATUS[r.status] : undefined,
+                                    fontWeight: r ? "bold" : "normal",
+                                  }}
+                                >
+                                  {r?.valor ?? ""}
+                                </td>
+                              );
+                            })}
+                            <td>
+                              <button
+                                type="button"
+                                onClick={() => setLinhaExpandida(expandida ? null : linha.chave)}
+                                style={{ fontSize: "0.75rem", padding: "3px 8px" }}
+                              >
+                                {expandida ? "Fechar" : "Ver interpretação"}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandida && ultimo && (
+                            <tr>
+                              <td colSpan={datas.length + 2} style={{ background: "white", padding: 12 }}>
+                                {resultadosOrdenados.length > 1 && (
+                                  <ResponsiveContainer width="100%" height={160}>
+                                    <LineChart data={resultadosOrdenados.map((r) => ({ data: r.data_exame, valor: r.valor }))}>
+                                      <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={11} />
+                                      <YAxis fontSize={11} domain={["auto", "auto"]} />
+                                      <Tooltip labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} />
+                                      <Line type="monotone" dataKey="valor" stroke="#7a5a2f" strokeWidth={2} dot />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                )}
+
+                                {linha.marcador ? (
+                                  <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
+                                    <p style={{ margin: "4px 0" }}>
+                                      <b>Significado:</b> {linha.marcador.significado}
+                                    </p>
+                                    <p style={{ margin: "4px 0" }}>
+                                      <b>Interpretação ({ultimo.status}):</b>{" "}
+                                      {ultimo.status === "acima"
+                                        ? linha.marcador.interpretacao_acima
+                                        : ultimo.status === "abaixo"
+                                        ? linha.marcador.interpretacao_abaixo
+                                        : linha.marcador.interpretacao_dentro}
+                                    </p>
+                                    <p style={{ margin: "4px 0" }}>
+                                      <b>Conduta sugerida:</b>{" "}
+                                      {ultimo.status === "acima"
+                                        ? linha.marcador.conduta_acima
+                                        : ultimo.status === "abaixo"
+                                        ? linha.marcador.conduta_abaixo
+                                        : linha.marcador.conduta_dentro}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
+                                    <p style={{ margin: "4px 0", color: "#888" }}>
+                                      Esse exame não está na base de referência do sistema. Referência do laudo:{" "}
+                                      {ultimo.min_referencia_livre ?? "—"} a {ultimo.max_referencia_livre ?? "—"}{" "}
+                                      {ultimo.unidade ?? ""}
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => pedirSugestaoLivre(linha.chave, linha.label, ultimo)}
+                                      disabled={buscandoSugestaoLivre === linha.chave}
+                                      style={{ fontSize: "0.8rem", background: "#4a6a7a" }}
+                                    >
+                                      {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "🤖 Pedir sugestão de IA"}
+                                    </button>
+                                    {sugestaoLivre[linha.chave] && (
+                                      <div
+                                        style={{
+                                          border: "1px solid #4a6a7a",
+                                          borderRadius: 6,
+                                          padding: 10,
+                                          marginTop: 8,
+                                          background: "#f0f4f6",
+                                          whiteSpace: "pre-wrap",
+                                        }}
+                                      >
+                                        <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "#4a6a7a" }}>
+                                          🤖 Sugestão gerada por IA — revise antes de usar.
+                                        </p>
+                                        {sugestaoLivre[linha.chave]}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
