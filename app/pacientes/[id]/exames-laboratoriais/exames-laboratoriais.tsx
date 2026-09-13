@@ -49,6 +49,12 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
+  // extração automática via IA
+  const [extraindo, setExtraindo] = useState(false);
+  const [erroExtracao, setErroExtracao] = useState<string | null>(null);
+  const [itensExtraidos, setItensExtraidos] = useState<any[]>([]);
+  const [salvandoExtraidos, setSalvandoExtraidos] = useState(false);
+
   async function carregar() {
     const { data: mData } = await supabase
       .from("marcadores_exames")
@@ -120,6 +126,75 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     carregar();
   }
 
+  async function extrairComIA(arquivo: File) {
+    setErroExtracao(null);
+    setExtraindo(true);
+    setItensExtraidos([]);
+
+    try {
+      const formData = new FormData();
+      formData.append("arquivo", arquivo);
+
+      const resposta = await fetch("/api/ia/extrair-exames", { method: "POST", body: formData });
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        setErroExtracao(dados.erro ?? "Erro ao extrair exames.");
+        setExtraindo(false);
+        return;
+      }
+
+      const itens = (dados.exames ?? []).map((item: any) => ({
+        ...item,
+        incluir: true,
+        valorFinal: item.valor_convertido ?? item.valor_original,
+        dataFinal: item.data_exame || new Date().toISOString().slice(0, 10),
+      }));
+      setItensExtraidos(itens);
+    } catch {
+      setErroExtracao("Erro de conexão com a IA.");
+    }
+    setExtraindo(false);
+  }
+
+  function atualizarItemExtraido(index: number, campo: string, valor: any) {
+    setItensExtraidos((atual) => atual.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)));
+  }
+
+  async function salvarItensExtraidos() {
+    setSalvandoExtraidos(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setErroExtracao("Sessão expirada.");
+      setSalvandoExtraidos(false);
+      return;
+    }
+
+    const paraSalvar = itensExtraidos.filter((item) => item.incluir && item.marcador_id && item.valorFinal);
+
+    for (const item of paraSalvar) {
+      const marcador = marcadores.find((m) => m.id === item.marcador_id);
+      const valorNum = parseFloat(String(item.valorFinal).replace(",", "."));
+      const status = marcador ? calcularStatus(marcador, valorNum) : null;
+
+      await supabase.from("resultados_exames_paciente").insert({
+        paciente_id: pacienteId,
+        marcador_id: item.marcador_id,
+        valor: valorNum,
+        data_exame: item.dataFinal,
+        status,
+        registrado_por: user.id,
+        extraido_por_ia: true,
+      });
+    }
+
+    setSalvandoExtraidos(false);
+    setItensExtraidos([]);
+    carregar();
+  }
+
   const ultimoPorMarcador = new Map<string, Resultado>();
   for (const r of resultados) {
     const atual = ultimoPorMarcador.get(r.marcador_id);
@@ -144,6 +219,93 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
       }}
     >
       <p style={{ fontWeight: "bold", margin: "0 0 8px" }}>Exames laboratoriais (análises clínicas)</p>
+
+      <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
+        <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
+          🤖 Extrair resultados de um PDF automaticamente (IA)
+        </p>
+        <input
+          type="file"
+          accept=".pdf"
+          disabled={extraindo}
+          onChange={(e) => {
+            const arquivo = e.target.files?.[0];
+            if (arquivo) extrairComIA(arquivo);
+          }}
+        />
+        {extraindo && <p style={{ fontSize: "0.85rem" }}>Lendo o PDF e identificando os exames...</p>}
+        {erroExtracao && <p className="erro">{erroExtracao}</p>}
+
+        {itensExtraidos.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: "0.85rem", color: "#666" }}>
+              Revise antes de salvar — a IA pode errar a identificação do marcador ou a conversão de unidade.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Extraído do laudo</th>
+                  <th>Marcador do sistema</th>
+                  <th>Valor</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itensExtraidos.map((item, i) => (
+                  <tr key={i}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={item.incluir}
+                        onChange={(e) => atualizarItemExtraido(i, "incluir", e.target.checked)}
+                      />
+                    </td>
+                    <td style={{ fontSize: "0.8rem" }}>
+                      {item.nome_extraido_do_laudo}
+                      {item.observacao_conversao && (
+                        <><br /><span style={{ color: "#888" }}>{item.observacao_conversao}</span></>
+                      )}
+                    </td>
+                    <td>
+                      <select
+                        value={item.marcador_id ?? ""}
+                        onChange={(e) => atualizarItemExtraido(i, "marcador_id", e.target.value || null)}
+                        style={{ fontSize: "0.8rem", padding: 4 }}
+                      >
+                        <option value="">— não identificado —</option>
+                        {marcadores.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        value={item.valorFinal}
+                        onChange={(e) => atualizarItemExtraido(i, "valorFinal", e.target.value)}
+                        style={{ width: 70, padding: 4, fontSize: "0.8rem" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        value={item.dataFinal}
+                        onChange={(e) => atualizarItemExtraido(i, "dataFinal", e.target.value)}
+                        style={{ padding: 4, fontSize: "0.8rem" }}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button type="button" onClick={salvarItensExtraidos} disabled={salvandoExtraidos} style={{ marginTop: 8 }}>
+              {salvandoExtraidos ? "Salvando..." : "Salvar resultados selecionados"}
+            </button>
+          </div>
+        )}
+      </div>
 
       <form onSubmit={salvarResultado} style={{ marginBottom: 16 }}>
         {erro && <p className="erro">{erro}</p>}
