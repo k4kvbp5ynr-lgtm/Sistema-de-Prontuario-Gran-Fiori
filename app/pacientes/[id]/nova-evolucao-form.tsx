@@ -16,6 +16,10 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
   const [observacoes, setObservacoes] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
   const [conduta, setConduta] = useState("");
+  const [sugestaoIA, setSugestaoIA] = useState<string | null>(null);
+  const [buscandoSugestao, setBuscandoSugestao] = useState(false);
+  const [erroSugestao, setErroSugestao] = useState<string | null>(null);
+  const [usouIA, setUsouIA] = useState(false);
   const [arquivos, setArquivos] = useState<File[]>([]);
   const [arquivoTemp, setArquivoTemp] = useState<File | null>(null);
 
@@ -33,6 +37,34 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
 
   function removerArquivo(index: number) {
     setArquivos((atual) => atual.filter((_, i) => i !== index));
+  }
+
+  async function buscarSugestaoIA() {
+    setErroSugestao(null);
+    setBuscandoSugestao(true);
+    try {
+      const resposta = await fetch("/api/ia/sugestao-diagnostica", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pacienteId,
+          motivoAtual: motivo,
+          anamneseAtual: anamnese,
+          exameFisicoAtual: exameFisico,
+        }),
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        setErroSugestao(dados.erro ?? "Erro ao gerar sugestão.");
+        setBuscandoSugestao(false);
+        return;
+      }
+      setSugestaoIA(dados.sugestao);
+      setUsouIA(true);
+    } catch {
+      setErroSugestao("Erro de conexão com a IA.");
+    }
+    setBuscandoSugestao(false);
   }
 
   async function salvar(e: React.FormEvent) {
@@ -79,6 +111,9 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
         anamnese,
         exame_fisico: exameFisico,
         observacoes,
+        uso_de_ia: usouIA,
+        ia_revisado_por: usouIA ? user.id : null,
+        ia_revisado_em: usouIA ? new Date().toISOString() : null,
       })
       .select()
       .single();
@@ -95,6 +130,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
       autor_id: user.id,
       diagnostico_cid: diagnostico,
       conduta,
+      sugestao_ia: sugestaoIA ? { texto: sugestaoIA, gerado_em: new Date().toISOString() } : null,
     });
 
     if (erroDiagnostico) {
@@ -157,6 +193,8 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
     setConduta("");
     setArquivos([]);
     setArquivoTemp(null);
+    setSugestaoIA(null);
+    setUsouIA(false);
     router.refresh();
   }
 
@@ -208,6 +246,41 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
       <p style={{ fontSize: "0.85rem", color: "#7a5a2f", marginBottom: 8 }}>
         Diagnóstico e conduta (não visível à recepção)
       </p>
+
+      <button type="button" onClick={buscarSugestaoIA} disabled={buscandoSugestao} style={{ marginBottom: 12, background: "#4a6a7a" }}>
+        {buscandoSugestao ? "Consultando IA..." : "🤖 Gerar sugestão de IA"}
+      </button>
+      {erroSugestao && <p className="erro">{erroSugestao}</p>}
+
+      {sugestaoIA && (
+        <div
+          style={{
+            border: "1px solid #4a6a7a",
+            borderRadius: 6,
+            padding: 12,
+            marginBottom: 12,
+            background: "#f0f4f6",
+            fontSize: "0.9rem",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          <p style={{ margin: "0 0 8px", fontWeight: "bold", color: "#4a6a7a" }}>
+            🤖 Sugestão gerada por IA — revise criticamente antes de usar. Nunca é comunicada automaticamente ao
+            paciente; a decisão é sempre sua.
+          </p>
+          {sugestaoIA}
+          <div style={{ marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => setConduta((atual) => (atual.trim() ? atual + "\n\n" + sugestaoIA : sugestaoIA))}
+              style={{ fontSize: "0.8rem" }}
+            >
+              Inserir na conduta
+            </button>
+          </div>
+        </div>
+      )}
+
       <input
         placeholder="Diagnóstico / CID"
         value={diagnostico}
