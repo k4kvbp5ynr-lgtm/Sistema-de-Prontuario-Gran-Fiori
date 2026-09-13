@@ -233,7 +233,12 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
             if (arquivo) extrairComIA(arquivo);
           }}
         />
-        {extraindo && <p style={{ fontSize: "0.85rem" }}>Lendo o PDF e identificando os exames...</p>}
+        {extraindo && (
+          <p style={{ fontSize: "0.85rem", fontWeight: "bold" }}>
+            ⏳ Lendo o PDF e identificando os exames... isso pode levar até 1-2 minutos. Não feche nem recarregue esta
+            página, só aguarde.
+          </p>
+        )}
         {erroExtracao && <p className="erro">{erroExtracao}</p>}
 
         {itensExtraidos.length > 0 && (
