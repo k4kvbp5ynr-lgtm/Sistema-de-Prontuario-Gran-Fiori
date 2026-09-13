@@ -18,7 +18,9 @@ REGRAS OBRIGATÓRIAS:
 
 3. Tente identificar a qual marcador da lista de referência do sistema cada exame corresponde (mesmo que o nome esteja abreviado ou por extenso, ex: "Hb" = "Hemoglobina", "TGO" = "AST").
 
-4. Se NÃO conseguir identificar com confiança a qual marcador da lista o exame corresponde: deixe marcador_id vazio, mas preencha nome_extraido_do_laudo, unidade_original, e também min_referencia_livre e max_referencia_livre com a faixa de referência que aparece IMPRESSA NO PRÓPRIO LAUDO para esse exame (não converta nesse caso, pois não há referência do sistema para comparar — apenas reporte a referência do laudo como está).
+4. Se NÃO conseguir identificar com confiança a qual marcador da lista o exame corresponde: deixe marcador_id vazio, mas preencha nome_extraido_do_laudo, unidade_original.
+   - Preencha min_referencia_livre e max_referencia_livre APENAS se o laudo mostrar uma faixa numérica clara (ex: "10 a 50 mg/dL"). NUNCA preencha com 0 como "valor padrão" quando não souber — nesse caso, deixe os dois campos vazios (não envie o campo, ou envie null).
+   - Se a referência do laudo for um limiar (ex: "reagente se ≥ 10", "não reagente se < 10") em vez de uma faixa mín-máx, ou for qualitativa (ex: "reagente/não reagente", "positivo/negativo"), NÃO tente forçar isso em min/max — deixe os campos vazios e escreva a referência textual em observacao_conversao (ex: "Referência do laudo: reagente se ≥ 10 mUI/mL — não é uma faixa numérica, avaliação deve ser manual").
 
 5. Use a ferramenta registrar_exames_extraidos para reportar todos os exames encontrados no documento.`;
 

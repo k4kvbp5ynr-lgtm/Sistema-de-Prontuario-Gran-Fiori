@@ -91,13 +91,17 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pacienteId, aberto]);
 
-  function calcularStatus(min: number | null, max: number | null, v: number): string {
+  function calcularStatus(min: number | null, max: number | null, v: number): string | null {
+    // Faixa inválida (ex: 0 a 0, ou mínimo maior que o máximo) — trata como referência desconhecida
+    if (min != null && max != null && (min > max || (min === 0 && max === 0))) {
+      return null;
+    }
     if (min != null && v < min) return "abaixo";
     if (max != null && v > max) return "acima";
     return "dentro";
   }
 
-  function calcularStatusMarcador(m: Marcador, v: number): string {
+  function calcularStatusMarcador(m: Marcador, v: number): string | null {
     const min = sexoPaciente === "masculino" ? m.min_homens : m.min_mulheres;
     const max = sexoPaciente === "masculino" ? m.max_homens : m.max_mulheres;
     return calcularStatus(min, max, v);
