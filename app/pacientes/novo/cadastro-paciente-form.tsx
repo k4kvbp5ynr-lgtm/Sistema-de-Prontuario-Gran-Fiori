@@ -15,6 +15,8 @@ export default function CadastroPacienteForm() {
   const [endereco, setEndereco] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  const [peso, setPeso] = useState("");
+  const [altura, setAltura] = useState("");
   const [foto, setFoto] = useState<File | null>(null);
 
   const [erro, setErro] = useState<string | null>(null);
@@ -35,6 +37,8 @@ export default function CadastroPacienteForm() {
         endereco: endereco || null,
         telefone: telefone || null,
         email: email || null,
+        peso: peso ? parseFloat(peso.replace(",", ".")) : null,
+        altura: altura ? parseFloat(altura.replace(",", ".")) : null,
       })
       .select()
       .single();
@@ -97,6 +101,12 @@ export default function CadastroPacienteForm() {
 
       <label>E-mail</label>
       <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+
+      <label>Peso (kg)</label>
+      <input value={peso} onChange={(e) => setPeso(e.target.value)} placeholder="Ex: 72,5" />
+
+      <label>Altura (cm)</label>
+      <input value={altura} onChange={(e) => setAltura(e.target.value)} placeholder="Ex: 175" />
 
       <label>Foto do paciente</label>
       <input

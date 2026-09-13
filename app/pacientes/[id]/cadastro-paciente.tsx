@@ -14,6 +14,8 @@ type Paciente = {
   telefone: string | null;
   email: string | null;
   foto_path: string | null;
+  peso: number | null;
+  altura: number | null;
 };
 
 export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
@@ -28,6 +30,8 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
   const [endereco, setEndereco] = useState(paciente.endereco ?? "");
   const [telefone, setTelefone] = useState(paciente.telefone ?? "");
   const [email, setEmail] = useState(paciente.email ?? "");
+  const [peso, setPeso] = useState(paciente.peso != null ? String(paciente.peso).replace(".", ",") : "");
+  const [altura, setAltura] = useState(paciente.altura != null ? String(paciente.altura).replace(".", ",") : "");
   const [novaFoto, setNovaFoto] = useState<File | null>(null);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
@@ -61,6 +65,8 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
         endereco: endereco || null,
         telefone: telefone || null,
         email: email || null,
+        peso: peso ? parseFloat(peso.replace(",", ".")) : null,
+        altura: altura ? parseFloat(altura.replace(",", ".")) : null,
       })
       .eq("id", paciente.id);
 
@@ -109,6 +115,9 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
             {paciente.telefone ?? "—"} · {paciente.email ?? "—"}
           </p>
           <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>{paciente.endereco ?? "—"}</p>
+          <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>
+            {paciente.peso != null ? `${paciente.peso} kg` : "Peso —"} · {paciente.altura != null ? `${paciente.altura} cm` : "Altura —"}
+          </p>
           <button type="button" onClick={() => setEditando(true)} style={{ marginTop: 8 }}>
             Editar cadastro
           </button>
@@ -139,6 +148,10 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
       <input value={telefone} onChange={(e) => setTelefone(e.target.value)} />
       <label>E-mail</label>
       <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <label>Peso (kg)</label>
+      <input value={peso} onChange={(e) => setPeso(e.target.value)} placeholder="Ex: 72,5" />
+      <label>Altura (cm)</label>
+      <input value={altura} onChange={(e) => setAltura(e.target.value)} placeholder="Ex: 175" />
       <label>Trocar foto</label>
       <input type="file" accept="image/*" onChange={(e) => setNovaFoto(e.target.files?.[0] ?? null)} style={{ marginBottom: 16 }} />
 

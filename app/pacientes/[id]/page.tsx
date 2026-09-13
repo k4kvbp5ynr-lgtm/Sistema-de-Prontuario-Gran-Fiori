@@ -15,7 +15,7 @@ export default async function DetalhePacientePage({
 
   const { data: paciente, error: erroPaciente } = await supabase
     .from("pacientes")
-    .select("id, nome, cpf, data_nascimento, sexo, endereco, telefone, email, foto_path")
+    .select("id, nome, cpf, data_nascimento, sexo, endereco, telefone, email, foto_path, peso, altura")
     .eq("id", id)
     .single();
 
