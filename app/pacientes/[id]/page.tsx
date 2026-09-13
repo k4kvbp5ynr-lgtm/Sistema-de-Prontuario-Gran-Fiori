@@ -4,6 +4,7 @@ import AnexosExames from "./anexos-exames";
 import BotaoAbrirAnexo from "./botao-abrir-anexo";
 import CadastroPaciente from "./cadastro-paciente";
 import ProcedimentosPaciente from "./procedimentos-paciente";
+import ExamesLaboratoriais from "./exames-laboratoriais/exames-laboratoriais";
 
 export default async function DetalhePacientePage({
   params,
@@ -53,6 +54,10 @@ export default async function DetalhePacientePage({
       <CadastroPaciente paciente={paciente} />
 
       <ProcedimentosPaciente pacienteId={paciente.id} />
+
+      <div id="exames-laboratoriais">
+        <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} />
+      </div>
 
       <NovaEvolucaoForm pacienteId={paciente.id} />
 
