@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 const SYSTEM_PROMPT = `Você extrai dados de laudos de exames laboratoriais (PDF) para um sistema de prontuário eletrônico.
 
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-5",
-        max_tokens: 16000,
+        max_tokens: 32000,
         system: SYSTEM_PROMPT,
         tools: [TOOL_REGISTRAR_EXAMES],
         tool_choice: { type: "tool", name: "registrar_exames_extraidos" },
@@ -127,6 +128,8 @@ export async function POST(request: NextRequest) {
     }
 
     const dados = await resposta.json();
+    console.log("[extrair-exames] stop_reason:", dados.stop_reason);
+    console.log("[extrair-exames] tipos de bloco retornados:", dados.content?.map((b: any) => b.type));
 
     if (dados.stop_reason === "max_tokens") {
       return NextResponse.json(
@@ -141,6 +144,8 @@ export async function POST(request: NextRequest) {
     const blocoFerramenta = dados.content?.find((b: any) => b.type === "tool_use");
 
     if (!blocoFerramenta) {
+      const textoResposta = dados.content?.map((b: any) => b.text ?? "").join(" ");
+      console.log("[extrair-exames] nenhum tool_use encontrado. Texto retornado:", textoResposta);
       return NextResponse.json(
         { erro: "A IA não retornou os dados estruturados esperados. Tente novamente." },
         { status: 500 }
@@ -148,6 +153,8 @@ export async function POST(request: NextRequest) {
     }
 
     const examesRaw = blocoFerramenta.input?.exames;
+    console.log("[extrair-exames] quantidade de exames no input da ferramenta:", Array.isArray(examesRaw) ? examesRaw.length : "não é array: " + typeof examesRaw);
+
     const exames = (Array.isArray(examesRaw) ? examesRaw : []).map((item: any) => ({
       ...item,
       marcador_id: item.marcador_id || null,

@@ -342,8 +342,8 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
             />
             {extraindo && (
               <p style={{ fontSize: "0.85rem", fontWeight: "bold" }}>
-                ⏳ Lendo o PDF e identificando os exames... isso pode levar até 1-2 minutos. Não feche nem recarregue
-                esta página, só aguarde.
+                ⏳ Lendo o PDF e identificando os exames... para laudos grandes (muitas páginas/exames) isso pode
+                levar até 3-4 minutos. Não feche nem recarregue esta página, só aguarde.
               </p>
             )}
             {erroExtracao && <p className="erro">{erroExtracao}</p>}
@@ -354,7 +354,8 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                   Revise antes de salvar. Itens sem marcador identificado usam a referência impressa no próprio laudo
                   (edite se necessário).
                 </p>
-                <table>
+                <div style={{ overflowX: "auto" }}>
+                  <table>
                   <thead>
                     <tr>
                       <th></th>
@@ -435,6 +436,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                     ))}
                   </tbody>
                 </table>
+                </div>
                 <button type="button" onClick={salvarItensExtraidos} disabled={salvandoExtraidos} style={{ marginTop: 8 }}>
                   {salvandoExtraidos ? "Salvando..." : "Salvar resultados selecionados"}
                 </button>
@@ -516,6 +518,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                 <thead>
                   <tr>
                     <th>Marcador</th>
+                    <th>Referência</th>
                     {datas.map((d) => (
                       <th key={d} style={{ whiteSpace: "nowrap" }}>
                         {new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
@@ -531,10 +534,16 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                       const expandida = linhaExpandida === linha.chave;
                       const resultadosOrdenados = datas.map((d) => linha.porData.get(d)).filter(Boolean) as Resultado[];
                       const ultimo = resultadosOrdenados[resultadosOrdenados.length - 1];
+                      const referenciaTexto = linha.marcador
+                        ? (sexoPaciente === "masculino" ? linha.marcador.valor_ideal_homens_texto : linha.marcador.valor_ideal_mulheres_texto) ?? "—"
+                        : ultimo
+                        ? `${ultimo.min_referencia_livre ?? "—"} a ${ultimo.max_referencia_livre ?? "—"} ${ultimo.unidade ?? ""}`
+                        : "—";
                       return (
                         <React.Fragment key={linha.chave}>
                           <tr>
                             <td>{linha.label}</td>
+                            <td style={{ fontSize: "0.78rem", color: "#666", whiteSpace: "nowrap" }}>{referenciaTexto}</td>
                             {datas.map((d) => {
                               const r = linha.porData.get(d);
                               return (
@@ -545,9 +554,10 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                                     background: r?.status ? FUNDO_STATUS[r.status] : undefined,
                                     color: r?.status ? CORES_STATUS[r.status] : undefined,
                                     fontWeight: r ? "bold" : "normal",
+                                    whiteSpace: "nowrap",
                                   }}
                                 >
-                                  {r?.valor ?? ""}
+                                  {r ? `${r.valor}${r.unidade ? " " + r.unidade : ""}` : ""}
                                 </td>
                               );
                             })}
@@ -563,7 +573,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                           </tr>
                           {expandida && ultimo && (
                             <tr>
-                              <td colSpan={datas.length + 2} style={{ background: "white", padding: 12 }}>
+                              <td colSpan={datas.length + 3} style={{ background: "white", padding: 12 }}>
                                 {resultadosOrdenados.length > 1 && (
                                   <ResponsiveContainer width="100%" height={160}>
                                     <LineChart data={resultadosOrdenados.map((r) => ({ data: r.data_exame, valor: r.valor }))}>
