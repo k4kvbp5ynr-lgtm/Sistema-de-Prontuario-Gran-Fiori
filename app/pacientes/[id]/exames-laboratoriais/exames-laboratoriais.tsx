@@ -9,6 +9,8 @@ type Marcador = {
   nome: string;
   categoria: string | null;
   significado: string | null;
+  valor_ideal_mulheres_texto: string | null;
+  valor_ideal_homens_texto: string | null;
   min_mulheres: number | null;
   max_mulheres: number | null;
   min_homens: number | null;
@@ -72,7 +74,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     const { data: mData } = await supabase
       .from("marcadores_exames")
       .select(
-        "id, nome, categoria, significado, min_mulheres, max_mulheres, min_homens, max_homens, interpretacao_acima, interpretacao_dentro, interpretacao_abaixo, conduta_abaixo, conduta_dentro, conduta_acima"
+        "id, nome, categoria, significado, valor_ideal_mulheres_texto, valor_ideal_homens_texto, min_mulheres, max_mulheres, min_homens, max_homens, interpretacao_acima, interpretacao_dentro, interpretacao_abaixo, conduta_abaixo, conduta_dentro, conduta_acima"
       )
       .eq("ativo", true)
       .order("nome");
