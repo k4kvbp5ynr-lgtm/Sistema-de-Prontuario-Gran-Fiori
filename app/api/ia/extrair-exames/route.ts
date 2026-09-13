@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-5",
-        max_tokens: 8000,
+        max_tokens: 16000,
         system: SYSTEM_PROMPT,
         tools: [TOOL_REGISTRAR_EXAMES],
         tool_choice: { type: "tool", name: "registrar_exames_extraidos" },
@@ -114,6 +114,17 @@ export async function POST(request: NextRequest) {
     }
 
     const dados = await resposta.json();
+
+    if (dados.stop_reason === "max_tokens") {
+      return NextResponse.json(
+        {
+          erro:
+            "Esse laudo tem muitos exames e a resposta da IA foi cortada antes de terminar. Tente novamente (às vezes resolve) ou, se persistir, me avise — pode ser necessário dividir o PDF em partes menores.",
+        },
+        { status: 500 }
+      );
+    }
+
     const blocoFerramenta = dados.content?.find((b: any) => b.type === "tool_use");
 
     if (!blocoFerramenta) {
