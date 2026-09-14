@@ -73,9 +73,18 @@ async function consultarMyGene(geneSymbol: string) {
 // =========================================================
 // 3. ClinVar / NCBI (E-utilities)
 // =========================================================
-async function consultarClinVar(rsid: string) {
-  const rsidCompleto = rsid.toLowerCase().startsWith("rs") ? rsid.toLowerCase() : `rs${rsid}`;
-  const buscaUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term=${rsidCompleto}&retmode=json`;
+async function consultarClinVar(rsid: string, chrom: string | null, position: string | number | null) {
+  // ClinVar não indexa rsID de forma confiável por busca de texto — o jeito preciso é
+  // buscar pela coordenada genômica exata (cromossomo + posição), que já veio do MyVariant.
+  let termoBusca: string;
+  if (chrom && position) {
+    termoBusca = `${chrom}%5Bchr%5D+AND+(${position}%3A${position}%5Bchrpos38%5D+OR+${position}%3A${position}%5Bchrpos37%5D)`;
+  } else {
+    const rsidCompleto = rsid.toLowerCase().startsWith("rs") ? rsid.toLowerCase() : `rs${rsid}`;
+    termoBusca = rsidCompleto;
+  }
+
+  const buscaUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term=${termoBusca}&retmode=json&retmax=20`;
   const buscaResposta = await fetch(buscaUrl, { headers: { "User-Agent": "ProntuarioGranFiori/1.0" } });
   if (!buscaResposta.ok) return null;
   const buscaDados = await buscaResposta.json();
@@ -93,6 +102,14 @@ async function consultarClinVar(rsid: string) {
   const registros = ids
     .map((id) => resumoDados?.result?.[id])
     .filter(Boolean)
+    .filter((r: any) => {
+      // Trava de segurança: descarta registro se o cromossomo não bater com o esperado
+      // (evita mostrar uma variante errada por causa de uma busca imprecisa).
+      if (!chrom) return true;
+      const locs = r.variation_set?.[0]?.variation_loc ?? [];
+      if (locs.length === 0) return true; // sem info de posição, deixa passar sem travar
+      return locs.some((l: any) => String(l.chr) === String(chrom));
+    })
     .map((r: any) => {
       // ClinVar mudou o esquema: campos de classificação agora ficam dentro de
       // "germline_classification" em vez de "clinical_significance" direto.
@@ -176,7 +193,7 @@ export async function POST(request: NextRequest) {
 
     const [gene, clinvar] = await Promise.all([
       geneSymbol ? consultarMyGene(geneSymbol) : Promise.resolve(null),
-      consultarClinVar(rsid),
+      consultarClinVar(rsid, variant?.chromosome ?? null, variant?.position ?? null),
     ]);
 
     const resultado = {
