@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useConsultaTimer } from "./consulta-timer-context";
 
-export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string }) {
+export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pacienteId: string; podeUsarIA?: boolean }) {
   const router = useRouter();
   const supabase = createClient();
+  const { pararEObterDuracao } = useConsultaTimer();
 
   const [tipoAtendimento, setTipoAtendimento] = useState("consulta_medica");
   const [motivo, setMotivo] = useState("");
@@ -83,6 +85,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
     }
 
     // 1. Cria o encontro (a consulta em si)
+    const duracaoSegundos = pararEObterDuracao(); // trava o timer visual e pega a duração final
     const { data: encontro, error: erroEncontro } = await supabase
       .from("encontros")
       .insert({
@@ -91,6 +94,7 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
         data_hora: new Date().toISOString(),
         tipo_atendimento: tipoAtendimento,
         status: "finalizado",
+        duracao_segundos: duracaoSegundos,
       })
       .select()
       .single();
@@ -247,10 +251,14 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
         Diagnóstico e conduta (não visível à recepção)
       </p>
 
-      <button type="button" onClick={buscarSugestaoIA} disabled={buscandoSugestao} style={{ marginBottom: 12, background: "#4a6a7a" }}>
-        {buscandoSugestao ? "Consultando IA..." : "🤖 Gerar sugestão de IA"}
-      </button>
-      {erroSugestao && <p className="erro">{erroSugestao}</p>}
+      {podeUsarIA && (
+        <>
+          <button type="button" onClick={buscarSugestaoIA} disabled={buscandoSugestao} style={{ marginBottom: 12, background: "#4a6a7a" }}>
+            {buscandoSugestao ? "Consultando IA..." : "🤖 Gerar sugestão de IA"}
+          </button>
+          {erroSugestao && <p className="erro">{erroSugestao}</p>}
+        </>
+      )}
 
       {sugestaoIA && (
         <div

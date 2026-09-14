@@ -80,6 +80,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Sessão expirada. Faça login novamente." }, { status: 401 });
   }
 
+  const { data: meuUsuario } = await supabase.from("usuarios").select("pode_usar_ia").eq("id", user.id).single();
+  if (!meuUsuario?.pode_usar_ia) {
+    return NextResponse.json({ erro: "Seu usuário não tem permissão para usar ferramentas de IA." }, { status: 403 });
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { erro: "A chave da Anthropic ainda não foi configurada no servidor (ANTHROPIC_API_KEY)." },

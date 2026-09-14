@@ -47,7 +47,15 @@ const FUNDO_STATUS: Record<string, string> = {
   abaixo: "#faf1d9",
 };
 
-export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { pacienteId: string; sexoPaciente: string | null }) {
+export default function ExamesLaboratoriais({
+  pacienteId,
+  sexoPaciente,
+  podeUsarIA = true,
+}: {
+  pacienteId: string;
+  sexoPaciente: string | null;
+  podeUsarIA?: boolean;
+}) {
   const supabase = createClient();
   const [marcadores, setMarcadores] = useState<Marcador[]>([]);
   const [resultados, setResultados] = useState<Resultado[]>([]);
@@ -342,6 +350,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
       </h2>
 
       <div style={{ padding: "0 0 16px" }}>
+        {podeUsarIA && (
         <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
           <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
             🤖 Extrair resultados de um PDF automaticamente (IA)
@@ -458,8 +467,10 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
               </div>
             )}
           </div>
+        )}
+      </div>
 
-          <form onSubmit={salvarResultado} style={{ marginBottom: 16 }}>
+      <form onSubmit={salvarResultado} style={{ marginBottom: 16 }}>
             {erro && <p className="erro">{erro}</p>}
 
             <div style={{ position: "relative", marginBottom: 8 }}>
@@ -642,6 +653,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                                         {ultimo.min_referencia_livre ?? "—"} a {ultimo.max_referencia_livre ?? "—"}{" "}
                                         {ultimo.unidade ?? ""}
                                       </p>
+                                      {podeUsarIA && (
                                       <button
                                         type="button"
                                         onClick={() => pedirSugestaoLivre(linha.chave, linha.label, ultimo)}
@@ -650,6 +662,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                                       >
                                         {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "🤖 Pedir sugestão de IA"}
                                       </button>
+                                      )}
                                       {sugestaoLivre[linha.chave] && (
                                         <div
                                           style={{

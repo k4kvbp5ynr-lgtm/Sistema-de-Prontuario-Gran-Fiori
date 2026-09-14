@@ -14,6 +14,7 @@ type Usuario = {
   admin_extra: boolean;
   ativo: boolean;
   cor_agenda: string;
+  pode_usar_ia: boolean;
 };
 
 const PERFIS: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function GestaoEquipe() {
   const [especialidade, setEspecialidade] = useState("");
   const [adminExtra, setAdminExtra] = useState(false);
   const [corAgenda, setCorAgenda] = useState("#7a5a2f");
+  const [podeUsarIA, setPodeUsarIA] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   // criar novo usuário direto pelo sistema
@@ -95,7 +97,7 @@ export default function GestaoEquipe() {
 
     const { data: users } = await supabase
       .from("usuarios")
-      .select("id, nome, perfil, registro_classe, rqe, especialidade, admin_extra, ativo, cor_agenda")
+      .select("id, nome, perfil, registro_classe, rqe, especialidade, admin_extra, ativo, cor_agenda, pode_usar_ia")
       .order("nome");
 
     setUsuarios(users ?? []);
@@ -130,6 +132,7 @@ export default function GestaoEquipe() {
     setEspecialidade(usuario.especialidade ?? "");
     setAdminExtra(usuario.admin_extra);
     setCorAgenda(usuario.cor_agenda ?? "#7a5a2f");
+    setPodeUsarIA(usuario.pode_usar_ia ?? false);
     setErro(null);
   }
 
@@ -149,6 +152,7 @@ export default function GestaoEquipe() {
         especialidade: especialidade || null,
         admin_extra: adminExtra,
         cor_agenda: corAgenda,
+        pode_usar_ia: podeUsarIA,
       })
       .eq("id", editandoUsuarioId);
 
@@ -178,6 +182,7 @@ export default function GestaoEquipe() {
       especialidade: especialidade || null,
       admin_extra: adminExtra,
       cor_agenda: corAgenda,
+      pode_usar_ia: podeUsarIA,
     });
 
     setSalvando(false);
@@ -303,6 +308,16 @@ export default function GestaoEquipe() {
                         Também terá poderes de administrador
                       </label>
 
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={podeUsarIA}
+                          onChange={(e) => setPodeUsarIA(e.target.checked)}
+                          style={{ width: "auto" }}
+                        />
+                        🤖 Pode usar as ferramentas de IA (extração de exames, sugestão diagnóstica, etc.)
+                      </label>
+
                       <button type="submit" disabled={salvando} style={{ marginTop: 12, marginRight: 8 }}>
                         {salvando ? "Salvando..." : "Salvar alterações"}
                       </button>
@@ -419,6 +434,16 @@ export default function GestaoEquipe() {
                     style={{ width: "auto" }}
                   />
                   Também terá poderes de administrador
+                </label>
+
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={podeUsarIA}
+                    onChange={(e) => setPodeUsarIA(e.target.checked)}
+                    style={{ width: "auto" }}
+                  />
+                  🤖 Pode usar as ferramentas de IA (extração de exames, sugestão diagnóstica, etc.)
                 </label>
 
                 <button type="submit" disabled={salvando} style={{ marginTop: 12, marginRight: 8 }}>

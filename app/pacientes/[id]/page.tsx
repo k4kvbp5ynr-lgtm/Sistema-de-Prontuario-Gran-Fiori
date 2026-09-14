@@ -7,6 +7,8 @@ import ProcedimentosPaciente from "./procedimentos-paciente";
 import ExamesLaboratoriais from "./exames-laboratoriais/exames-laboratoriais";
 import NovaPrescricaoForm from "./receituario/novo-prescricao-form";
 import MenuLateral, { ItemMenuLateral } from "../../menu-lateral";
+import { ConsultaTimerProvider } from "./consulta-timer-context";
+import TimerConsultaWidget from "./timer-consulta-widget";
 
 export default async function DetalhePacientePage({
   params,
@@ -20,9 +22,10 @@ export default async function DetalhePacientePage({
     data: { user },
   } = await supabase.auth.getUser();
   const { data: meuUsuario } = user
-    ? await supabase.from("usuarios").select("perfil, admin_extra").eq("id", user.id).single()
+    ? await supabase.from("usuarios").select("perfil, admin_extra, pode_usar_ia").eq("id", user.id).single()
     : { data: null };
   const souRecepcao = meuUsuario?.perfil === "recepcao";
+  const podeUsarIA = meuUsuario?.pode_usar_ia ?? false;
 
   const { data: paciente, error: erroPaciente } = await supabase
     .from("pacientes")
@@ -34,7 +37,8 @@ export default async function DetalhePacientePage({
     .from("encontros")
     .select(
       `
-      id, data_hora, tipo_atendimento,
+      id, data_hora, tipo_atendimento, duracao_segundos,
+      usuarios!profissional_id ( nome, perfil ),
       evolucoes (
         id, motivo_consulta, anamnese, exame_fisico, observacoes,
         evolucoes_diagnostico ( diagnostico_cid, conduta )
@@ -73,7 +77,7 @@ export default async function DetalhePacientePage({
       ) : (
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Nova consulta</h2>
-          <NovaEvolucaoForm pacienteId={paciente.id} />
+          <NovaEvolucaoForm pacienteId={paciente.id} podeUsarIA={podeUsarIA} />
           <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
           <h2 style={{ fontSize: "1.1rem" }}>Prescrição desta consulta (opcional)</h2>
           <NovaPrescricaoForm pacienteId={paciente.id} />
@@ -85,7 +89,7 @@ export default async function DetalhePacientePage({
       id: "exames-lab",
       label: "Exames de análises clínicas",
       icone: "🧪",
-      conteudo: <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} />,
+      conteudo: <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} podeUsarIA={podeUsarIA} />,
     },
     {
       tipo: "painel",
@@ -116,6 +120,18 @@ export default async function DetalhePacientePage({
               style={{ border: "1px solid #e5e0d8", borderRadius: 8, padding: 16, marginBottom: 12 }}
             >
               <strong>{new Date(enc.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</strong> — {enc.tipo_atendimento}
+              {enc.usuarios && (
+                <span style={{ fontSize: "0.85rem", color: "#666" }}>
+                  {" "}
+                  · salvo por {enc.usuarios.nome}
+                </span>
+              )}
+              {enc.duracao_segundos != null && (
+                <span style={{ fontSize: "0.85rem", color: "#666" }}>
+                  {" "}
+                  · duração: {Math.floor(enc.duracao_segundos / 60)}min {enc.duracao_segundos % 60}s
+                </span>
+              )}
               {enc.evolucoes?.map((ev: any) => (
                 <div key={ev.id} style={{ marginTop: 8 }}>
                   {ev.motivo_consulta && <p><b>Motivo:</b> {ev.motivo_consulta}</p>}
@@ -150,5 +166,20 @@ export default async function DetalhePacientePage({
     },
   ];
 
-  return <MenuLateral itens={itens} itemInicial="anamnese" cabecalho={<CadastroPaciente paciente={paciente} />} />;
+  return (
+    <ConsultaTimerProvider>
+      <MenuLateral
+        itens={itens}
+        itemInicial="anamnese"
+        cabecalho={
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <CadastroPaciente paciente={paciente} />
+            </div>
+            {!souRecepcao && <TimerConsultaWidget />}
+          </div>
+        }
+      />
+    </ConsultaTimerProvider>
+  );
 }
