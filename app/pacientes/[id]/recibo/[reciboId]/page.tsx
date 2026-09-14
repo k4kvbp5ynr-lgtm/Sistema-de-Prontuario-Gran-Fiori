@@ -29,7 +29,7 @@ export default async function VisualizarReciboPage({
     supabase.from("clinica_config").select("*").eq("id", 1).single(),
   ]);
 
-  const dataFormatada = new Date(recibo.criado_em).toLocaleDateString("pt-BR");
+  const dataFormatada = new Date(recibo.criado_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const itens = recibo.itens as { nome: string; codigo_tuss: string | null; referencia_cbhpm: string | null; valor: number | null }[];
 
   const titulo = recibo.tipo === "previa" ? "PRÉVIA DE REEMBOLSO" : "GUIA DE REEMBOLSO";

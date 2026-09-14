@@ -321,7 +321,11 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
   }
 
   const linhas = Array.from(linhasMap.values());
-  const categorias = Array.from(new Set(linhas.map((l) => l.categoria)));
+  const categorias = Array.from(new Set(linhas.map((l) => l.categoria))).sort((a, b) => {
+    if (a === "Hemograma") return -1;
+    if (b === "Hemograma") return 1;
+    return a.localeCompare(b);
+  });
   const datas = Array.from(new Set(resultados.map((r) => r.data_exame))).sort();
 
   return (
@@ -522,146 +526,160 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
 
           {linhas.length === 0 && <p style={{ fontSize: "0.9rem", color: "#888" }}>Nenhum resultado lançado ainda.</p>}
 
-          {categorias.map((cat) => (
-            <div key={cat} style={{ marginBottom: 16, overflowX: "auto" }}>
-              <p style={{ fontWeight: "bold", fontSize: "0.85rem", color: "#7a5a2f", margin: "8px 0 4px" }}>{cat}</p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Marcador</th>
-                    <th>Referência</th>
-                    {datas.map((d) => (
-                      <th key={d} style={{ whiteSpace: "nowrap" }}>
-                        {new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
-                      </th>
-                    ))}
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {linhas
-                    .filter((l) => l.categoria === cat)
-                    .map((linha) => {
-                      const expandida = linhaExpandida === linha.chave;
-                      const resultadosOrdenados = datas.map((d) => linha.porData.get(d)).filter(Boolean) as Resultado[];
-                      const ultimo = resultadosOrdenados[resultadosOrdenados.length - 1];
-                      const referenciaTexto = linha.marcador
-                        ? (sexoPaciente === "masculino" ? linha.marcador.valor_ideal_homens_texto : linha.marcador.valor_ideal_mulheres_texto) ?? "—"
-                        : ultimo
-                        ? `${ultimo.min_referencia_livre ?? "—"} a ${ultimo.max_referencia_livre ?? "—"} ${ultimo.unidade ?? ""}`
-                        : "—";
-                      return (
-                        <React.Fragment key={linha.chave}>
-                          <tr>
-                            <td>{linha.label}</td>
-                            <td style={{ fontSize: "0.78rem", color: "#666", whiteSpace: "nowrap" }}>{referenciaTexto}</td>
-                            {datas.map((d) => {
-                              const r = linha.porData.get(d);
-                              return (
-                                <td
-                                  key={d}
-                                  style={{
-                                    textAlign: "center",
-                                    background: r?.status ? FUNDO_STATUS[r.status] : undefined,
-                                    color: r?.status ? CORES_STATUS[r.status] : undefined,
-                                    fontWeight: r ? "bold" : "normal",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {r ? `${r.valor}${r.unidade ? " " + r.unidade : ""}` : ""}
-                                </td>
-                              );
-                            })}
-                            <td>
-                              <button
-                                type="button"
-                                onClick={() => setLinhaExpandida(expandida ? null : linha.chave)}
-                                style={{ fontSize: "0.75rem", padding: "3px 8px" }}
-                              >
-                                {expandida ? "Fechar" : "Ver interpretação"}
-                              </button>
-                            </td>
-                          </tr>
-                          {expandida && ultimo && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ tableLayout: "fixed", width: "100%" }}>
+              <colgroup>
+                <col style={{ width: 220 }} />
+                <col style={{ width: 160 }} />
+                {datas.map((d) => (
+                  <col key={d} style={{ width: 110 }} />
+                ))}
+                <col style={{ width: 130 }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left" }}>Marcador</th>
+                  <th style={{ textAlign: "left" }}>Referência</th>
+                  {datas.map((d) => (
+                    <th key={d} style={{ whiteSpace: "nowrap" }}>
+                      {new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
+                    </th>
+                  ))}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {categorias.map((cat) => (
+                  <React.Fragment key={cat}>
+                    <tr>
+                      <td colSpan={datas.length + 3} style={{ fontWeight: "bold", fontSize: "0.85rem", color: "#7a5a2f", background: "#f0ece2", padding: "6px 8px" }}>
+                        {cat}
+                      </td>
+                    </tr>
+                    {linhas
+                      .filter((l) => l.categoria === cat)
+                      .map((linha) => {
+                        const expandida = linhaExpandida === linha.chave;
+                        const resultadosOrdenados = datas.map((d) => linha.porData.get(d)).filter(Boolean) as Resultado[];
+                        const ultimo = resultadosOrdenados[resultadosOrdenados.length - 1];
+                        const referenciaTexto = linha.marcador
+                          ? (sexoPaciente === "masculino" ? linha.marcador.valor_ideal_homens_texto : linha.marcador.valor_ideal_mulheres_texto) ?? "—"
+                          : ultimo
+                          ? `${ultimo.min_referencia_livre ?? "—"} a ${ultimo.max_referencia_livre ?? "—"} ${ultimo.unidade ?? ""}`
+                          : "—";
+                        return (
+                          <React.Fragment key={linha.chave}>
                             <tr>
-                              <td colSpan={datas.length + 3} style={{ background: "white", padding: 12 }}>
-                                {resultadosOrdenados.length > 1 && (
-                                  <ResponsiveContainer width="100%" height={160}>
-                                    <LineChart data={resultadosOrdenados.map((r) => ({ data: r.data_exame, valor: r.valor }))}>
-                                      <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={11} />
-                                      <YAxis fontSize={11} domain={["auto", "auto"]} />
-                                      <Tooltip labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} />
-                                      <Line type="monotone" dataKey="valor" stroke="#7a5a2f" strokeWidth={2} dot />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                )}
-
-                                {linha.marcador ? (
-                                  <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
-                                    <p style={{ margin: "4px 0" }}>
-                                      <b>Significado:</b> {linha.marcador.significado}
-                                    </p>
-                                    <p style={{ margin: "4px 0" }}>
-                                      <b>Interpretação ({ultimo.status}):</b>{" "}
-                                      {ultimo.status === "acima"
-                                        ? linha.marcador.interpretacao_acima
-                                        : ultimo.status === "abaixo"
-                                        ? linha.marcador.interpretacao_abaixo
-                                        : linha.marcador.interpretacao_dentro}
-                                    </p>
-                                    <p style={{ margin: "4px 0" }}>
-                                      <b>Conduta sugerida:</b>{" "}
-                                      {ultimo.status === "acima"
-                                        ? linha.marcador.conduta_acima
-                                        : ultimo.status === "abaixo"
-                                        ? linha.marcador.conduta_abaixo
-                                        : linha.marcador.conduta_dentro}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
-                                    <p style={{ margin: "4px 0", color: "#888" }}>
-                                      Esse exame não está na base de referência do sistema. Referência do laudo:{" "}
-                                      {ultimo.min_referencia_livre ?? "—"} a {ultimo.max_referencia_livre ?? "—"}{" "}
-                                      {ultimo.unidade ?? ""}
-                                    </p>
-                                    <button
-                                      type="button"
-                                      onClick={() => pedirSugestaoLivre(linha.chave, linha.label, ultimo)}
-                                      disabled={buscandoSugestaoLivre === linha.chave}
-                                      style={{ fontSize: "0.8rem", background: "#4a6a7a" }}
-                                    >
-                                      {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "🤖 Pedir sugestão de IA"}
-                                    </button>
-                                    {sugestaoLivre[linha.chave] && (
-                                      <div
-                                        style={{
-                                          border: "1px solid #4a6a7a",
-                                          borderRadius: 6,
-                                          padding: 10,
-                                          marginTop: 8,
-                                          background: "#f0f4f6",
-                                          whiteSpace: "pre-wrap",
-                                        }}
-                                      >
-                                        <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "#4a6a7a" }}>
-                                          🤖 Sugestão gerada por IA — revise antes de usar.
-                                        </p>
-                                        {sugestaoLivre[linha.chave]}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                              <td>{linha.label}</td>
+                              <td style={{ fontSize: "0.78rem", color: "#666", overflow: "hidden", textOverflow: "ellipsis" }}>{referenciaTexto}</td>
+                              {datas.map((d) => {
+                                const r = linha.porData.get(d);
+                                return (
+                                  <td
+                                    key={d}
+                                    style={{
+                                      textAlign: "center",
+                                      background: r?.status ? FUNDO_STATUS[r.status] : undefined,
+                                      color: r?.status ? CORES_STATUS[r.status] : undefined,
+                                      fontWeight: r ? "bold" : "normal",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {r ? `${r.valor}${r.unidade ? " " + r.unidade : ""}` : ""}
+                                  </td>
+                                );
+                              })}
+                              <td>
+                                <button
+                                  type="button"
+                                  onClick={() => setLinhaExpandida(expandida ? null : linha.chave)}
+                                  style={{ fontSize: "0.75rem", padding: "3px 8px" }}
+                                >
+                                  {expandida ? "Fechar" : "Ver interpretação"}
+                                </button>
                               </td>
                             </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          ))}
+                            {expandida && ultimo && (
+                              <tr>
+                                <td colSpan={datas.length + 3} style={{ background: "white", padding: 12 }}>
+                                  {resultadosOrdenados.length > 1 && (
+                                    <ResponsiveContainer width="100%" height={160}>
+                                      <LineChart data={resultadosOrdenados.map((r) => ({ data: r.data_exame, valor: r.valor }))}>
+                                        <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={11} />
+                                        <YAxis fontSize={11} domain={["auto", "auto"]} />
+                                        <Tooltip labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} />
+                                        <Line type="monotone" dataKey="valor" stroke="#7a5a2f" strokeWidth={2} dot />
+                                      </LineChart>
+                                    </ResponsiveContainer>
+                                  )}
+
+                                  {linha.marcador ? (
+                                    <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
+                                      <p style={{ margin: "4px 0" }}>
+                                        <b>Significado:</b> {linha.marcador.significado}
+                                      </p>
+                                      <p style={{ margin: "4px 0" }}>
+                                        <b>Interpretação ({ultimo.status}):</b>{" "}
+                                        {ultimo.status === "acima"
+                                          ? linha.marcador.interpretacao_acima
+                                          : ultimo.status === "abaixo"
+                                          ? linha.marcador.interpretacao_abaixo
+                                          : linha.marcador.interpretacao_dentro}
+                                      </p>
+                                      <p style={{ margin: "4px 0" }}>
+                                        <b>Conduta sugerida:</b>{" "}
+                                        {ultimo.status === "acima"
+                                          ? linha.marcador.conduta_acima
+                                          : ultimo.status === "abaixo"
+                                          ? linha.marcador.conduta_abaixo
+                                          : linha.marcador.conduta_dentro}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
+                                      <p style={{ margin: "4px 0", color: "#888" }}>
+                                        Esse exame não está na base de referência do sistema. Referência do laudo:{" "}
+                                        {ultimo.min_referencia_livre ?? "—"} a {ultimo.max_referencia_livre ?? "—"}{" "}
+                                        {ultimo.unidade ?? ""}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        onClick={() => pedirSugestaoLivre(linha.chave, linha.label, ultimo)}
+                                        disabled={buscandoSugestaoLivre === linha.chave}
+                                        style={{ fontSize: "0.8rem", background: "#4a6a7a" }}
+                                      >
+                                        {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "🤖 Pedir sugestão de IA"}
+                                      </button>
+                                      {sugestaoLivre[linha.chave] && (
+                                        <div
+                                          style={{
+                                            border: "1px solid #4a6a7a",
+                                            borderRadius: 6,
+                                            padding: 10,
+                                            marginTop: 8,
+                                            background: "#f0f4f6",
+                                            whiteSpace: "pre-wrap",
+                                          }}
+                                        >
+                                          <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "#4a6a7a" }}>
+                                            🤖 Sugestão gerada por IA — revise antes de usar.
+                                          </p>
+                                          {sugestaoLivre[linha.chave]}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
     </div>
   );

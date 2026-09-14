@@ -226,7 +226,7 @@ export default function ProcedimentosPaciente({ pacienteId }: { pacienteId: stri
                   <td>{i.procedimentos.nome}</td>
                   <td>{i.procedimentos.codigo_tuss ?? "—"}</td>
                   <td>{i.status === "planejado" ? "Planejado" : "Realizado"}</td>
-                  <td>{new Date(i.data).toLocaleDateString("pt-BR")}</td>
+                  <td>{new Date(i.data).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
                   <td>
                     {(i.valor_cobrado ?? i.procedimentos.valor)?.toLocaleString("pt-BR", {
                       style: "currency",

@@ -42,7 +42,7 @@ export default async function VisualizarReceitaPage({
       supabase.from("clinica_config").select("*").eq("id", 1).single(),
     ]);
 
-  const dataFormatada = new Date(prescricao.criado_em).toLocaleDateString("pt-BR");
+  const dataFormatada = new Date(prescricao.criado_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
   const rotulos: Record<string, string> = {
     simples: "",
@@ -133,7 +133,7 @@ export default async function VisualizarReceitaPage({
                 {paciente?.data_nascimento && (
                   <>
                     &nbsp;·&nbsp;<b>Nascimento:</b>{" "}
-                    {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")}
+                    {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
                   </>
                 )}
               </p>

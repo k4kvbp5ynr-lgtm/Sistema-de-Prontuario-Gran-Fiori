@@ -140,7 +140,7 @@ export default function AnexosExames({ pacienteId }: { pacienteId: string }) {
             <span>
               {a.nome_arquivo} {a.descricao && `— ${a.descricao}`}
               <br />
-              <small>{new Date(a.criado_em).toLocaleString("pt-BR")}</small>
+              <small>{new Date(a.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</small>
             </span>
             <button type="button" onClick={() => baixar(a.caminho_storage)}>
               Abrir

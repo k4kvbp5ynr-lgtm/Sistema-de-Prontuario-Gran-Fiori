@@ -448,7 +448,7 @@ export default function AgendaCalendario() {
             </h2>
             <p style={{ fontSize: "0.9rem" }}>
               {usuariosAgenda.find((u) => u.id === agendamentoDetalhe.profissional_id)?.nome} ·{" "}
-              {new Date(agendamentoDetalhe.data_hora).toLocaleString("pt-BR")} ·{" "}
+              {new Date(agendamentoDetalhe.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} ·{" "}
               {tiposEvento.find((t) => t.id === agendamentoDetalhe.tipo_evento_id)?.nome} ·{" "}
               {agendamentoDetalhe.duracao_minutos} min
             </p>

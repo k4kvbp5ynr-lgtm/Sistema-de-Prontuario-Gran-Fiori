@@ -102,7 +102,7 @@ export default async function DetalhePacientePage({
               key={enc.id}
               style={{ border: "1px solid #e5e0d8", borderRadius: 8, padding: 16, marginBottom: 12 }}
             >
-              <strong>{new Date(enc.data_hora).toLocaleString("pt-BR")}</strong> — {enc.tipo_atendimento}
+              <strong>{new Date(enc.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</strong> — {enc.tipo_atendimento}
               {enc.evolucoes?.map((ev: any) => (
                 <div key={ev.id} style={{ marginTop: 8 }}>
                   {ev.motivo_consulta && <p><b>Motivo:</b> {ev.motivo_consulta}</p>}

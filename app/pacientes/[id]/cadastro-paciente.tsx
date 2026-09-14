@@ -109,7 +109,7 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
           <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>
             CPF: {paciente.cpf ?? "—"}
             {paciente.data_nascimento &&
-              ` · Nascimento: ${new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")}`}
+              ` · Nascimento: ${new Date(paciente.data_nascimento).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
           </p>
           <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>
             {paciente.telefone ?? "—"} · {paciente.email ?? "—"}
