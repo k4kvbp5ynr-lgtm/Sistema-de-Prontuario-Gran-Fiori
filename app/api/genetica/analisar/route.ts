@@ -16,13 +16,18 @@ async function consultarMyVariant(rsid: string) {
   const hit = dados?.hits?.[0];
   if (!hit) return null;
 
+  const geneBruto = hit.dbnsfp?.genename ?? hit.cadd?.gene?.genename ?? hit.snpeff?.ann?.[0]?.gene_id ?? null;
+  const geneLimpo = Array.isArray(geneBruto)
+    ? geneBruto.find((g: any) => typeof g === "string" && g) ?? null
+    : geneBruto;
+
   return {
     rsid,
     chromosome: hit.chrom ?? null,
     position: hit.vcf?.position ?? hit.hg19?.start ?? null,
     ref: hit.vcf?.ref ?? null,
     alt: hit.vcf?.alt ?? null,
-    gene: hit.dbnsfp?.genename ?? hit.cadd?.gene?.genename ?? hit.snpeff?.ann?.[0]?.gene_id ?? null,
+    gene: geneLimpo,
     consequencia_funcional: hit.snpeff?.ann?.[0]?.effect ?? hit.cadd?.consequence ?? null,
     dbsnp: hit.dbsnp ?? null,
     clinvar_myvariant: hit.clinvar ?? null,
@@ -83,17 +88,24 @@ async function consultarClinVar(rsid: string) {
   const resumoResposta = await fetch(resumoUrl, { headers: { "User-Agent": "ProntuarioGranFiori/1.0" } });
   if (!resumoResposta.ok) return null;
   const resumoDados = await resumoResposta.json();
+  console.log("[genetica] ClinVar bruto (1º registro):", JSON.stringify(resumoDados?.result?.[ids[0]])?.slice(0, 800));
 
   const registros = ids
     .map((id) => resumoDados?.result?.[id])
     .filter(Boolean)
-    .map((r: any) => ({
-      accession: r.accession ?? null,
-      significancia_clinica: r.clinical_significance?.description ?? null,
-      review_status: r.clinical_significance?.review_status ?? null,
-      condicoes: (r.trait_set ?? []).map((t: any) => t.trait_name).filter(Boolean),
-      ultima_atualizacao: r.clinical_significance?.last_evaluated ?? null,
-    }));
+    .map((r: any) => {
+      // ClinVar mudou o esquema: campos de classificação agora ficam dentro de
+      // "germline_classification" em vez de "clinical_significance" direto.
+      const classificacao = r.germline_classification ?? r.clinical_significance ?? {};
+      const traits = classificacao.trait_set ?? r.trait_set ?? [];
+      return {
+        accession: r.accession ?? null,
+        significancia_clinica: classificacao.description ?? null,
+        review_status: classificacao.review_status ?? null,
+        condicoes: traits.map((t: any) => t.trait_name).filter(Boolean),
+        ultima_atualizacao: classificacao.last_evaluated ?? null,
+      };
+    });
 
   return registros;
 }
