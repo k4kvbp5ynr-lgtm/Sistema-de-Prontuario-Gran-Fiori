@@ -306,11 +306,9 @@ export default function NovaEvolucaoForm({ pacienteId }: { pacienteId: string })
 
       <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
       <label>Anexar exame(s) desta consulta (opcional)</label>
-      <p style={{ fontSize: "0.85rem", margin: "0 0 8px" }}>
-        📋 Exame de análises clínicas (sangue)?{" "}
-        <a href="#exames-laboratoriais" style={{ color: "#7a5a2f" }}>
-          Anexe o PDF e lance os resultados aqui
-        </a>
+      <p style={{ fontSize: "0.85rem", margin: "0 0 8px", color: "#666" }}>
+        📋 Exame de análises clínicas (sangue)? Anexe o PDF e lance os resultados no ícone{" "}
+        <b>"Exames de análises clínicas"</b> no menu à esquerda.
       </p>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
         <input

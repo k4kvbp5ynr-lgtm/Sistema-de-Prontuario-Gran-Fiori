@@ -49,7 +49,6 @@ const FUNDO_STATUS: Record<string, string> = {
 
 export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { pacienteId: string; sexoPaciente: string | null }) {
   const supabase = createClient();
-  const [aberto, setAberto] = useState(false);
   const [marcadores, setMarcadores] = useState<Marcador[]>([]);
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [linhaExpandida, setLinhaExpandida] = useState<string | null>(null);
@@ -89,9 +88,9 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
   }
 
   useEffect(() => {
-    if (aberto) carregar();
+    carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pacienteId, aberto]);
+  }, [pacienteId]);
 
   function calcularStatus(min: number | null, max: number | null, v: number): string | null {
     // Faixa inválida (ex: 0 a 0, ou mínimo maior que o máximo) — trata como referência desconhecida
@@ -329,37 +328,20 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     <div
       id="exames-laboratoriais"
       style={{
-        border: "1px solid #e5e0d8",
         borderRadius: 8,
         marginBottom: 20,
         background: "#fbfaf7",
-        overflow: "hidden",
       }}
     >
-      <button
-        type="button"
-        onClick={() => setAberto((a) => !a)}
-        style={{
-          width: "100%",
-          textAlign: "left",
-          background: "#7a5a2f",
-          color: "white",
-          padding: 14,
-          fontWeight: "bold",
-          fontSize: "1rem",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        {aberto ? "▾" : "▸"} Exames de análises clínicas {resultados.length > 0 && `(${linhas.length} marcadores)`}
-      </button>
+      <h2 style={{ fontSize: "1.1rem" }}>
+        Exames de análises clínicas {resultados.length > 0 && `(${linhas.length} marcadores)`}
+      </h2>
 
-      {aberto && (
-        <div style={{ padding: 16 }}>
-          <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
-            <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
-              🤖 Extrair resultados de um PDF automaticamente (IA)
-            </p>
+      <div style={{ padding: "0 0 16px" }}>
+        <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
+          <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
+            🤖 Extrair resultados de um PDF automaticamente (IA)
+          </p>
             <input
               type="file"
               accept=".pdf"
@@ -681,7 +663,6 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
             </div>
           ))}
         </div>
-      )}
     </div>
   );
 }
