@@ -23,7 +23,9 @@ REGRAS OBRIGATÓRIAS:
    - Preencha min_referencia_livre e max_referencia_livre APENAS se o laudo mostrar uma faixa numérica clara (ex: "10 a 50 mg/dL"). NUNCA preencha com 0 como "valor padrão" quando não souber — nesse caso, deixe os dois campos vazios (não envie o campo, ou envie null).
    - Se a referência do laudo for um limiar (ex: "reagente se ≥ 10", "não reagente se < 10") em vez de uma faixa mín-máx, ou for qualitativa (ex: "reagente/não reagente", "positivo/negativo"), NÃO tente forçar isso em min/max — deixe os campos vazios e escreva a referência textual em observacao_conversao (ex: "Referência do laudo: reagente se ≥ 10 mUI/mL — não é uma faixa numérica, avaliação deve ser manual").
 
-5. Use a ferramenta registrar_exames_extraidos para reportar todos os exames encontrados no documento.`;
+5. IMPORTANTE — SEJA EXAUSTIVO: extraia TODOS OS EXAMES que aparecem no texto, sem exceção, mesmo que pareçam repetidos, triviais, ou que você já tenha visto algo parecido antes. Se o texto tiver 30 exames, sua resposta deve ter 30 itens — nunca resuma, nunca pule um exame achando que não é importante. Isso é especialmente crítico quando o texto for um trecho/parte de um documento maior: processe TUDO que estiver nesse trecho, do início ao fim, sem deixar nada de fora.
+
+6. Use a ferramenta registrar_exames_extraidos para reportar todos os exames encontrados no documento.`;
 
 const TOOL_REGISTRAR_EXAMES = {
   name: "registrar_exames_extraidos",
@@ -288,7 +290,7 @@ export async function POST(request: NextRequest) {
   // Divide o texto em pedaços menores (por linha, sem cortar no meio de uma linha) e chama a IA
   // em paralelo pra cada pedaço — reduz bastante o tempo de espera em laudos grandes, já que
   // várias respostas são geradas ao mesmo tempo em vez de uma atrás da outra.
-  const TAMANHO_ALVO_PEDACO = 20000;
+  const TAMANHO_ALVO_PEDACO = 40000;
   const LINHAS_SOBREPOSICAO = 15; // repete o fim de um pedaço no início do próximo, pra nunca cortar um exame ao meio
   function dividirEmPedacos(texto: string): string[] {
     const linhas = texto.split("\n");
@@ -332,6 +334,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Reativado com instrução de exaustividade mais forte + pedaços maiores (menos divisões,
+    // menos risco do "efeito fragmento" que reduziu a completude na primeira tentativa).
     let pedacos: string[] = textoParaEnviar ? dividirEmPedacos(textoParaEnviar) : [];
     if (pedacos.length === 0) pedacos = [""]; // garante ao menos 1 chamada (caso do PDF como imagem)
     resumo.anthropicCalls = pedacos.length;
