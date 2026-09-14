@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import pdfParse from "pdf-parse";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -17,9 +18,7 @@ REGRAS OBRIGATÓRIAS:
    e. Se você não tiver certeza do fator de conversão correto para um par de unidades, NÃO invente um fator — deixe valor_convertido igual ao valor_original e escreva em observacao_conversao: "unidade diferente da referência (LAUDO) vs (SISTEMA) — conversão não realizada, confirme manualmente." Isso é preferível a uma conversão errada.
    Esse passo é crítico: uma conversão errada ou ausente faz um resultado normal aparecer como alterado (ou vice-versa), o que é um erro clínico grave.
 
-3. Tente identificar a qual marcador da lista de referência do sistema cada exame corresponde (mesmo que o nome esteja abreviado ou por extenso, ex: "Hb" = "Hemoglobina", "TGO" = "AST").
-
-3.1. IMPORTANTE — mesmo quando você identificar o marcador correspondente na base do sistema: antes de usar a faixa de referência da base, avalie se a metodologia/analito específico do laudo é realmente compatível com o que a faixa da base representa (unidade muito diferente, método de dosagem diferente, ou o laudo trazendo uma faixa de referência própria que diverge muito da faixa do sistema são sinais de que pode não ser compatível). Se houver qualquer dúvida sobre isso, NÃO force a conversão/comparação com a faixa da base — em vez disso, preencha min_referencia_livre e max_referencia_livre com a referência impressa no PRÓPRIO LAUDO (mesmo com marcador_id preenchido) e explique a divergência em observacao_conversao. O sistema vai priorizar a referência do laudo sempre que ela vier preenchida, independentemente de ter identificado o marcador.
+3. Tente identificar a qual marcador da lista de referência do sistema cada exame corresponde (mesmo que o nome esteja abreviado ou por extenso, ex: "Hb" = "Hemoglobina", "TGO" = "AST"). Sempre que conseguir identificar com confiança, use a faixa de referência DA BASE DO SISTEMA (convertendo a unidade corretamente conforme a regra 2) — a base do sistema prevalece sobre a referência impressa no laudo.
 
 4. Se NÃO conseguir identificar com confiança a qual marcador da lista o exame corresponde: deixe marcador_id vazio, mas preencha nome_extraido_do_laudo, unidade_original.
    - Preencha min_referencia_livre e max_referencia_livre APENAS se o laudo mostrar uma faixa numérica clara (ex: "10 a 50 mg/dL"). NUNCA preencha com 0 como "valor padrão" quando não souber — nesse caso, deixe os dois campos vazios (não envie o campo, ou envie null).
@@ -90,7 +89,21 @@ export async function POST(request: NextRequest) {
     .join("\n");
 
   const bytes = Buffer.from(await arquivo.arrayBuffer());
+
+  // Tenta extrair o texto localmente primeiro (de graça, sem IA) — bem mais barato do que
+  // mandar o PDF inteiro pra IA processar como se fossem imagens de página.
+  let textoExtraido: string | null = null;
+  try {
+    const resultado = await pdfParse(bytes);
+    if (resultado.text && resultado.text.trim().length > 200) {
+      textoExtraido = resultado.text;
+    }
+  } catch {
+    // Se a extração local falhar, segue com o PDF como imagem mesmo
+  }
+
   const base64 = bytes.toString("base64");
+  console.log("[extrair-exames] usando texto extraído localmente:", !!textoExtraido, textoExtraido ? `(${textoExtraido.length} caracteres)` : "");
 
   try {
     const resposta = await fetch("https://api.anthropic.com/v1/messages", {
@@ -109,16 +122,27 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "document",
-                source: { type: "base64", media_type: "application/pdf", data: base64 },
-              },
-              {
-                type: "text",
-                text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}`,
-              },
-            ],
+            content: textoExtraido
+              ? [
+                  {
+                    type: "text",
+                    text: `Texto extraído do laudo em PDF:\n\n${textoExtraido}`,
+                  },
+                  {
+                    type: "text",
+                    text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}`,
+                  },
+                ]
+              : [
+                  {
+                    type: "document",
+                    source: { type: "base64", media_type: "application/pdf", data: base64 },
+                  },
+                  {
+                    type: "text",
+                    text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}`,
+                  },
+                ],
           },
         ],
       }),

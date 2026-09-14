@@ -232,9 +232,8 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
 
     for (const item of paraSalvar) {
       const valorNum = parseFloat(String(item.valorFinal).replace(",", "."));
-      const temReferenciaLivre = item.minRefFinal !== "" || item.maxRefFinal !== "";
 
-      if (item.marcador_id && !temReferenciaLivre) {
+      if (item.marcador_id) {
         const marcador = marcadores.find((m) => m.id === item.marcador_id);
         const status = marcador ? calcularStatusMarcador(marcador, valorNum) : null;
         await salvarOuAtualizarResultado({
@@ -248,14 +247,12 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
           unidade: item.unidade_original || null,
         });
       } else {
-        // Usa a referência do próprio laudo — seja porque o marcador não foi identificado,
-        // seja porque a IA sinalizou que a faixa da base não se aplica com segurança a esse resultado
         const minRef = item.minRefFinal !== "" ? parseFloat(String(item.minRefFinal).replace(",", ".")) : null;
         const maxRef = item.maxRefFinal !== "" ? parseFloat(String(item.maxRefFinal).replace(",", ".")) : null;
         const status = calcularStatus(minRef, maxRef, valorNum);
         await salvarOuAtualizarResultado({
-          marcador_id: item.marcador_id || null,
-          nome_livre: item.marcador_id ? null : item.nome_extraido_do_laudo,
+          marcador_id: null,
+          nome_livre: item.nome_extraido_do_laudo,
           valor: valorNum,
           data_exame: item.dataFinal,
           status,
@@ -394,7 +391,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                       <th>Extraído do laudo</th>
                       <th>Marcador do sistema</th>
                       <th>Valor</th>
-                      <th>Ref. do laudo (se divergir da base)</th>
+                      <th>Ref. mín/máx (se fora da base)</th>
                       <th>Data</th>
                     </tr>
                   </thead>
@@ -439,7 +436,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
                           />
                         </td>
                         <td>
-                          {(item.minRefFinal !== "" || item.maxRefFinal !== "" || !item.marcador_id) && (
+                          {!item.marcador_id && (
                             <span style={{ display: "flex", gap: 4 }}>
                               <input
                                 placeholder="mín"
