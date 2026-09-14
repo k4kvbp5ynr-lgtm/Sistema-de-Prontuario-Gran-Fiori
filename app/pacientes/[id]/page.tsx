@@ -51,6 +51,7 @@ export default async function DetalhePacientePage({
   }
 
   const itens: ItemMenuLateral[] = [
+    { tipo: "link", id: "voltar", label: "Voltar", icone: "⬅️", href: "/pacientes" },
     {
       tipo: "painel",
       id: "anamnese",

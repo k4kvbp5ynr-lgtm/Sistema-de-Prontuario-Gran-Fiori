@@ -266,17 +266,6 @@ export async function POST(request: NextRequest) {
   resumo.localResultsCount = resolvidosLocalmente.length;
   console.timeEnd("[extrair-exames] LOCAL_PARSER");
 
-  // DIAGNÓSTICO TEMPORÁRIO — só pra ajustar o regex do parser local.
-  // Só loga linhas curtas com números (padrão de exame), nunca linhas de identificação do paciente.
-  if (textoParaEnviar) {
-    const linhasComNumero = textoParaEnviar
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0 && l.length < 150 && /\d/.test(l) && !/CPF|FAP|DN:|Gênero|Solicitante/i.test(l))
-      .slice(0, 15);
-    console.log("[extrair-exames] DIAGNOSTICO amostra de linhas com número (sem dado de paciente):", JSON.stringify(linhasComNumero));
-  }
-
   const base64 = bytes.toString("base64");
   const usouTextoOriginalmente = !!textoExtraido;
   resumo.modoEnvio = usouTextoOriginalmente ? "texto" : "pdf_como_imagem";
@@ -296,13 +285,34 @@ export async function POST(request: NextRequest) {
 
   resumo.anthropicCalls = 1;
 
-  try {
-    console.time("[extrair-exames] ANTHROPIC");
+  // Divide o texto em pedaços menores (por linha, sem cortar no meio de uma linha) e chama a IA
+  // em paralelo pra cada pedaço — reduz bastante o tempo de espera em laudos grandes, já que
+  // várias respostas são geradas ao mesmo tempo em vez de uma atrás da outra.
+  const TAMANHO_ALVO_PEDACO = 20000;
+  function dividirEmPedacos(texto: string): string[] {
+    const linhas = texto.split("\n");
+    const pedacos: string[] = [];
+    let atual: string[] = [];
+    let tamanhoAtual = 0;
+    for (const linha of linhas) {
+      atual.push(linha);
+      tamanhoAtual += linha.length + 1;
+      if (tamanhoAtual >= TAMANHO_ALVO_PEDACO) {
+        pedacos.push(atual.join("\n"));
+        atual = [];
+        tamanhoAtual = 0;
+      }
+    }
+    if (atual.length) pedacos.push(atual.join("\n"));
+    return pedacos;
+  }
+
+  async function chamarAnthropic(conteudo: any[]) {
     const resposta = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "x-api-key": process.env.ANTHROPIC_API_KEY!,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -311,79 +321,95 @@ export async function POST(request: NextRequest) {
         system: SYSTEM_PROMPT,
         tools: [TOOL_REGISTRAR_EXAMES],
         tool_choice: { type: "tool", name: "registrar_exames_extraidos" },
-        messages: [
-          {
-            role: "user",
-            content: textoParaEnviar
-              ? [
-                  { type: "text", text: `Texto extraído do laudo em PDF:\n\n${textoParaEnviar}` },
-                  { type: "text", text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}` },
-                ]
-              : [
-                  { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
-                  { type: "text", text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}` },
-                ],
-          },
-        ],
+        messages: [{ role: "user", content: conteudo }],
       }),
     });
+    if (!resposta.ok) {
+      throw new Error(await resposta.text());
+    }
+    return resposta.json();
+  }
+
+  try {
+    let pedacos: string[] = textoParaEnviar ? dividirEmPedacos(textoParaEnviar) : [];
+    if (pedacos.length === 0) pedacos = [""]; // garante ao menos 1 chamada (caso do PDF como imagem)
+    resumo.anthropicCalls = pedacos.length;
+
+    console.time("[extrair-exames] ANTHROPIC");
+    const respostas = await Promise.allSettled(
+      pedacos.map((pedaco) =>
+        chamarAnthropic(
+          pedaco
+            ? [
+                { type: "text", text: `Texto extraído do laudo em PDF (parte de um documento maior):\n\n${pedaco}` },
+                { type: "text", text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}` },
+              ]
+            : [
+                { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+                { type: "text", text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}` },
+              ]
+        )
+      )
+    );
     console.timeEnd("[extrair-exames] ANTHROPIC");
 
-    if (!resposta.ok) {
-      const erroTexto = await resposta.text();
-      console.timeEnd("[extrair-exames] TOTAL");
-      return NextResponse.json({ erro: "Erro ao consultar a IA: " + erroTexto }, { status: 500 });
-    }
-
     console.time("[extrair-exames] NORMALIZATION");
-    const dados = await resposta.json();
-    resumo.stopReason = dados.stop_reason;
-    resumo.inputTokens = dados.usage?.input_tokens ?? null;
-    resumo.outputTokens = dados.usage?.output_tokens ?? null;
+    let examesDaIA: any[] = [];
+    let algumFalhou = false;
+    let algumCortado = false;
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
 
-    if (dados.stop_reason === "max_tokens") {
-      console.timeEnd("[extrair-exames] NORMALIZATION");
-      console.timeEnd("[extrair-exames] TOTAL");
-      console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
-      return NextResponse.json(
-        {
-          erro:
-            "Esse laudo tem muitos exames e a resposta da IA foi cortada antes de terminar. Tente novamente (às vezes resolve) ou, se persistir, me avise — pode ser necessário dividir o PDF em partes menores.",
-        },
-        { status: 500 }
-      );
+    for (const r of respostas) {
+      if (r.status === "rejected") {
+        algumFalhou = true;
+        console.log("[extrair-exames] pedaço falhou:", r.reason?.message);
+        continue;
+      }
+      const dados = r.value;
+      totalInputTokens += dados.usage?.input_tokens ?? 0;
+      totalOutputTokens += dados.usage?.output_tokens ?? 0;
+      if (dados.stop_reason === "max_tokens") {
+        algumCortado = true;
+        continue;
+      }
+      const blocoFerramenta = dados.content?.find((b: any) => b.type === "tool_use");
+      const examesRaw = blocoFerramenta?.input?.exames;
+      if (Array.isArray(examesRaw)) {
+        examesDaIA.push(
+          ...examesRaw.map((item: any) => ({
+            ...item,
+            marcador_id: item.marcador_id || null,
+            observacao_conversao: item.observacao_conversao || null,
+            data_exame: item.data_exame || null,
+            min_referencia_livre: item.min_referencia_livre ?? null,
+            max_referencia_livre: item.max_referencia_livre ?? null,
+          }))
+        );
+      }
     }
 
-    const blocoFerramenta = dados.content?.find((b: any) => b.type === "tool_use");
-
-    if (!blocoFerramenta) {
-      console.timeEnd("[extrair-exames] NORMALIZATION");
-      console.timeEnd("[extrair-exames] TOTAL");
-      console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
-      return NextResponse.json(
-        { erro: "A IA não retornou os dados estruturados esperados. Tente novamente." },
-        { status: 500 }
-      );
-    }
-
-    const examesRaw = blocoFerramenta.input?.exames;
-    const exames = (Array.isArray(examesRaw) ? examesRaw : []).map((item: any) => ({
-      ...item,
-      marcador_id: item.marcador_id || null,
-      observacao_conversao: item.observacao_conversao || null,
-      data_exame: item.data_exame || null,
-      min_referencia_livre: item.min_referencia_livre ?? null,
-      max_referencia_livre: item.max_referencia_livre ?? null,
-    }));
-
-    resumo.ambiguousResultsCount = exames.length;
-    resumo.totalExamesExtraidos = exames.length + resolvidosLocalmente.length;
-    resumo.marcadoresIdentificados = exames.filter((e: any) => e.marcador_id).length + resolvidosLocalmente.length;
+    resumo.inputTokens = totalInputTokens;
+    resumo.outputTokens = totalOutputTokens;
+    resumo.ambiguousResultsCount = examesDaIA.length;
+    resumo.totalExamesExtraidos = examesDaIA.length + resolvidosLocalmente.length;
+    resumo.marcadoresIdentificados = examesDaIA.filter((e: any) => e.marcador_id).length + resolvidosLocalmente.length;
+    resumo.algumPedacoFalhou = algumFalhou;
+    resumo.algumPedacoCortado = algumCortado;
     console.timeEnd("[extrair-exames] NORMALIZATION");
     console.timeEnd("[extrair-exames] TOTAL");
     console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
 
-    return NextResponse.json({ exames: [...resolvidosLocalmente, ...exames] });
+    if (examesDaIA.length === 0 && resolvidosLocalmente.length === 0) {
+      const detalhe = algumCortado
+        ? "A resposta da IA foi cortada antes de terminar. Tente novamente."
+        : algumFalhou
+        ? "Não foi possível consultar a IA. Tente novamente."
+        : "A IA não retornou os dados estruturados esperados. Tente novamente.";
+      return NextResponse.json({ erro: detalhe }, { status: 500 });
+    }
+
+    return NextResponse.json({ exames: [...resolvidosLocalmente, ...examesDaIA] });
   } catch (erro: any) {
     console.timeEnd("[extrair-exames] TOTAL");
     console.log("[extrair-exames] resumo (erro):", JSON.stringify(resumo));

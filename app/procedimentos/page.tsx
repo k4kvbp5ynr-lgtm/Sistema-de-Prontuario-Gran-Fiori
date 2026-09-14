@@ -1,7 +1,5 @@
-import CatalogoProcedimentos from "./catalogo-procedimentos";
-import MenuLateral from "../menu-lateral";
-import { itensMenuPrincipal } from "../itens-menu-principal";
+import { redirect } from "next/navigation";
 
 export default function ProcedimentosPage() {
-  return <MenuLateral itens={itensMenuPrincipal("procedimentos", <CatalogoProcedimentos />)} itemInicial="procedimentos" />;
+  redirect("/configuracoes");
 }

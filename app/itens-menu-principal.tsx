@@ -6,10 +6,7 @@ const PAGINAS = [
   { id: "pacientes", label: "Pacientes", icone: "🧑‍⚕️", href: "/pacientes" },
   { id: "agenda", label: "Agenda", icone: "📅", href: "/agenda" },
   { id: "novo-paciente", label: "Novo paciente", icone: "➕", href: "/pacientes/novo" },
-  { id: "procedimentos", label: "Procedimentos", icone: "🩺", href: "/procedimentos" },
-  { id: "tipos-evento", label: "Tipos de evento", icone: "🗂️", href: "/tipos-evento" },
-  { id: "equipe", label: "Equipe", icone: "👥", href: "/equipe" },
-  { id: "configuracoes", label: "Config.", icone: "⚙️", href: "/configuracoes" },
+  { id: "configuracoes", label: "Configurações", icone: "⚙️", href: "/configuracoes" },
 ];
 
 export function itensMenuPrincipal(paginaAtual: string, conteudoAtual: ReactNode): ItemMenuLateral[] {

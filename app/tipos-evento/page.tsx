@@ -1,7 +1,5 @@
-import TiposEvento from "./tipos-evento";
-import MenuLateral from "../menu-lateral";
-import { itensMenuPrincipal } from "../itens-menu-principal";
+import { redirect } from "next/navigation";
 
 export default function TiposEventoPage() {
-  return <MenuLateral itens={itensMenuPrincipal("tipos-evento", <TiposEvento />)} itemInicial="tipos-evento" />;
+  redirect("/configuracoes");
 }
