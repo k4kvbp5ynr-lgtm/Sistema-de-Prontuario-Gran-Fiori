@@ -6,6 +6,7 @@ const PAGINAS = [
   { id: "pacientes", label: "Pacientes", icone: "🧑‍⚕️", href: "/pacientes" },
   { id: "agenda", label: "Agenda", icone: "📅", href: "/agenda" },
   { id: "novo-paciente", label: "Novo paciente", icone: "➕", href: "/pacientes/novo" },
+  { id: "chat", label: "Chat", icone: "💬", href: "/chat" },
   { id: "configuracoes", label: "Configurações", icone: "⚙️", href: "/configuracoes" },
 ];
 
