@@ -77,6 +77,11 @@ const PADROES_BOILERPLATE = [
   /^Assinado eletronicamente por:/i,
   /^Respons[aá]vel:/i,
   /^Locais de Execução/i,
+  /^CPF:\s*\d/i,
+  /^FAP:\s*\d/i,
+  /^DN:\s*\d/i,
+  /^Gênero:/i,
+  /^Solicitante:/i,
 ];
 
 function limparTextoLaudo(textoOriginal: string): string {
@@ -245,6 +250,17 @@ export async function POST(request: NextRequest) {
   }
   resumo.localResultsCount = resolvidosLocalmente.length;
   console.timeEnd("[extrair-exames] LOCAL_PARSER");
+
+  // DIAGNÓSTICO TEMPORÁRIO — só pra ajustar o regex do parser local.
+  // Só loga linhas curtas com números (padrão de exame), nunca linhas de identificação do paciente.
+  if (textoParaEnviar) {
+    const linhasComNumero = textoParaEnviar
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && l.length < 150 && /\d/.test(l) && !/CPF|FAP|DN:|Gênero|Solicitante/i.test(l))
+      .slice(0, 15);
+    console.log("[extrair-exames] DIAGNOSTICO amostra de linhas com número (sem dado de paciente):", JSON.stringify(linhasComNumero));
+  }
 
   const base64 = bytes.toString("base64");
   const usouTextoOriginalmente = !!textoExtraido;
