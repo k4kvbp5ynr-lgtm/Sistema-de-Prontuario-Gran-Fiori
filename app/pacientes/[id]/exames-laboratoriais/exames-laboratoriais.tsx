@@ -693,7 +693,6 @@ export default function ExamesLaboratoriais({
               </tbody>
             </table>
           </div>
-        </div>
     </div>
   );
 }
