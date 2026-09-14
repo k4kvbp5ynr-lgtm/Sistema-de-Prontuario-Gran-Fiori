@@ -14,10 +14,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               try {
                 var tema = localStorage.getItem('tema');
-                if (tema === 'dark') {
+                if (tema !== 'light') {
                   document.documentElement.setAttribute('data-theme', 'dark');
                 }
-              } catch (e) {}
+              } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+              }
             `,
           }}
         />

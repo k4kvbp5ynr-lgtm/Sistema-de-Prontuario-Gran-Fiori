@@ -14,8 +14,6 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
   const [tipoAtendimento, setTipoAtendimento] = useState("consulta_medica");
   const [motivo, setMotivo] = useState("");
   const [anamnese, setAnamnese] = useState("");
-  const [exameFisico, setExameFisico] = useState("");
-  const [observacoes, setObservacoes] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
   const [conduta, setConduta] = useState("");
   const [sugestaoIA, setSugestaoIA] = useState<string | null>(null);
@@ -52,7 +50,6 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
           pacienteId,
           motivoAtual: motivo,
           anamneseAtual: anamnese,
-          exameFisicoAtual: exameFisico,
         }),
       });
       const dados = await resposta.json();
@@ -113,8 +110,8 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         autor_id: user.id,
         motivo_consulta: motivo,
         anamnese,
-        exame_fisico: exameFisico,
-        observacoes,
+        exame_fisico: null,
+        observacoes: null,
         uso_de_ia: usouIA,
         ia_revisado_por: usouIA ? user.id : null,
         ia_revisado_em: usouIA ? new Date().toISOString() : null,
@@ -191,8 +188,6 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
     // Limpa o formulário
     setMotivo("");
     setAnamnese("");
-    setExameFisico("");
-    setObservacoes("");
     setDiagnostico("");
     setConduta("");
     setArquivos([]);
@@ -225,24 +220,10 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         onChange={(e) => setMotivo(e.target.value)}
       />
       <textarea
-        placeholder="Anamnese"
+        placeholder="Anamnese / Exame físico / Observações"
         value={anamnese}
         onChange={(e) => setAnamnese(e.target.value)}
-        rows={3}
-        style={{ width: "100%", marginBottom: 12, padding: 8 }}
-      />
-      <textarea
-        placeholder="Exame físico"
-        value={exameFisico}
-        onChange={(e) => setExameFisico(e.target.value)}
-        rows={3}
-        style={{ width: "100%", marginBottom: 12, padding: 8 }}
-      />
-      <textarea
-        placeholder="Observações"
-        value={observacoes}
-        onChange={(e) => setObservacoes(e.target.value)}
-        rows={2}
+        rows={7}
         style={{ width: "100%", marginBottom: 12, padding: 8 }}
       />
 
