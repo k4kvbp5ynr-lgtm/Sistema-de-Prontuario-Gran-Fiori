@@ -54,7 +54,7 @@ export default async function VisualizarReciboPage({
         <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
           <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
           <div>
-            <h1 style={{ fontSize: "1.3rem", margin: 0, letterSpacing: 1 }}>{profissional?.nome ?? "—"}</h1>
+            <h1 style={{ fontSize: "1.3rem", margin: 0, letterSpacing: 1, color: "#1a1a1a" }}>{profissional?.nome ?? "—"}</h1>
             <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>
               {profissional?.registro_classe}
               {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
