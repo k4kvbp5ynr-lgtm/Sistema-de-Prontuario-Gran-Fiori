@@ -289,21 +289,22 @@ export async function POST(request: NextRequest) {
   // em paralelo pra cada pedaço — reduz bastante o tempo de espera em laudos grandes, já que
   // várias respostas são geradas ao mesmo tempo em vez de uma atrás da outra.
   const TAMANHO_ALVO_PEDACO = 20000;
+  const LINHAS_SOBREPOSICAO = 15; // repete o fim de um pedaço no início do próximo, pra nunca cortar um exame ao meio
   function dividirEmPedacos(texto: string): string[] {
     const linhas = texto.split("\n");
     const pedacos: string[] = [];
-    let atual: string[] = [];
-    let tamanhoAtual = 0;
-    for (const linha of linhas) {
-      atual.push(linha);
-      tamanhoAtual += linha.length + 1;
-      if (tamanhoAtual >= TAMANHO_ALVO_PEDACO) {
-        pedacos.push(atual.join("\n"));
-        atual = [];
-        tamanhoAtual = 0;
+    let inicio = 0;
+    while (inicio < linhas.length) {
+      let fim = inicio;
+      let tamanho = 0;
+      while (fim < linhas.length && tamanho < TAMANHO_ALVO_PEDACO) {
+        tamanho += linhas[fim].length + 1;
+        fim++;
       }
+      pedacos.push(linhas.slice(inicio, fim).join("\n"));
+      if (fim >= linhas.length) break;
+      inicio = Math.max(fim - LINHAS_SOBREPOSICAO, inicio + 1);
     }
-    if (atual.length) pedacos.push(atual.join("\n"));
     return pedacos;
   }
 
@@ -391,6 +392,19 @@ export async function POST(request: NextRequest) {
 
     resumo.inputTokens = totalInputTokens;
     resumo.outputTokens = totalOutputTokens;
+
+    // A sobreposição entre pedaços pode fazer o mesmo exame aparecer 2x — remove duplicata
+    // (mesmo nome normalizado + mesmo valor, mantém a primeira ocorrência).
+    const vistos = new Set<string>();
+    const examesSemDuplicata = examesDaIA.filter((e: any) => {
+      const chave = `${normalizarNome(e.nome_extraido_do_laudo || "")}|${e.valor_original}`;
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+    resumo.duplicatasRemovidas = examesDaIA.length - examesSemDuplicata.length;
+    examesDaIA = examesSemDuplicata;
+
     resumo.ambiguousResultsCount = examesDaIA.length;
     resumo.totalExamesExtraidos = examesDaIA.length + resolvidosLocalmente.length;
     resumo.marcadoresIdentificados = examesDaIA.filter((e: any) => e.marcador_id).length + resolvidosLocalmente.length;
