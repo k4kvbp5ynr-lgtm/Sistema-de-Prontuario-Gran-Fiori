@@ -9,16 +9,16 @@ export default function ConfiguracoesComAbas({
   equipe,
 }: {
   assinaturas: ReactNode;
-  procedimentos: ReactNode;
-  tiposEvento: ReactNode;
-  equipe: ReactNode;
+  procedimentos: ReactNode | null;
+  tiposEvento: ReactNode | null;
+  equipe: ReactNode | null;
 }) {
   const abas = [
     { id: "assinaturas", label: "Assinaturas", conteudo: assinaturas },
     { id: "procedimentos", label: "Procedimentos", conteudo: procedimentos },
     { id: "tipos-evento", label: "Tipos de evento", conteudo: tiposEvento },
     { id: "equipe", label: "Equipe", conteudo: equipe },
-  ];
+  ].filter((aba) => aba.conteudo !== null);
   const [selecionada, setSelecionada] = useState("assinaturas");
 
   return (

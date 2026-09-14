@@ -16,6 +16,14 @@ export default async function DetalhePacientePage({
   const { id } = await params;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: meuUsuario } = user
+    ? await supabase.from("usuarios").select("perfil, admin_extra").eq("id", user.id).single()
+    : { data: null };
+  const souRecepcao = meuUsuario?.perfil === "recepcao";
+
   const { data: paciente, error: erroPaciente } = await supabase
     .from("pacientes")
     .select("id, nome, cpf, data_nascimento, sexo, endereco, telefone, email, foto_path, peso, altura")
@@ -57,7 +65,12 @@ export default async function DetalhePacientePage({
       id: "anamnese",
       label: "Anamnese",
       icone: "📝",
-      conteudo: (
+      conteudo: souRecepcao ? (
+        <>
+          <h2 style={{ fontSize: "1.1rem" }}>Anexar exames</h2>
+          <AnexosExames pacienteId={paciente.id} />
+        </>
+      ) : (
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Nova consulta</h2>
           <NovaEvolucaoForm pacienteId={paciente.id} />
