@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import SeletorPaciente from "../pacientes/seletor-paciente";
 
@@ -444,7 +445,13 @@ export default function AgendaCalendario() {
         >
           <div style={{ background: "white", borderRadius: 8, padding: 24, maxWidth: 380, width: "90%" }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>
-              {agendamentoDetalhe.pacientes?.nome ?? agendamentoDetalhe.titulo_livre ?? "Evento"}
+              {agendamentoDetalhe.paciente_id ? (
+                <Link href={`/pacientes/${agendamentoDetalhe.paciente_id}`} style={{ color: "#7a5a2f" }}>
+                  {agendamentoDetalhe.pacientes?.nome ?? "Paciente"} →
+                </Link>
+              ) : (
+                agendamentoDetalhe.titulo_livre ?? "Evento"
+              )}
             </h2>
             <p style={{ fontSize: "0.9rem" }}>
               {usuariosAgenda.find((u) => u.id === agendamentoDetalhe.profissional_id)?.nome} ·{" "}

@@ -216,12 +216,21 @@ export default function GestaoEquipe() {
       <h1>Equipe</h1>
 
       <h2 style={{ fontSize: "1.1rem" }}>Equipe atual</h2>
-      <table>
+      <table style={{ tableLayout: "fixed", width: "100%" }}>
+        <colgroup>
+          <col style={{ width: "18%" }} />
+          <col style={{ width: "14%" }} />
+          <col style={{ width: "18%" }} />
+          <col style={{ width: "8%" }} />
+          <col style={{ width: "8%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "24%" }} />
+        </colgroup>
         <thead>
           <tr>
-            <th>Nome</th>
-            <th>Perfil</th>
-            <th>Registro</th>
+            <th style={{ textAlign: "left" }}>Nome</th>
+            <th style={{ textAlign: "left" }}>Perfil</th>
+            <th style={{ textAlign: "left" }}>Registro</th>
             <th>Admin</th>
             <th>Cor</th>
             <th>Status</th>
@@ -238,8 +247,8 @@ export default function GestaoEquipe() {
                   {u.registro_classe}
                   {u.rqe ? ` · ${u.rqe}` : ""}
                 </td>
-                <td>{u.admin_extra || u.perfil === "admin" ? "Sim" : "—"}</td>
-                <td>
+                <td style={{ textAlign: "center" }}>{u.admin_extra || u.perfil === "admin" ? "Sim" : "—"}</td>
+                <td style={{ textAlign: "center" }}>
                   <span
                     style={{
                       display: "inline-block",
@@ -250,14 +259,16 @@ export default function GestaoEquipe() {
                     }}
                   />
                 </td>
-                <td>{u.ativo ? "Ativo" : "Inativo"}</td>
-                <td style={{ display: "flex", gap: 6 }}>
+                <td style={{ textAlign: "center" }}>{u.ativo ? "Ativo" : "Inativo"}</td>
+                <td>
+                  <div style={{ display: "flex", gap: 6 }}>
                   <button type="button" onClick={() => abrirEdicao(u)} style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
                     Editar
                   </button>
                   <button type="button" onClick={() => alternarAtivo(u)} style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
                     {u.ativo ? "Desativar" : "Reativar"}
                   </button>
+                  </div>
                 </td>
               </tr>
               {editandoUsuarioId === u.id && (
