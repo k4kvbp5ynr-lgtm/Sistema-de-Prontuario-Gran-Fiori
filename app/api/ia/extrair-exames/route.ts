@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import pdfParse from "pdf-parse";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -55,11 +54,50 @@ const TOOL_REGISTRAR_EXAMES = {
   },
 };
 
+// Linhas boilerplate (repetidas em quase toda página do laudo: cabeçalho, rodapé, legendas,
+// dados administrativos, assinaturas, QR code) que não carregam informação de exame nenhuma.
+// Remover isso reduz o tamanho do texto mandado pra IA sem tirar nenhum dado clínico.
+const PADROES_BOILERPLATE = [
+  /^Atendimento ao (cliente|médico)/i,
+  /^\(\d{2}\)\s?\d{4}[-\s]?\d{4}/,
+  /^www\.\S+/i,
+  /^NAM\s*-\s*Núcleo/i,
+  /^Legenda aplicável/i,
+  /^A interpretação dos resultados/i,
+  /^dependem de análise conjunta/i,
+  /^Data da geração:/i,
+  /^Sob a responsabilidade/i,
+  /^Laudo também disponível/i,
+  /^Laboratório registrado/i,
+  /^Valide seu laudo/i,
+  /^valida\.\S+/i,
+  /^Token:/i,
+  /^Pág\.\s*\d+\s*de\s*\d+/i,
+  /^Dentro do intervalo de referência/i,
+  /^Assinado eletronicamente por:/i,
+  /^Respons[aá]vel:/i,
+  /^Locais de Execução/i,
+];
+
+function limparTextoLaudo(textoOriginal: string): string {
+  const linhas = textoOriginal.split("\n");
+  const linhasLimpas = linhas.filter((linha) => {
+    const linhaLimpa = linha.trim();
+    if (!linhaLimpa) return false;
+    return !PADROES_BOILERPLATE.some((padrao) => padrao.test(linhaLimpa));
+  });
+  return linhasLimpas.join("\n");
+}
+
 export async function POST(request: NextRequest) {
+  console.time("[extrair-exames] TOTAL");
+  const resumo: Record<string, any> = {};
+
   const formData = await request.formData();
   const arquivo = formData.get("arquivo") as File | null;
 
   if (!arquivo) {
+    console.timeEnd("[extrair-exames] TOTAL");
     return NextResponse.json({ erro: "Nenhum arquivo enviado." }, { status: 400 });
   }
 
@@ -69,17 +107,21 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    console.timeEnd("[extrair-exames] TOTAL");
     return NextResponse.json({ erro: "Sessão expirada. Faça login novamente." }, { status: 401 });
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
+    console.timeEnd("[extrair-exames] TOTAL");
     return NextResponse.json({ erro: "A chave da Anthropic ainda não foi configurada no servidor." }, { status: 500 });
   }
 
+  console.time("[extrair-exames] BUSCA_MARCADORES");
   const { data: marcadores } = await supabase
     .from("marcadores_exames")
     .select("id, nome, categoria, valor_ideal_mulheres_texto, valor_ideal_homens_texto")
     .eq("ativo", true);
+  console.timeEnd("[extrair-exames] BUSCA_MARCADORES");
 
   const listaReferencia = (Array.isArray(marcadores) ? marcadores : [])
     .map(
@@ -87,25 +129,40 @@ export async function POST(request: NextRequest) {
         `id: ${m.id} | nome: ${m.nome} | categoria: ${m.categoria} | ideal mulheres: ${m.valor_ideal_mulheres_texto} | ideal homens: ${m.valor_ideal_homens_texto}`
     )
     .join("\n");
+  resumo.marcadoresNaBase = Array.isArray(marcadores) ? marcadores.length : 0;
 
   const bytes = Buffer.from(await arquivo.arrayBuffer());
 
-  // Tenta extrair o texto localmente primeiro (de graça, sem IA) — bem mais barato do que
-  // mandar o PDF inteiro pra IA processar como se fossem imagens de página.
+  console.time("[extrair-exames] PDF_EXTRACTION");
   let textoExtraido: string | null = null;
   try {
+    const { default: pdfParse } = await import("pdf-parse");
     const resultado = await pdfParse(bytes);
+    resumo.pdfPages = resultado.numpages ?? null;
+    resumo.originalTextLength = resultado.text?.length ?? 0;
     if (resultado.text && resultado.text.trim().length > 200) {
       textoExtraido = resultado.text;
     }
-  } catch {
-    // Se a extração local falhar, segue com o PDF como imagem mesmo
+  } catch (erroExtracao: any) {
+    console.log("[extrair-exames] falha ao extrair texto localmente, seguindo com PDF como imagem:", erroExtracao?.message);
   }
+  console.timeEnd("[extrair-exames] PDF_EXTRACTION");
+
+  console.time("[extrair-exames] TEXT_CLEANING");
+  let textoParaEnviar = textoExtraido;
+  if (textoExtraido) {
+    textoParaEnviar = limparTextoLaudo(textoExtraido);
+    resumo.cleanedTextLength = textoParaEnviar.length;
+  }
+  console.timeEnd("[extrair-exames] TEXT_CLEANING");
 
   const base64 = bytes.toString("base64");
-  console.log("[extrair-exames] usando texto extraído localmente:", !!textoExtraido, textoExtraido ? `(${textoExtraido.length} caracteres)` : "");
+  resumo.modoEnvio = textoParaEnviar ? "texto" : "pdf_como_imagem";
+  resumo.charsSentToAnthropic = textoParaEnviar ? textoParaEnviar.length + listaReferencia.length : null;
+  resumo.anthropicCalls = 1;
 
   try {
+    console.time("[extrair-exames] ANTHROPIC");
     const resposta = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -122,42 +179,37 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "user",
-            content: textoExtraido
+            content: textoParaEnviar
               ? [
-                  {
-                    type: "text",
-                    text: `Texto extraído do laudo em PDF:\n\n${textoExtraido}`,
-                  },
-                  {
-                    type: "text",
-                    text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}`,
-                  },
+                  { type: "text", text: `Texto extraído do laudo em PDF:\n\n${textoParaEnviar}` },
+                  { type: "text", text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}` },
                 ]
               : [
-                  {
-                    type: "document",
-                    source: { type: "base64", media_type: "application/pdf", data: base64 },
-                  },
-                  {
-                    type: "text",
-                    text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}`,
-                  },
+                  { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+                  { type: "text", text: `Lista de marcadores de referência do sistema (use os ids exatos quando houver correspondência):\n\n${listaReferencia}` },
                 ],
           },
         ],
       }),
     });
+    console.timeEnd("[extrair-exames] ANTHROPIC");
 
     if (!resposta.ok) {
       const erroTexto = await resposta.text();
+      console.timeEnd("[extrair-exames] TOTAL");
       return NextResponse.json({ erro: "Erro ao consultar a IA: " + erroTexto }, { status: 500 });
     }
 
+    console.time("[extrair-exames] NORMALIZATION");
     const dados = await resposta.json();
-    console.log("[extrair-exames] stop_reason:", dados.stop_reason);
-    console.log("[extrair-exames] tipos de bloco retornados:", dados.content?.map((b: any) => b.type));
+    resumo.stopReason = dados.stop_reason;
+    resumo.inputTokens = dados.usage?.input_tokens ?? null;
+    resumo.outputTokens = dados.usage?.output_tokens ?? null;
 
     if (dados.stop_reason === "max_tokens") {
+      console.timeEnd("[extrair-exames] NORMALIZATION");
+      console.timeEnd("[extrair-exames] TOTAL");
+      console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
       return NextResponse.json(
         {
           erro:
@@ -170,8 +222,9 @@ export async function POST(request: NextRequest) {
     const blocoFerramenta = dados.content?.find((b: any) => b.type === "tool_use");
 
     if (!blocoFerramenta) {
-      const textoResposta = dados.content?.map((b: any) => b.text ?? "").join(" ");
-      console.log("[extrair-exames] nenhum tool_use encontrado. Texto retornado:", textoResposta);
+      console.timeEnd("[extrair-exames] NORMALIZATION");
+      console.timeEnd("[extrair-exames] TOTAL");
+      console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
       return NextResponse.json(
         { erro: "A IA não retornou os dados estruturados esperados. Tente novamente." },
         { status: 500 }
@@ -179,8 +232,6 @@ export async function POST(request: NextRequest) {
     }
 
     const examesRaw = blocoFerramenta.input?.exames;
-    console.log("[extrair-exames] quantidade de exames no input da ferramenta:", Array.isArray(examesRaw) ? examesRaw.length : "não é array: " + typeof examesRaw);
-
     const exames = (Array.isArray(examesRaw) ? examesRaw : []).map((item: any) => ({
       ...item,
       marcador_id: item.marcador_id || null,
@@ -190,8 +241,18 @@ export async function POST(request: NextRequest) {
       max_referencia_livre: item.max_referencia_livre ?? null,
     }));
 
+    resumo.localResultsCount = 0; // hoje toda a extração ainda passa pela IA, nenhuma é resolvida localmente
+    resumo.ambiguousResultsCount = exames.length;
+    resumo.totalExamesExtraidos = exames.length;
+    resumo.marcadoresIdentificados = exames.filter((e: any) => e.marcador_id).length;
+    console.timeEnd("[extrair-exames] NORMALIZATION");
+    console.timeEnd("[extrair-exames] TOTAL");
+    console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
+
     return NextResponse.json({ exames });
   } catch (erro: any) {
+    console.timeEnd("[extrair-exames] TOTAL");
+    console.log("[extrair-exames] resumo (erro):", JSON.stringify(resumo));
     return NextResponse.json({ erro: "Erro de conexão com a IA: " + erro.message }, { status: 500 });
   }
 }
