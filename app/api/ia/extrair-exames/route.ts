@@ -340,9 +340,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Reativado com instrução de exaustividade mais forte + pedaços maiores (menos divisões,
-    // menos risco do "efeito fragmento" que reduziu a completude na primeira tentativa).
-    let pedacos: string[] = textoParaEnviar ? dividirEmPedacos(textoParaEnviar) : [];
+    // A divisão em pedaços paralelos foi testada 3 vezes (com sobreposição, com instrução de
+    // exaustividade, com pedaços maiores) e sempre reduziu a completude da extração de forma
+    // grave (112 → 47 → 27 → 0 exames vindos da IA). Revertido definitivamente para uma
+    // chamada única — completude importa mais que velocidade nesse caso.
+    let pedacos: string[] = textoParaEnviar ? [textoParaEnviar] : [];
     if (pedacos.length === 0) pedacos = [""]; // garante ao menos 1 chamada (caso do PDF como imagem)
     resumo.anthropicCalls = pedacos.length;
 
@@ -386,6 +388,9 @@ export async function POST(request: NextRequest) {
       }
       const blocoFerramenta = dados.content?.find((b: any) => b.type === "tool_use");
       const examesRaw = blocoFerramenta?.input?.exames;
+      if (!Array.isArray(examesRaw)) {
+        console.log("[extrair-exames] pedaço sem bloco de ferramenta válido. stop_reason:", dados.stop_reason, "tipos de conteúdo:", dados.content?.map((b: any) => b.type));
+      }
       if (Array.isArray(examesRaw)) {
         examesDaIA.push(
           ...examesRaw.map((item: any) => ({
