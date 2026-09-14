@@ -80,23 +80,22 @@ function extrairClinVarDoMyVariant(variant: any) {
   const bruto = variant?.clinvar_myvariant;
   if (!bruto) return null;
 
-  console.log("[genetica] clinvar do MyVariant (bruto):", JSON.stringify(bruto)?.slice(0, 800));
+  // O objeto do MyVariant tem um campo "rcv" que é a lista de submissões — cada uma com
+  // sua própria significância clínica, condição e status. É preciso entrar nessa lista,
+  // não tratar o objeto inteiro como se fosse 1 registro só.
+  const itensBrutos = Array.isArray(bruto) ? bruto : [bruto];
+  const todosRcv = itensBrutos.flatMap((item: any) => (Array.isArray(item?.rcv) ? item.rcv : item?.rcv ? [item.rcv] : []));
 
-  // clinvar pode vir como um objeto único ou uma lista, dependendo da variante
-  const registrosBrutos = Array.isArray(bruto) ? bruto : [bruto];
+  if (todosRcv.length === 0) return null;
 
-  return registrosBrutos.map((r: any) => {
-    const rcv = Array.isArray(r.rcv) ? r.rcv : r.rcv ? [r.rcv] : [];
-    const condicoes = rcv
-      .map((x: any) => x.conditions?.name ?? x.condition?.name)
-      .filter(Boolean);
-
+  return todosRcv.map((rcvItem: any) => {
+    const nomeCondicao = rcvItem.conditions?.name ?? rcvItem.condition?.name ?? null;
     return {
-      accession: r.variant_id ?? r.allele_id ?? null,
-      significancia_clinica: r.clinical_significance ?? r.rcv?.clinical_significance ?? null,
-      review_status: r.rcv?.[0]?.review_status ?? r.review_status ?? null,
-      condicoes: condicoes.length > 0 ? condicoes : r.trait?.map((t: any) => t.name).filter(Boolean) ?? [],
-      ultima_atualizacao: r.last_evaluated ?? null,
+      accession: rcvItem.accession ?? null,
+      significancia_clinica: rcvItem.clinical_significance ?? null,
+      review_status: rcvItem.review_status ?? null,
+      condicoes: Array.isArray(nomeCondicao) ? nomeCondicao : nomeCondicao ? [nomeCondicao] : [],
+      ultima_atualizacao: rcvItem.last_evaluated ?? null,
     };
   });
 }
