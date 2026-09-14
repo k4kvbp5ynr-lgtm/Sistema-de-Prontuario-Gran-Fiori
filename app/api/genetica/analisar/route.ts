@@ -74,8 +74,8 @@ async function consultarMyGene(geneSymbol: string) {
 // 3. ClinVar / NCBI (E-utilities)
 // =========================================================
 async function consultarClinVar(rsid: string) {
-  const rsidNumero = rsid.replace(/^rs/i, "");
-  const buscaUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term=${rsidNumero}%5BRS%5D&retmode=json`;
+  const rsidCompleto = rsid.toLowerCase().startsWith("rs") ? rsid.toLowerCase() : `rs${rsid}`;
+  const buscaUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term=${rsidCompleto}&retmode=json`;
   const buscaResposta = await fetch(buscaUrl, { headers: { "User-Agent": "ProntuarioGranFiori/1.0" } });
   if (!buscaResposta.ok) return null;
   const buscaDados = await buscaResposta.json();
