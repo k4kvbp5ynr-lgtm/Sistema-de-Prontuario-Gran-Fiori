@@ -106,13 +106,15 @@ function normalizarNome(nome: string): string {
 // Extrai só a unidade do final de um texto de referência da base, ex: "12 a 16 g/dL" -> "g/dl"
 function extrairUnidade(textoReferencia: string | null): string | null {
   if (!textoReferencia) return null;
-  const match = textoReferencia.match(/([a-zA-Zµ%]+(?:\/[a-zA-Z0-9µ]+)?)\s*$/);
+  const match = textoReferencia.match(/([a-zA-Zµ%0-9\^]+(?:\/[a-zA-Zµ0-9\^]+)?)\s*$/);
   return match ? match[1].toLowerCase().replace(/\s+/g, "") : null;
 }
 
-// Regex pra linha no formato "Nome do exame 1,28 mg/dL 0,70 a 1,30 mg/dL" (com variações "de X até Y", "X a Y")
-const REGEX_LINHA_RANGE =
-  /^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9°\s\-\(\)\/\.]{2,60}?)\s+(-?\d+[.,]\d+|\-?\d+)\s+([a-zA-Zµ%]+(?:\/[a-zA-Z0-9µ]+)?)\s+(?:de\s+)?(-?\d+[.,]?\d*)\s+(?:a|até)\s+(-?\d+[.,]?\d*)\s*([a-zA-Zµ%]+(?:\/[a-zA-Z0-9µ]+)?)?\s*$/;
+// O pdf-parse costuma separar em 3 linhas: nome / "valor unidade" / "mín a máx unidade"
+// (em vez de tudo numa linha só, por causa do layout em colunas do laudo original).
+const REGEX_VALOR_UNIDADE = /^(-?\d+[.,]?\d*)\s+([a-zA-Zµ%0-9\^]+(?:\/[a-zA-Zµ0-9\^]+)?)\s*$/;
+const REGEX_RANGE = /^(-?\d+[.,]?\d*)\s+(?:a|até)\s+(-?\d+[.,]?\d*)\s*([a-zA-Zµ%0-9\^]+(?:\/[a-zA-Zµ0-9\^]+)?)?\s*$/;
+const REGEX_NOME_CANDIDATO = /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9°\s\-\(\)\/\.]{1,60}$/;
 
 type ExameResolvidoLocalmente = {
   nome_extraido_do_laudo: string;
@@ -133,36 +135,49 @@ function resolverLocalmente(
 ): { resolvidos: ExameResolvidoLocalmente[]; textoRestante: string } {
   const porNomeNormalizado = new Map(marcadores.map((m) => [normalizarNome(m.nome), m]));
   const resolvidos: ExameResolvidoLocalmente[] = [];
-  const linhasRestantes: string[] = [];
+  const linhas = textoLimpo.split("\n").map((l) => l.trim());
+  const consumida = new Array(linhas.length).fill(false);
 
-  for (const linha of textoLimpo.split("\n")) {
-    const linhaTrim = linha.trim();
-    const match = linhaTrim.match(REGEX_LINHA_RANGE);
+  for (let i = 0; i < linhas.length - 2; i++) {
+    if (consumida[i]) continue;
+    const linhaNome = linhas[i];
+    const linhaValor = linhas[i + 1];
+    const linhaRange = linhas[i + 2];
 
-    if (match) {
-      const [, nomeExtraido, valorTexto, unidade, , , unidade2] = match;
-      const marcador = porNomeNormalizado.get(normalizarNome(nomeExtraido));
-      const unidadeLinha = unidade.toLowerCase().replace(/\s+/g, "");
-      const unidadeBase = extrairUnidade(marcador?.valor_ideal_mulheres_texto ?? marcador?.valor_ideal_homens_texto ?? null);
+    if (!linhaNome || !linhaValor || !linhaRange) continue;
+    if (!REGEX_NOME_CANDIDATO.test(linhaNome)) continue;
 
-      if (marcador && unidadeBase && unidadeLinha === unidadeBase) {
-        resolvidos.push({
-          nome_extraido_do_laudo: nomeExtraido.trim(),
-          marcador_id: marcador.id,
-          valor_original: parseFloat(valorTexto.replace(",", ".")),
-          unidade_original: unidade2 || unidade,
-          valor_convertido: parseFloat(valorTexto.replace(",", ".")),
-          observacao_conversao: null,
-          min_referencia_livre: null,
-          max_referencia_livre: null,
-          data_exame: dataExame,
-        });
-        continue; // linha resolvida localmente, não vai pro texto que sobra pra IA
-      }
+    const matchValor = linhaValor.match(REGEX_VALOR_UNIDADE);
+    const matchRange = linhaRange.match(REGEX_RANGE);
+    if (!matchValor || !matchRange) continue;
+
+    const marcador = porNomeNormalizado.get(normalizarNome(linhaNome));
+    if (!marcador) continue;
+
+    const [, valorTexto, unidade] = matchValor;
+    const [, , , unidadeRange] = matchRange;
+    const unidadeFinal = unidadeRange || unidade;
+    const unidadeLinha = unidadeFinal.toLowerCase().replace(/\s+/g, "");
+    const unidadeBase = extrairUnidade(marcador.valor_ideal_mulheres_texto ?? marcador.valor_ideal_homens_texto ?? null);
+
+    if (unidadeBase && unidadeLinha === unidadeBase) {
+      resolvidos.push({
+        nome_extraido_do_laudo: linhaNome.trim(),
+        marcador_id: marcador.id,
+        valor_original: parseFloat(valorTexto.replace(",", ".")),
+        unidade_original: unidadeFinal,
+        valor_convertido: parseFloat(valorTexto.replace(",", ".")),
+        observacao_conversao: null,
+        min_referencia_livre: null,
+        max_referencia_livre: null,
+        data_exame: dataExame,
+      });
+      consumida[i] = consumida[i + 1] = consumida[i + 2] = true;
+      i += 2; // pula as 3 linhas já consumidas
     }
-    linhasRestantes.push(linha);
   }
 
+  const linhasRestantes = linhas.filter((_, idx) => !consumida[idx]);
   return { resolvidos, textoRestante: linhasRestantes.join("\n") };
 }
 
