@@ -32,9 +32,9 @@ function BotaoTema() {
       type="button"
       onClick={alternar}
       style={{ border: "none", background: "none", padding: 0, cursor: "pointer", width: "100%" }}
-      title={escuro ? "Mudar para tema claro" : "Mudar para tema escuro"}
+      title={escuro ? "Mudar para Light On" : "Mudar para Light Off"}
     >
-      <BotaoMenu icone={escuro ? "☀️" : "🌙"} label={escuro ? "Tema claro" : "Tema escuro"} ativo={false} />
+      <BotaoMenu icone={escuro ? "☀️" : "🌙"} label={escuro ? "Light On" : "Light Off"} ativo={false} />
     </button>
   );
 }

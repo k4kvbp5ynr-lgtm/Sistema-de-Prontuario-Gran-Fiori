@@ -1,20 +1,20 @@
 :root {
-  --cor-fundo: #faf8f5;
-  --cor-fundo-card: #fbfaf7;
-  --cor-fundo-card-alt: #f0ece2;
-  --cor-texto: #1a1a1a;
-  --cor-texto-suave: #666;
-  --cor-texto-fraco: #888;
-  --cor-texto-muito-fraco: #999;
-  --cor-borda: #e5e0d8;
-  --cor-borda-input: #ccc;
-  --cor-marca: #7a5a2f;
-  --cor-marca-hover: #614824;
+  --cor-fundo: #eeeeec;
+  --cor-fundo-card: #f7f7f5;
+  --cor-fundo-card-alt: #e2e0da;
+  --cor-texto: #1f1f1f;
+  --cor-texto-suave: #5c5c5c;
+  --cor-texto-fraco: #7a7a7a;
+  --cor-texto-muito-fraco: #969696;
+  --cor-borda: #d3d1c9;
+  --cor-borda-input: #bdbdb5;
+  --cor-marca: #b8912f;
+  --cor-marca-hover: #96751f;
   --cor-erro: #b3261e;
   --cor-ia: #4a6a7a;
-  --cor-ia-fundo: #f0f4f6;
+  --cor-ia-fundo: #e4eaec;
   --cor-sucesso: #4a7a4a;
-  --cor-sidebar: #3d3226;
+  --cor-sidebar: #2b2b2b;
   --cor-input-fundo: white;
   --cor-status-acima-fundo: #fbe8e6;
   --cor-status-abaixo-fundo: #faf1d9;
@@ -23,23 +23,23 @@
 }
 
 [data-theme="dark"] {
-  --cor-fundo: #1c1913;
-  --cor-fundo-card: #262119;
-  --cor-fundo-card-alt: #332c1f;
-  --cor-texto: #ece6d9;
-  --cor-texto-suave: #b3aa98;
-  --cor-texto-fraco: #948b7a;
-  --cor-texto-muito-fraco: #7d7565;
-  --cor-borda: #453d2e;
-  --cor-borda-input: #574e3b;
-  --cor-marca: #c9a15f;
-  --cor-marca-hover: #d9b578;
+  --cor-fundo: #101010;
+  --cor-fundo-card: #1c1c1c;
+  --cor-fundo-card-alt: #282828;
+  --cor-texto: #f2f2f0;
+  --cor-texto-suave: #b8b8b4;
+  --cor-texto-fraco: #929290;
+  --cor-texto-muito-fraco: #757573;
+  --cor-borda: #3a3a3a;
+  --cor-borda-input: #4a4a4a;
+  --cor-marca: #d4af37;
+  --cor-marca-hover: #e6c561;
   --cor-erro: #e0685c;
   --cor-ia: #7ba3b5;
-  --cor-ia-fundo: #223038;
+  --cor-ia-fundo: #1c2b30;
   --cor-sucesso: #7bb37b;
-  --cor-sidebar: #14110c;
-  --cor-input-fundo: #262119;
+  --cor-sidebar: #000000;
+  --cor-input-fundo: #1c1c1c;
   --cor-status-acima-fundo: #4a2320;
   --cor-status-abaixo-fundo: #4a3c14;
   --cor-status-abaixo-texto: #dcb24a;
@@ -110,4 +110,12 @@ th, td {
 .erro {
   color: var(--cor-erro);
   margin-bottom: 12px;
+}
+
+a {
+  color: var(--cor-texto);
+}
+
+a:visited {
+  color: var(--cor-texto);
 }
