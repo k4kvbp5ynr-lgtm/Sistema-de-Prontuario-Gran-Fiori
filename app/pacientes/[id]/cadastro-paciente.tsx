@@ -158,7 +158,7 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
       <button type="submit" disabled={salvando} style={{ marginRight: 8 }}>
         {salvando ? "Salvando..." : "Salvar alterações"}
       </button>
-      <button type="button" onClick={() => setEditando(false)} style={{ background: "transparent", color: "#666" }}>
+      <button type="button" onClick={() => setEditando(false)} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
         Cancelar
       </button>
     </form>

@@ -42,7 +42,7 @@ export default function GestaoEquipe() {
   const [rqe, setRqe] = useState("");
   const [especialidade, setEspecialidade] = useState("");
   const [adminExtra, setAdminExtra] = useState(false);
-  const [corAgenda, setCorAgenda] = useState("#7a5a2f");
+  const [corAgenda, setCorAgenda] = useState("var(--cor-marca)");
   const [podeUsarIA, setPodeUsarIA] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
@@ -118,7 +118,7 @@ export default function GestaoEquipe() {
     setRqe("");
     setEspecialidade("");
     setAdminExtra(false);
-    setCorAgenda("#7a5a2f");
+    setCorAgenda("var(--cor-marca)");
     setErro(null);
   }
 
@@ -131,7 +131,7 @@ export default function GestaoEquipe() {
     setRqe(usuario.rqe ?? "");
     setEspecialidade(usuario.especialidade ?? "");
     setAdminExtra(usuario.admin_extra);
-    setCorAgenda(usuario.cor_agenda ?? "#7a5a2f");
+    setCorAgenda(usuario.cor_agenda ?? "var(--cor-marca)");
     setPodeUsarIA(usuario.pode_usar_ia ?? false);
     setErro(null);
   }
@@ -255,7 +255,7 @@ export default function GestaoEquipe() {
                       width: 16,
                       height: 16,
                       borderRadius: "50%",
-                      background: u.cor_agenda ?? "#7a5a2f",
+                      background: u.cor_agenda ?? "var(--cor-marca)",
                     }}
                   />
                 </td>
@@ -335,7 +335,7 @@ export default function GestaoEquipe() {
                       <button
                         type="button"
                         onClick={() => setEditandoUsuarioId(null)}
-                        style={{ background: "transparent", color: "#666" }}
+                        style={{ background: "transparent", color: "var(--cor-texto-suave)" }}
                       >
                         Cancelar
                       </button>
@@ -367,7 +367,7 @@ export default function GestaoEquipe() {
             placeholder="Mínimo 6 caracteres"
             required
           />
-          <p style={{ fontSize: "0.8rem", color: "#666" }}>
+          <p style={{ fontSize: "0.8rem", color: "var(--cor-texto-suave)" }}>
             Depois de criado, o login aparece logo abaixo em "Logins pendentes" pra você completar o cadastro.
             Passe essa senha pra pessoa e peça pra trocar assim que entrar.
           </p>
@@ -377,7 +377,7 @@ export default function GestaoEquipe() {
           <button
             type="button"
             onClick={() => setMostrarCriarUsuario(false)}
-            style={{ background: "transparent", color: "#666" }}
+            style={{ background: "transparent", color: "var(--cor-texto-suave)" }}
           >
             Cancelar
           </button>
@@ -385,7 +385,7 @@ export default function GestaoEquipe() {
       )}
 
       <h2 style={{ fontSize: "1.1rem", marginTop: 32 }}>Logins pendentes de cadastro</h2>
-      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+      <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
         Logins criados (por aqui ou direto no Supabase) que ainda não têm perfil completo aparecem abaixo.
       </p>
 
@@ -393,7 +393,7 @@ export default function GestaoEquipe() {
 
       <ul style={{ listStyle: "none", padding: 0 }}>
         {pendentes.map((p) => (
-          <li key={p.id} style={{ padding: "8px 0", borderBottom: "1px solid #e5e0d8" }}>
+          <li key={p.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--cor-borda)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{p.email}</span>
               <button type="button" onClick={() => abrirFormulario(p.id, p.email)}>
@@ -463,7 +463,7 @@ export default function GestaoEquipe() {
                 <button
                   type="button"
                   onClick={() => setIdSelecionado(null)}
-                  style={{ background: "transparent", color: "#666" }}
+                  style={{ background: "transparent", color: "var(--cor-texto-suave)" }}
                 >
                   Cancelar
                 </button>

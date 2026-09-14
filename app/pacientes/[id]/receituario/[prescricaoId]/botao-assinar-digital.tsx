@@ -93,12 +93,12 @@ export default function BotaoAssinarDigital({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "white", borderRadius: 8, padding: 24, maxWidth: 360, width: "90%" }}
+            style={{ background: "var(--cor-fundo-card)", borderRadius: 8, padding: 24, maxWidth: 360, width: "90%" }}
           >
             {!linkGerado ? (
               <form onSubmit={assinar}>
                 <h2 style={{ fontSize: "1rem", marginTop: 0 }}>Senha do certificado</h2>
-                <p style={{ fontSize: "0.85rem", color: "#666" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
                   Digite a senha do seu certificado A1. Ela não é salva em nenhum lugar — usada só nesta assinatura.
                 </p>
                 {erro && <p className="erro">{erro}</p>}
@@ -115,7 +115,7 @@ export default function BotaoAssinarDigital({
                   📲 Abrir WhatsApp Web já com a mensagem pronta para o paciente
                 </label>
                 {!pacienteTelefone && (
-                  <p style={{ fontSize: "0.75rem", color: "#b3261e", margin: "4px 0 0" }}>
+                  <p style={{ fontSize: "0.75rem", color: "var(--cor-erro)", margin: "4px 0 0" }}>
                     Esse paciente não tem telefone cadastrado — edite o cadastro dele para usar essa opção.
                   </p>
                 )}
@@ -127,7 +127,7 @@ export default function BotaoAssinarDigital({
                   type="button"
                   onClick={() => setMostrarSenha(false)}
                   disabled={assinando}
-                  style={{ background: "transparent", color: "#666" }}
+                  style={{ background: "transparent", color: "var(--cor-texto-suave)" }}
                 >
                   Cancelar
                 </button>
@@ -137,7 +137,7 @@ export default function BotaoAssinarDigital({
                 <h2 style={{ fontSize: "1rem", marginTop: 0 }}>
                   {linkCopiado ? "Assinado! Link copiado ✓" : "Assinado!"}
                 </h2>
-                <p style={{ fontSize: "0.85rem", color: "#666" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
                   {enviarWhatsapp && pacienteTelefone
                     ? "O WhatsApp Web deve ter aberto numa nova aba com a mensagem pronta — é só clicar em enviar."
                     : linkCopiado
@@ -164,7 +164,7 @@ export default function BotaoAssinarDigital({
                   <a href={linkGerado} target="_blank" rel="noreferrer">
                     <button type="button">Abrir/baixar PDF</button>
                   </a>
-                  <button type="button" onClick={() => setMostrarSenha(false)} style={{ background: "transparent", color: "#666" }}>
+                  <button type="button" onClick={() => setMostrarSenha(false)} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
                     Fechar
                   </button>
                 </div>

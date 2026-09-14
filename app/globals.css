@@ -1,3 +1,51 @@
+:root {
+  --cor-fundo: #faf8f5;
+  --cor-fundo-card: #fbfaf7;
+  --cor-fundo-card-alt: #f0ece2;
+  --cor-texto: #1a1a1a;
+  --cor-texto-suave: #666;
+  --cor-texto-fraco: #888;
+  --cor-texto-muito-fraco: #999;
+  --cor-borda: #e5e0d8;
+  --cor-borda-input: #ccc;
+  --cor-marca: #7a5a2f;
+  --cor-marca-hover: #614824;
+  --cor-erro: #b3261e;
+  --cor-ia: #4a6a7a;
+  --cor-ia-fundo: #f0f4f6;
+  --cor-sucesso: #4a7a4a;
+  --cor-sidebar: #3d3226;
+  --cor-input-fundo: white;
+  --cor-status-acima-fundo: #fbe8e6;
+  --cor-status-abaixo-fundo: #faf1d9;
+  --cor-status-abaixo-texto: #b8860b;
+  --cor-status-dentro-fundo: #e8f2e8;
+}
+
+[data-theme="dark"] {
+  --cor-fundo: #1c1913;
+  --cor-fundo-card: #262119;
+  --cor-fundo-card-alt: #332c1f;
+  --cor-texto: #ece6d9;
+  --cor-texto-suave: #b3aa98;
+  --cor-texto-fraco: #948b7a;
+  --cor-texto-muito-fraco: #7d7565;
+  --cor-borda: #453d2e;
+  --cor-borda-input: #574e3b;
+  --cor-marca: #c9a15f;
+  --cor-marca-hover: #d9b578;
+  --cor-erro: #e0685c;
+  --cor-ia: #7ba3b5;
+  --cor-ia-fundo: #223038;
+  --cor-sucesso: #7bb37b;
+  --cor-sidebar: #14110c;
+  --cor-input-fundo: #262119;
+  --cor-status-acima-fundo: #4a2320;
+  --cor-status-abaixo-fundo: #4a3c14;
+  --cor-status-abaixo-texto: #dcb24a;
+  --cor-status-dentro-fundo: #223a22;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5,8 +53,8 @@
 body {
   margin: 0;
   font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  background: #faf8f5;
-  color: #1a1a1a;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
 }
 
 .container {
@@ -18,22 +66,24 @@ body {
 h1 {
   font-size: 1.5rem;
   margin-bottom: 24px;
-  color: #7a5a2f;
+  color: var(--cor-marca);
 }
 
-input {
+input, select, textarea {
   display: block;
   width: 100%;
   padding: 10px;
   margin-bottom: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--cor-borda-input);
   border-radius: 6px;
   font-size: 1rem;
+  background: var(--cor-input-fundo);
+  color: var(--cor-texto);
 }
 
 button {
   padding: 10px 18px;
-  background: #7a5a2f;
+  background: var(--cor-marca);
   color: white;
   border: none;
   border-radius: 6px;
@@ -42,7 +92,7 @@ button {
 }
 
 button:hover {
-  background: #614824;
+  background: var(--cor-marca-hover);
 }
 
 table {
@@ -54,10 +104,10 @@ table {
 th, td {
   text-align: left;
   padding: 8px 10px;
-  border-bottom: 1px solid #e5e0d8;
+  border-bottom: 1px solid var(--cor-borda);
 }
 
 .erro {
-  color: #b3261e;
+  color: var(--cor-erro);
   margin-bottom: 12px;
 }

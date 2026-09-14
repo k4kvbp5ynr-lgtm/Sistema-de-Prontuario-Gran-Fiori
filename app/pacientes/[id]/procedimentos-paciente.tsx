@@ -145,11 +145,11 @@ export default function ProcedimentosPaciente({ pacienteId }: { pacienteId: stri
   return (
     <div
       style={{
-        border: "1px solid #e5e0d8",
+        border: "1px solid var(--cor-borda)",
         borderRadius: 8,
         padding: 16,
         marginBottom: 20,
-        background: "#fbfaf7",
+        background: "var(--cor-fundo-card)",
       }}
     >
       <p style={{ fontWeight: "bold", margin: "0 0 8px" }}>Procedimentos (reembolso)</p>
@@ -199,7 +199,7 @@ export default function ProcedimentosPaciente({ pacienteId }: { pacienteId: stri
       </form>
 
       {itens.length === 0 ? (
-        <p style={{ fontSize: "0.9rem", color: "#888" }}>Nenhum procedimento registrado ainda.</p>
+        <p style={{ fontSize: "0.9rem", color: "var(--cor-texto-fraco)" }}>Nenhum procedimento registrado ainda.</p>
       ) : (
         <>
           <table>

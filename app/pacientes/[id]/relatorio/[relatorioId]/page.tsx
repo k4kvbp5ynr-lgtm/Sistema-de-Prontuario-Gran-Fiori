@@ -51,7 +51,7 @@ export default async function VisualizarRelatorioPage({
   const totalOrcamento = orcamento.reduce((soma, o) => soma + (o.valor ?? 0), 0);
 
   return (
-    <div style={{ background: "#f2ede4", minHeight: "100vh", padding: "32px 0" }}>
+    <div style={{ background: "var(--cor-fundo-card-alt)", minHeight: "100vh", padding: "32px 0" }}>
       <div
         className="folha-receituario"
         style={{
@@ -164,7 +164,7 @@ export default async function VisualizarRelatorioPage({
               </thead>
               <tbody>
                 {procedimentos.map((p, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={i} style={{ borderBottom: "1px solid #e5e0d8" }}>
                     <td style={{ padding: 6 }}>{p.codigo_tuss ?? "—"}</td>
                     <td style={{ padding: 6 }}>{p.nome}</td>
                     <td style={{ padding: 6 }}>{p.referencia_cbhpm ?? "—"}</td>
@@ -188,7 +188,7 @@ export default async function VisualizarRelatorioPage({
               </thead>
               <tbody>
                 {orcamento.map((o, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={i} style={{ borderBottom: "1px solid #e5e0d8" }}>
                     <td style={{ padding: 6 }}>{o.item}</td>
                     <td style={{ padding: 6 }}>{o.referencia}</td>
                     <td style={{ padding: 6, textAlign: "right" }}>
@@ -213,14 +213,14 @@ export default async function VisualizarRelatorioPage({
           <p style={{ borderTop: "1px solid #999", display: "inline-block", paddingTop: 4, margin: "24px 0 4px" }}>
             {profissional?.nome}
           </p>
-          <p style={{ fontSize: "0.85rem", color: "#555", margin: 0 }}>
+          <p style={{ fontSize: "0.85rem", color: "#666", margin: 0 }}>
             {template?.titulo_especialidade ?? profissional?.especialidade ?? ""}
           </p>
-          <p style={{ fontSize: "0.85rem", color: "#555", margin: "4px 0 0" }}>
+          <p style={{ fontSize: "0.85rem", color: "#666", margin: "4px 0 0" }}>
             {profissional?.registro_classe}
             {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
           </p>
-          <p style={{ fontSize: "0.85rem", color: "#555", marginTop: 16 }}>
+          <p style={{ fontSize: "0.85rem", color: "#666", marginTop: 16 }}>
             {relatorio.local}, {dataFormatada}.
           </p>
         </div>

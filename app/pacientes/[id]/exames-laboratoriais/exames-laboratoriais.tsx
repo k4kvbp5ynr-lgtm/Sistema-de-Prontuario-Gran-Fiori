@@ -37,14 +37,14 @@ type Resultado = {
 
 // dentro = verde (normal) · acima = vermelho · abaixo = amarelo
 const CORES_STATUS: Record<string, string> = {
-  dentro: "#4a7a4a",
-  acima: "#b3261e",
-  abaixo: "#b8860b",
+  dentro: "var(--cor-sucesso)",
+  acima: "var(--cor-erro)",
+  abaixo: "var(--cor-status-abaixo-texto)",
 };
 const FUNDO_STATUS: Record<string, string> = {
-  dentro: "#e8f2e8",
-  acima: "#fbe8e6",
-  abaixo: "#faf1d9",
+  dentro: "var(--cor-status-dentro-fundo)",
+  acima: "var(--cor-status-acima-fundo)",
+  abaixo: "var(--cor-status-abaixo-fundo)",
 };
 
 export default function ExamesLaboratoriais({
@@ -342,7 +342,7 @@ export default function ExamesLaboratoriais({
       style={{
         borderRadius: 8,
         marginBottom: 20,
-        background: "#fbfaf7",
+        background: "var(--cor-fundo-card)",
       }}
     >
       <h2 style={{ fontSize: "1.1rem" }}>
@@ -351,8 +351,8 @@ export default function ExamesLaboratoriais({
 
       <div style={{ padding: "0 0 16px" }}>
         {podeUsarIA && (
-        <div style={{ background: "#f0f4f6", border: "1px solid #4a6a7a", borderRadius: 6, padding: 12, marginBottom: 16 }}>
-          <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#4a6a7a", margin: "0 0 8px" }}>
+        <div style={{ background: "var(--cor-ia-fundo)", border: "1px solid var(--cor-ia)", borderRadius: 6, padding: 12, marginBottom: 16 }}>
+          <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "var(--cor-ia)", margin: "0 0 8px" }}>
             🤖 Extrair resultados de um PDF automaticamente (IA)
           </p>
             <input
@@ -374,7 +374,7 @@ export default function ExamesLaboratoriais({
 
             {itensExtraidos.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                <p style={{ fontSize: "0.85rem", color: "#666" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
                   Revise antes de salvar. Itens sem marcador identificado usam a referência impressa no próprio laudo
                   (edite se necessário).
                 </p>
@@ -405,7 +405,7 @@ export default function ExamesLaboratoriais({
                           {item.observacao_conversao && (
                             <>
                               <br />
-                              <span style={{ color: "#888" }}>{item.observacao_conversao}</span>
+                              <span style={{ color: "var(--cor-texto-fraco)" }}>{item.observacao_conversao}</span>
                             </>
                           )}
                         </td>
@@ -491,8 +491,8 @@ export default function ExamesLaboratoriais({
                     top: "100%",
                     left: 0,
                     right: 0,
-                    background: "white",
-                    border: "1px solid #e5e0d8",
+                    background: "var(--cor-fundo-card)",
+                    border: "1px solid var(--cor-borda)",
                     borderRadius: 6,
                     listStyle: "none",
                     margin: 0,
@@ -512,7 +512,7 @@ export default function ExamesLaboratoriais({
                       }}
                       style={{ padding: "8px 10px", cursor: "pointer", fontSize: "0.9rem" }}
                     >
-                      {m.nome} <span style={{ color: "#999", fontSize: "0.8rem" }}>({m.categoria})</span>
+                      {m.nome} <span style={{ color: "var(--cor-texto-muito-fraco)", fontSize: "0.8rem" }}>({m.categoria})</span>
                     </li>
                   ))}
                 </ul>
@@ -535,7 +535,7 @@ export default function ExamesLaboratoriais({
             <span><span style={{ display: "inline-block", width: 12, height: 12, background: CORES_STATUS.abaixo, borderRadius: 2 }} /> Abaixo do normal</span>
           </div>
 
-          {linhas.length === 0 && <p style={{ fontSize: "0.9rem", color: "#888" }}>Nenhum resultado lançado ainda.</p>}
+          {linhas.length === 0 && <p style={{ fontSize: "0.9rem", color: "var(--cor-texto-fraco)" }}>Nenhum resultado lançado ainda.</p>}
 
           <div style={{ overflowX: "auto" }}>
             <table style={{ tableLayout: "fixed", width: "100%" }}>
@@ -563,7 +563,7 @@ export default function ExamesLaboratoriais({
                 {categorias.map((cat) => (
                   <React.Fragment key={cat}>
                     <tr>
-                      <td colSpan={datas.length + 3} style={{ fontWeight: "bold", fontSize: "0.85rem", color: "#7a5a2f", background: "#f0ece2", padding: "6px 8px" }}>
+                      <td colSpan={datas.length + 3} style={{ fontWeight: "bold", fontSize: "0.85rem", color: "var(--cor-marca)", background: "var(--cor-fundo-card-alt)", padding: "6px 8px" }}>
                         {cat}
                       </td>
                     </tr>
@@ -582,7 +582,7 @@ export default function ExamesLaboratoriais({
                           <React.Fragment key={linha.chave}>
                             <tr>
                               <td>{linha.label}</td>
-                              <td style={{ fontSize: "0.78rem", color: "#666", overflow: "hidden", textOverflow: "ellipsis" }}>{referenciaTexto}</td>
+                              <td style={{ fontSize: "0.78rem", color: "var(--cor-texto-suave)", overflow: "hidden", textOverflow: "ellipsis" }}>{referenciaTexto}</td>
                               {datas.map((d) => {
                                 const r = linha.porData.get(d);
                                 return (
@@ -612,14 +612,14 @@ export default function ExamesLaboratoriais({
                             </tr>
                             {expandida && ultimo && (
                               <tr>
-                                <td colSpan={datas.length + 3} style={{ background: "white", padding: 12 }}>
+                                <td colSpan={datas.length + 3} style={{ background: "var(--cor-fundo-card)", padding: 12 }}>
                                   {resultadosOrdenados.length > 1 && (
                                     <ResponsiveContainer width="100%" height={160}>
                                       <LineChart data={resultadosOrdenados.map((r) => ({ data: r.data_exame, valor: r.valor }))}>
                                         <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={11} />
                                         <YAxis fontSize={11} domain={["auto", "auto"]} />
                                         <Tooltip labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} />
-                                        <Line type="monotone" dataKey="valor" stroke="#7a5a2f" strokeWidth={2} dot />
+                                        <Line type="monotone" dataKey="valor" stroke="var(--cor-marca)" strokeWidth={2} dot />
                                       </LineChart>
                                     </ResponsiveContainer>
                                   )}
@@ -648,7 +648,7 @@ export default function ExamesLaboratoriais({
                                     </div>
                                   ) : (
                                     <div style={{ fontSize: "0.85rem", marginTop: 8 }}>
-                                      <p style={{ margin: "4px 0", color: "#888" }}>
+                                      <p style={{ margin: "4px 0", color: "var(--cor-texto-fraco)" }}>
                                         Esse exame não está na base de referência do sistema. Referência do laudo:{" "}
                                         {ultimo.min_referencia_livre ?? "—"} a {ultimo.max_referencia_livre ?? "—"}{" "}
                                         {ultimo.unidade ?? ""}
@@ -658,7 +658,7 @@ export default function ExamesLaboratoriais({
                                         type="button"
                                         onClick={() => pedirSugestaoLivre(linha.chave, linha.label, ultimo)}
                                         disabled={buscandoSugestaoLivre === linha.chave}
-                                        style={{ fontSize: "0.8rem", background: "#4a6a7a" }}
+                                        style={{ fontSize: "0.8rem", background: "var(--cor-ia)" }}
                                       >
                                         {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "🤖 Pedir sugestão de IA"}
                                       </button>
@@ -666,15 +666,15 @@ export default function ExamesLaboratoriais({
                                       {sugestaoLivre[linha.chave] && (
                                         <div
                                           style={{
-                                            border: "1px solid #4a6a7a",
+                                            border: "1px solid var(--cor-ia)",
                                             borderRadius: 6,
                                             padding: 10,
                                             marginTop: 8,
-                                            background: "#f0f4f6",
+                                            background: "var(--cor-ia-fundo)",
                                             whiteSpace: "pre-wrap",
                                           }}
                                         >
-                                          <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "#4a6a7a" }}>
+                                          <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "var(--cor-ia)" }}>
                                             🤖 Sugestão gerada por IA — revise antes de usar.
                                           </p>
                                           {sugestaoLivre[linha.chave]}

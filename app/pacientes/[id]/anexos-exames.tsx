@@ -131,7 +131,7 @@ export default function AnexosExames({ pacienteId }: { pacienteId: string }) {
             key={a.id}
             style={{
               padding: "8px 0",
-              borderBottom: "1px solid #e5e0d8",
+              borderBottom: "1px solid var(--cor-borda)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",

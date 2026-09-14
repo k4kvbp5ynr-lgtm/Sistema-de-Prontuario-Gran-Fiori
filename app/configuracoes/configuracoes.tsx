@@ -168,7 +168,7 @@ export default function Configuracoes() {
       <h1>Configurações</h1>
 
       <h2 style={{ fontSize: "1.1rem" }}>Minha assinatura</h2>
-      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+      <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
         Uma imagem da sua assinatura (foto ou digitalização), usada como referência visual nos documentos.
         Isso não substitui a assinatura digital com validade jurídica (ICP-Brasil/BirdID) — é só a
         representação visual.
@@ -178,7 +178,7 @@ export default function Configuracoes() {
         <img
           src={assinaturaUrl}
           alt="Assinatura atual"
-          style={{ maxWidth: 240, maxHeight: 100, display: "block", marginBottom: 12, background: "#fbfaf7", padding: 8 }}
+          style={{ maxWidth: 240, maxHeight: 100, display: "block", marginBottom: 12, background: "var(--cor-fundo-card)", padding: 8 }}
         />
       )}
 
@@ -191,7 +191,7 @@ export default function Configuracoes() {
       </form>
 
       <h2 style={{ fontSize: "1.1rem" }}>Certificado digital (A1)</h2>
-      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+      <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
         Envie seu certificado A1 (arquivo .pfx ou .p12) comprado em qualquer Autoridade Certificadora
         credenciada pela ICP-Brasil. Ele fica guardado de forma privada — só você tem acesso, nem outros
         colegas nem o administrador conseguem ver. <b>A senha do certificado nunca é salva aqui</b> — você
@@ -199,7 +199,7 @@ export default function Configuracoes() {
       </p>
 
       {certificadoPath && (
-        <p style={{ fontSize: "0.85rem", color: "#4a7a4a", marginBottom: 8 }}>
+        <p style={{ fontSize: "0.85rem", color: "var(--cor-sucesso)", marginBottom: 8 }}>
           ✓ Certificado enviado ({certificadoPath.split("_").slice(2).join("_")})
         </p>
       )}
@@ -219,7 +219,7 @@ export default function Configuracoes() {
       {ehAdmin && (
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Assinatura eletrônica (BirdID)</h2>
-          <p style={{ fontSize: "0.85rem", color: "#666" }}>
+          <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
             Guarde aqui as credenciais da sua conta BirdID Pro (Client ID e Client Secret) quando você tiver
             uma. A chamada de assinatura de verdade nos documentos será construída depois, usando essas
             credenciais — por enquanto elas só ficam guardadas com segurança (visíveis só para

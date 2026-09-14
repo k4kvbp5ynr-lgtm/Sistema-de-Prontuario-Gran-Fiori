@@ -203,11 +203,11 @@ export default function NovoRelatorioForm({ pacienteId }: { pacienteId: string }
           />
 
           {regioes.map((r, i) => (
-            <div key={i} style={{ border: "1px solid #e5e0d8", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+            <div key={i} style={{ border: "1px solid var(--cor-borda)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <b>Região {i + 1}</b>
                 {regioes.length > 1 && (
-                  <button type="button" onClick={() => removerRegiao(i)} style={{ background: "transparent", color: "#b3261e" }}>
+                  <button type="button" onClick={() => removerRegiao(i)} style={{ background: "transparent", color: "var(--cor-erro)" }}>
                     remover
                   </button>
                 )}
@@ -230,7 +230,7 @@ export default function NovoRelatorioForm({ pacienteId }: { pacienteId: string }
         </>
       )}
 
-      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
+      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
       <label style={{ fontWeight: "bold" }}>Códigos TUSS solicitados</label>
       <div style={{ marginBottom: 16 }}>
         {catalogo.map((p) => (
@@ -253,7 +253,7 @@ export default function NovoRelatorioForm({ pacienteId }: { pacienteId: string }
           <input placeholder="Referência" value={o.referencia} onChange={(e) => atualizarOrcamento(i, "referencia", e.target.value)} style={{ flex: 2 }} />
           <input placeholder="Valor" value={o.valor} onChange={(e) => atualizarOrcamento(i, "valor", e.target.value)} style={{ flex: 1 }} />
           {orcamento.length > 1 && (
-            <button type="button" onClick={() => removerOrcamento(i)} style={{ background: "transparent", color: "#b3261e" }}>
+            <button type="button" onClick={() => removerOrcamento(i)} style={{ background: "transparent", color: "var(--cor-erro)" }}>
               x
             </button>
           )}

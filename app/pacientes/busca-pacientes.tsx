@@ -41,7 +41,7 @@ export default function BuscaPacientes({ pacientes }: { pacientes: Paciente[] })
         </tbody>
       </table>
 
-      {filtrados.length === 0 && <p style={{ color: "#888" }}>Nenhum paciente encontrado.</p>}
+      {filtrados.length === 0 && <p style={{ color: "var(--cor-texto-fraco)" }}>Nenhum paciente encontrado.</p>}
     </div>
   );
 }

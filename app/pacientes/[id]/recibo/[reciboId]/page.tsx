@@ -39,7 +39,7 @@ export default async function VisualizarReciboPage({
       : "Documento referente a procedimento(s) já realizado(s), para fins de reembolso junto ao plano de saúde.";
 
   return (
-    <div style={{ background: "#f2ede4", minHeight: "100vh", padding: "32px 0" }}>
+    <div style={{ background: "var(--cor-fundo-card-alt)", minHeight: "100vh", padding: "32px 0" }}>
       <div
         className="folha-receituario"
         style={{
@@ -55,7 +55,7 @@ export default async function VisualizarReciboPage({
           <img src="/logo.png" alt="" style={{ width: 70, height: 70 }} />
           <div>
             <h1 style={{ fontSize: "1.3rem", margin: 0, letterSpacing: 1 }}>{profissional?.nome ?? "—"}</h1>
-            <p style={{ margin: 0, color: "#555", fontSize: "0.85rem" }}>
+            <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>
               {profissional?.registro_classe}
               {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
             </p>
@@ -86,7 +86,7 @@ export default async function VisualizarReciboPage({
           </thead>
           <tbody>
             {itens.map((item, i) => (
-              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+              <tr key={i} style={{ borderBottom: "1px solid #e5e0d8" }}>
                 <td style={{ padding: "6px 4px" }}>{item.nome}</td>
                 <td style={{ padding: "6px 4px" }}>{item.codigo_tuss ?? "—"}</td>
                 <td style={{ padding: "6px 4px" }}>{item.referencia_cbhpm ?? "—"}</td>

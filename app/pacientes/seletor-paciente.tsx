@@ -65,8 +65,8 @@ export default function SeletorPaciente({
             top: "100%",
             left: 0,
             right: 0,
-            background: "white",
-            border: "1px solid #e5e0d8",
+            background: "var(--cor-fundo-card)",
+            border: "1px solid var(--cor-borda)",
             borderRadius: 6,
             listStyle: "none",
             margin: 0,
@@ -91,7 +91,7 @@ export default function SeletorPaciente({
                 borderRadius: 4,
                 fontSize: "0.9rem",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#fbfaf7")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cor-fundo-card)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               {p.nome}
@@ -107,12 +107,12 @@ export default function SeletorPaciente({
             top: "100%",
             left: 0,
             right: 0,
-            background: "white",
-            border: "1px solid #e5e0d8",
+            background: "var(--cor-fundo-card)",
+            border: "1px solid var(--cor-borda)",
             borderRadius: 6,
             padding: "8px 10px",
             fontSize: "0.85rem",
-            color: "#888",
+            color: "var(--cor-texto-fraco)",
             zIndex: 20,
           }}
         >

@@ -215,13 +215,13 @@ export default function AgendaCalendario() {
             Próxima semana →
           </button>
         </div>
-        <button type="button" onClick={gerarLinkFeed} style={{ background: "#555" }}>
+        <button type="button" onClick={gerarLinkFeed} style={{ background: "var(--cor-texto-suave)" }}>
           Gerar link p/ Google Agenda / iPhone
         </button>
       </div>
 
       {linkFeed && (
-        <div style={{ background: "#fbfaf7", border: "1px solid #e5e0d8", borderRadius: 8, padding: 12, marginBottom: 16, fontSize: "0.85rem" }}>
+        <div style={{ background: "var(--cor-fundo-card)", border: "1px solid var(--cor-borda)", borderRadius: 8, padding: 12, marginBottom: 16, fontSize: "0.85rem" }}>
           <p style={{ margin: "0 0 4px" }}>
             <b>Link de assinatura</b> (cole no Google Agenda &gt; Outras agendas &gt; Por URL, ou no app Calendário do
             iPhone &gt; Adicionar calendário &gt; Assinar):
@@ -239,7 +239,7 @@ export default function AgendaCalendario() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "50px repeat(6, 1fr)", border: "1px solid #e5e0d8" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "50px repeat(6, 1fr)", border: "1px solid var(--cor-borda)" }}>
         <div></div>
         {dias.map((d, i) => (
           <div
@@ -249,8 +249,8 @@ export default function AgendaCalendario() {
               padding: 8,
               fontWeight: "bold",
               fontSize: "0.85rem",
-              borderLeft: "1px solid #e5e0d8",
-              borderBottom: "1px solid #e5e0d8",
+              borderLeft: "1px solid var(--cor-borda)",
+              borderBottom: "1px solid var(--cor-borda)",
             }}
           >
             {DIAS_SEMANA[d.getDay()]} {d.getDate()}/{d.getMonth() + 1}
@@ -266,7 +266,7 @@ export default function AgendaCalendario() {
                 top: (h - HORA_INICIO) * ALTURA_HORA,
                 right: 4,
                 fontSize: "0.7rem",
-                color: "#999",
+                color: "var(--cor-texto-muito-fraco)",
               }}
             >
               {h}h
@@ -280,7 +280,7 @@ export default function AgendaCalendario() {
             style={{
               position: "relative",
               height: horas.length * ALTURA_HORA,
-              borderLeft: "1px solid #e5e0d8",
+              borderLeft: "1px solid var(--cor-borda)",
             }}
           >
             {horas.map((h) => (
@@ -319,7 +319,7 @@ export default function AgendaCalendario() {
                     height: Math.max(altura, 20),
                     left: 2,
                     right: 2,
-                    background: profissional?.cor_agenda ?? "#7a5a2f",
+                    background: profissional?.cor_agenda ?? "var(--cor-marca)",
                     color: "white",
                     borderRadius: 4,
                     padding: "2px 6px",
@@ -356,7 +356,7 @@ export default function AgendaCalendario() {
           onClick={() => setSlotSelecionado(null)}
         >
           <div
-            style={{ background: "white", borderRadius: 8, padding: 24, maxWidth: 400, width: "90%" }}
+            style={{ background: "var(--cor-fundo-card)", borderRadius: 8, padding: 24, maxWidth: 400, width: "90%" }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>
@@ -419,7 +419,7 @@ export default function AgendaCalendario() {
               <button type="submit" disabled={salvando} style={{ marginTop: 12, marginRight: 8 }}>
                 {salvando ? "Salvando..." : "Agendar"}
               </button>
-              <button type="button" onClick={() => setSlotSelecionado(null)} style={{ background: "transparent", color: "#666" }}>
+              <button type="button" onClick={() => setSlotSelecionado(null)} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
                 Cancelar
               </button>
             </form>
@@ -443,10 +443,10 @@ export default function AgendaCalendario() {
           }}
           onClick={() => setDetalheId(null)}
         >
-          <div style={{ background: "white", borderRadius: 8, padding: 24, maxWidth: 380, width: "90%" }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ background: "var(--cor-fundo-card)", borderRadius: 8, padding: 24, maxWidth: 380, width: "90%" }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>
               {agendamentoDetalhe.paciente_id ? (
-                <Link href={`/pacientes/${agendamentoDetalhe.paciente_id}`} style={{ color: "#7a5a2f" }}>
+                <Link href={`/pacientes/${agendamentoDetalhe.paciente_id}`} style={{ color: "var(--cor-marca)" }}>
                   {agendamentoDetalhe.pacientes?.nome ?? "Paciente"} →
                 </Link>
               ) : (
@@ -473,10 +473,10 @@ export default function AgendaCalendario() {
               <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "faltou")}>
                 Faltou
               </button>
-              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "cancelado")} style={{ background: "#b3261e" }}>
+              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "cancelado")} style={{ background: "var(--cor-erro)" }}>
                 Cancelar
               </button>
-              <button type="button" onClick={() => excluirAgendamento(agendamentoDetalhe.id)} style={{ background: "transparent", color: "#666" }}>
+              <button type="button" onClick={() => excluirAgendamento(agendamentoDetalhe.id)} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
                 Excluir
               </button>
             </div>

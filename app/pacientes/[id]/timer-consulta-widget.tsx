@@ -15,7 +15,7 @@ export default function TimerConsultaWidget() {
 
   if (travado) {
     return (
-      <span style={{ fontSize: "0.85rem", color: "#4a7a4a", fontWeight: "bold" }}>
+      <span style={{ fontSize: "0.85rem", color: "var(--cor-sucesso)", fontWeight: "bold" }}>
         ✓ Consulta registrada — {formatarTempo(segundosDecorridos)}
       </span>
     );
@@ -23,14 +23,14 @@ export default function TimerConsultaWidget() {
 
   if (rodando) {
     return (
-      <span style={{ fontSize: "0.95rem", color: "#7a5a2f", fontWeight: "bold", fontVariantNumeric: "tabular-nums" }}>
+      <span style={{ fontSize: "0.95rem", color: "var(--cor-marca)", fontWeight: "bold", fontVariantNumeric: "tabular-nums" }}>
         ⏱️ {formatarTempo(segundosDecorridos)}
       </span>
     );
   }
 
   return (
-    <button type="button" onClick={iniciar} style={{ fontSize: "0.85rem", background: "#4a7a4a" }}>
+    <button type="button" onClick={iniciar} style={{ fontSize: "0.85rem", background: "var(--cor-sucesso)" }}>
       ▶ Iniciar consulta
     </button>
   );

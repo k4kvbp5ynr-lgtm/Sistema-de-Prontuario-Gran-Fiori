@@ -11,7 +11,7 @@ export default function BotaoSair() {
   }
 
   return (
-    <button type="button" onClick={sair} style={{ background: "#b3261e" }}>
+    <button type="button" onClick={sair} style={{ background: "var(--cor-erro)" }}>
       Sair
     </button>
   );

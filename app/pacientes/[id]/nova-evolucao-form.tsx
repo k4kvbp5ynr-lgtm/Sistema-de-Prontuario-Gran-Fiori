@@ -246,14 +246,14 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         style={{ width: "100%", marginBottom: 12, padding: 8 }}
       />
 
-      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
-      <p style={{ fontSize: "0.85rem", color: "#7a5a2f", marginBottom: 8 }}>
+      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
+      <p style={{ fontSize: "0.85rem", color: "var(--cor-marca)", marginBottom: 8 }}>
         Diagnóstico e conduta (não visível à recepção)
       </p>
 
       {podeUsarIA && (
         <>
-          <button type="button" onClick={buscarSugestaoIA} disabled={buscandoSugestao} style={{ marginBottom: 12, background: "#4a6a7a" }}>
+          <button type="button" onClick={buscarSugestaoIA} disabled={buscandoSugestao} style={{ marginBottom: 12, background: "var(--cor-ia)" }}>
             {buscandoSugestao ? "Consultando IA..." : "🤖 Gerar sugestão de IA"}
           </button>
           {erroSugestao && <p className="erro">{erroSugestao}</p>}
@@ -263,16 +263,16 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
       {sugestaoIA && (
         <div
           style={{
-            border: "1px solid #4a6a7a",
+            border: "1px solid var(--cor-ia)",
             borderRadius: 6,
             padding: 12,
             marginBottom: 12,
-            background: "#f0f4f6",
+            background: "var(--cor-ia-fundo)",
             fontSize: "0.9rem",
             whiteSpace: "pre-wrap",
           }}
         >
-          <p style={{ margin: "0 0 8px", fontWeight: "bold", color: "#4a6a7a" }}>
+          <p style={{ margin: "0 0 8px", fontWeight: "bold", color: "var(--cor-ia)" }}>
             🤖 Sugestão gerada por IA — revise criticamente antes de usar. Nunca é comunicada automaticamente ao
             paciente; a decisão é sempre sua.
           </p>
@@ -312,9 +312,9 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         </button>
       </Link>
 
-      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
+      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
       <label>Anexar exame(s) desta consulta (opcional)</label>
-      <p style={{ fontSize: "0.85rem", margin: "0 0 8px", color: "#666" }}>
+      <p style={{ fontSize: "0.85rem", margin: "0 0 8px", color: "var(--cor-texto-suave)" }}>
         📋 Exame de análises clínicas (sangue)? Anexe o PDF e lance os resultados no ícone{" "}
         <b>"Exames de análises clínicas"</b> no menu à esquerda.
       </p>
@@ -347,7 +347,7 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
               <button
                 type="button"
                 onClick={() => removerArquivo(i)}
-                style={{ background: "transparent", color: "#b3261e", padding: "2px 8px" }}
+                style={{ background: "transparent", color: "var(--cor-erro)", padding: "2px 8px" }}
               >
                 remover
               </button>

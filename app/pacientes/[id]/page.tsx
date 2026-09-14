@@ -54,7 +54,7 @@ export default async function DetalhePacientePage({
       <div className="container">
         <p>Paciente não encontrado (ou você não tem permissão para ver este registro).</p>
         {erroPaciente && (
-          <p style={{ fontSize: "0.85rem", color: "#999" }}>
+          <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-muito-fraco)" }}>
             Detalhe técnico (me envie isso): {erroPaciente.message}
           </p>
         )}
@@ -78,7 +78,7 @@ export default async function DetalhePacientePage({
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Nova consulta</h2>
           <NovaEvolucaoForm pacienteId={paciente.id} podeUsarIA={podeUsarIA} />
-          <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
+          <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
           <h2 style={{ fontSize: "1.1rem" }}>Prescrição desta consulta (opcional)</h2>
           <NovaPrescricaoForm pacienteId={paciente.id} />
         </>
@@ -117,17 +117,17 @@ export default async function DetalhePacientePage({
           {encontros?.map((enc: any) => (
             <div
               key={enc.id}
-              style={{ border: "1px solid #e5e0d8", borderRadius: 8, padding: 16, marginBottom: 12 }}
+              style={{ border: "1px solid var(--cor-borda)", borderRadius: 8, padding: 16, marginBottom: 12 }}
             >
               <strong>{new Date(enc.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</strong> — {enc.tipo_atendimento}
               {enc.usuarios && (
-                <span style={{ fontSize: "0.85rem", color: "#666" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
                   {" "}
                   · salvo por {enc.usuarios.nome}
                 </span>
               )}
               {enc.duracao_segundos != null && (
-                <span style={{ fontSize: "0.85rem", color: "#666" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--cor-texto-suave)" }}>
                   {" "}
                   · duração: {Math.floor(enc.duracao_segundos / 60)}min {enc.duracao_segundos % 60}s
                 </span>

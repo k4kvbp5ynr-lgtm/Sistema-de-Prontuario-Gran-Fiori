@@ -129,8 +129,8 @@ export default function Chat({ meuId }: { meuId: string }) {
   }, [mensagens]);
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 120px)", border: "1px solid #e5e0d8", borderRadius: 8, overflow: "hidden" }}>
-      <div style={{ width: 220, borderRight: "1px solid #e5e0d8", overflowY: "auto", background: "#fbfaf7" }}>
+    <div style={{ display: "flex", height: "calc(100vh - 120px)", border: "1px solid var(--cor-borda)", borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ width: 220, borderRight: "1px solid var(--cor-borda)", overflowY: "auto", background: "var(--cor-fundo-card)" }}>
         {contatos.map((c) => (
           <div
             key={c.id}
@@ -138,8 +138,8 @@ export default function Chat({ meuId }: { meuId: string }) {
             style={{
               padding: "10px 12px",
               cursor: "pointer",
-              background: contatoSelecionado?.id === c.id ? "#f0ece2" : "transparent",
-              borderBottom: "1px solid #eee",
+              background: contatoSelecionado?.id === c.id ? "var(--cor-fundo-card-alt)" : "transparent",
+              borderBottom: "1px solid var(--cor-borda)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -147,12 +147,12 @@ export default function Chat({ meuId }: { meuId: string }) {
           >
             <div>
               <div style={{ fontSize: "0.9rem", fontWeight: "bold" }}>{c.nome}</div>
-              <div style={{ fontSize: "0.75rem", color: "#888" }}>{PERFIS[c.perfil] ?? c.perfil}</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--cor-texto-fraco)" }}>{PERFIS[c.perfil] ?? c.perfil}</div>
             </div>
             {naoLidas[c.id] > 0 && (
               <span
                 style={{
-                  background: "#b3261e",
+                  background: "var(--cor-erro)",
                   color: "white",
                   borderRadius: "50%",
                   width: 20,
@@ -168,15 +168,15 @@ export default function Chat({ meuId }: { meuId: string }) {
             )}
           </div>
         ))}
-        {contatos.length === 0 && <p style={{ fontSize: "0.85rem", color: "#888", padding: 12 }}>Nenhum outro usuário ativo.</p>}
+        {contatos.length === 0 && <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", padding: 12 }}>Nenhum outro usuário ativo.</p>}
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {!contatoSelecionado ? (
-          <p style={{ margin: "auto", color: "#888" }}>Escolha uma pessoa pra conversar.</p>
+          <p style={{ margin: "auto", color: "var(--cor-texto-fraco)" }}>Escolha uma pessoa pra conversar.</p>
         ) : (
           <>
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #e5e0d8", fontWeight: "bold" }}>
+            <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--cor-borda)", fontWeight: "bold" }}>
               {contatoSelecionado.nome}
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -185,7 +185,7 @@ export default function Chat({ meuId }: { meuId: string }) {
                   key={m.id}
                   style={{
                     alignSelf: m.remetente_id === meuId ? "flex-end" : "flex-start",
-                    background: m.remetente_id === meuId ? "#7a5a2f" : "#f0ece2",
+                    background: m.remetente_id === meuId ? "var(--cor-marca)" : "var(--cor-fundo-card-alt)",
                     color: m.remetente_id === meuId ? "white" : "#333",
                     padding: "8px 12px",
                     borderRadius: 12,
@@ -201,7 +201,7 @@ export default function Chat({ meuId }: { meuId: string }) {
               ))}
               <div ref={fimDaListaRef} />
             </div>
-            <form onSubmit={enviar} style={{ display: "flex", gap: 8, padding: 12, borderTop: "1px solid #e5e0d8" }}>
+            <form onSubmit={enviar} style={{ display: "flex", gap: 8, padding: 12, borderTop: "1px solid var(--cor-borda)" }}>
               <input
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}

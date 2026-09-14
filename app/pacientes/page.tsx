@@ -18,7 +18,7 @@ export default async function PacientesPage() {
   const conteudo = (
     <>
       <h1>Pacientes</h1>
-      <p style={{ fontSize: "0.85rem", color: "#888", marginBottom: 8 }}>Logado como: {user?.email}</p>
+      <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", marginBottom: 8 }}>Logado como: {user?.email}</p>
       {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
       <BuscaPacientes pacientes={pacientes ?? []} />
     </>

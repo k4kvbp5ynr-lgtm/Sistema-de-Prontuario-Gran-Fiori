@@ -90,11 +90,11 @@ export default function ModelosSalvos({
   return (
     <div
       style={{
-        border: "1px solid #e5e0d8",
+        border: "1px solid var(--cor-borda)",
         borderRadius: 8,
         padding: 16,
         marginBottom: 20,
-        background: "#fbfaf7",
+        background: "var(--cor-fundo-card)",
       }}
     >
       <p style={{ fontWeight: "bold", margin: "0 0 8px" }}>Modelos salvos</p>
@@ -109,7 +109,7 @@ export default function ModelosSalvos({
               onClick={() => setCategoriaAberta(aberta ? null : chave)}
               style={{
                 background: "transparent",
-                color: "#7a5a2f",
+                color: "var(--cor-marca)",
                 padding: "4px 0",
                 fontWeight: "bold",
                 fontSize: "0.9rem",
@@ -120,7 +120,7 @@ export default function ModelosSalvos({
             {aberta && (
               <ul style={{ listStyle: "none", paddingLeft: 16, margin: "4px 0" }}>
                 {itensDaCategoria.length === 0 && (
-                  <li style={{ fontSize: "0.85rem", color: "#888" }}>Nenhum modelo salvo ainda.</li>
+                  <li style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)" }}>Nenhum modelo salvo ainda.</li>
                 )}
                 {itensDaCategoria.map((item) => (
                   <li
@@ -149,7 +149,7 @@ export default function ModelosSalvos({
                           fontSize: "0.75rem",
                           padding: "3px 8px",
                           background: "transparent",
-                          color: "#b3261e",
+                          color: "var(--cor-erro)",
                         }}
                       >
                         remover
@@ -163,7 +163,7 @@ export default function ModelosSalvos({
         );
       })}
 
-      <hr style={{ margin: "12px 0", border: "none", borderTop: "1px solid #e5e0d8" }} />
+      <hr style={{ margin: "12px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
 
       {!mostrarNovo ? (
         <button type="button" onClick={() => setMostrarNovo(true)} style={{ fontSize: "0.85rem" }}>
@@ -195,7 +195,7 @@ export default function ModelosSalvos({
           <button
             type="button"
             onClick={() => setMostrarNovo(false)}
-            style={{ background: "transparent", color: "#666" }}
+            style={{ background: "transparent", color: "var(--cor-texto-suave)" }}
           >
             Cancelar
           </button>

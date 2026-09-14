@@ -1,12 +1,43 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 
 export type ItemMenuLateral =
   | { tipo: "painel"; id: string; label: string; icone: string; conteudo: ReactNode }
   | { tipo: "link"; id: string; label: string; icone: string; href: string }
   | { tipo: "acao"; id: string; label: string; icone: string; conteudo: ReactNode }; // ex: botão de sair
+
+function BotaoTema() {
+  const [escuro, setEscuro] = useState(false);
+
+  useEffect(() => {
+    setEscuro(document.documentElement.getAttribute("data-theme") === "dark");
+  }, []);
+
+  function alternar() {
+    const novoEscuro = !escuro;
+    setEscuro(novoEscuro);
+    if (novoEscuro) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("tema", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("tema", "light");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={alternar}
+      style={{ border: "none", background: "none", padding: 0, cursor: "pointer", width: "100%" }}
+      title={escuro ? "Mudar para tema claro" : "Mudar para tema escuro"}
+    >
+      <BotaoMenu icone={escuro ? "☀️" : "🌙"} label={escuro ? "Tema claro" : "Tema escuro"} ativo={false} />
+    </button>
+  );
+}
 
 export default function MenuLateral({
   itens,
@@ -29,7 +60,7 @@ export default function MenuLateral({
         style={{
           width: 96,
           flexShrink: 0,
-          background: "#3d3226",
+          background: "var(--cor-sidebar)",
           display: "flex",
           flexDirection: "column",
           alignItems: "stretch",
@@ -62,6 +93,9 @@ export default function MenuLateral({
             </button>
           );
         })}
+        <div style={{ marginTop: itens.some((i) => i.tipo === "acao") ? 0 : "auto" }}>
+          <BotaoTema />
+        </div>
       </div>
 
       <div style={{ flex: 1, padding: 24, overflowX: "auto" }}>
@@ -90,8 +124,8 @@ function BotaoMenu({ icone, label, ativo }: { icone: string; label: string; ativ
         gap: 4,
         padding: "12px 4px",
         cursor: "pointer",
-        background: ativo ? "#7a5a2f" : "transparent",
-        borderLeft: ativo ? "3px solid #d4af6a" : "3px solid transparent",
+        background: ativo ? "var(--cor-marca)" : "transparent",
+        borderLeft: ativo ? "3px solid var(--cor-marca-hover)" : "3px solid transparent",
       }}
     >
       <span style={{ fontSize: "1.4rem" }}>{icone}</span>

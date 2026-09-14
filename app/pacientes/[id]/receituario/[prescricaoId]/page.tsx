@@ -102,7 +102,7 @@ export default async function VisualizarReceitaPage({
         <p style={{ textAlign: "center", fontSize: "0.85rem", letterSpacing: 1, margin: 0 }}>
           {profissional?.nome?.toUpperCase()}
         </p>
-        <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#555", marginTop: 4 }}>
+        <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#666", marginTop: 4 }}>
           {profissional?.registro_classe}
           {profissional?.rqe ? ` · ${profissional.rqe}` : ""}
         </p>
@@ -215,7 +215,7 @@ export default async function VisualizarReceitaPage({
   }
 
   return (
-    <div style={{ background: "#f2ede4", minHeight: "100vh", padding: "32px 0" }}>
+    <div style={{ background: "var(--cor-fundo-card-alt)", minHeight: "100vh", padding: "32px 0" }}>
       {duasVias ? (
         <>
           <Folha viaLabel="1ª via — Farmácia" />
