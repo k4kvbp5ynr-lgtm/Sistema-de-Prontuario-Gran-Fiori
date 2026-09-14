@@ -46,7 +46,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!resposta.ok) {
-      return NextResponse.json({ erro: "Erro ao consultar o SNPedia." }, { status: 502 });
+      const corpoErro = await resposta.text().catch(() => "");
+      console.log("[consultar-snp] SNPedia respondeu status", resposta.status, "corpo:", corpoErro.slice(0, 300));
+      return NextResponse.json(
+        { erro: `Erro ao consultar o SNPedia (status ${resposta.status}).` },
+        { status: 502 }
+      );
     }
 
     const dados = await resposta.json();
