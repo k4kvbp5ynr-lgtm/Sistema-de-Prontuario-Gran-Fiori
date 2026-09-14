@@ -6,6 +6,7 @@ import CadastroPaciente from "./cadastro-paciente";
 import ProcedimentosPaciente from "./procedimentos-paciente";
 import ExamesLaboratoriais from "./exames-laboratoriais/exames-laboratoriais";
 import NovaPrescricaoForm from "./receituario/novo-prescricao-form";
+import ConsultaGenetica from "./consulta-genetica";
 import MenuLateral, { ItemMenuLateral } from "../../menu-lateral";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
@@ -104,6 +105,13 @@ export default async function DetalhePacientePage({
       label: "Procedimentos (reembolso)",
       icone: "🩺",
       conteudo: <ProcedimentosPaciente pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "genetica",
+      label: "Genética",
+      icone: "🧬",
+      conteudo: <ConsultaGenetica pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
