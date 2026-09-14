@@ -71,60 +71,34 @@ async function consultarMyGene(geneSymbol: string) {
 }
 
 // =========================================================
-// 3. ClinVar / NCBI (E-utilities)
+// 3. ClinVar — usa os dados que o próprio MyVariant.info já traz vinculados
+// corretamente à variante certa (busca separada no ClinVar se mostrou imprecisa,
+// trazendo variantes vizinhas da mesma região por causa de sobreposição histórica
+// de registros). Isso garante que a informação é da variante exata consultada.
 // =========================================================
-async function consultarClinVar(rsid: string, chrom: string | null, position: string | number | null) {
-  // ClinVar não indexa rsID de forma confiável por busca de texto — o jeito preciso é
-  // buscar pela coordenada genômica exata (cromossomo + posição), que já veio do MyVariant.
-  let termoBusca: string;
-  if (chrom && position) {
-    termoBusca = `${chrom}%5Bchr%5D+AND+(${position}%3A${position}%5Bchrpos38%5D+OR+${position}%3A${position}%5Bchrpos37%5D)`;
-  } else {
-    const rsidCompleto = rsid.toLowerCase().startsWith("rs") ? rsid.toLowerCase() : `rs${rsid}`;
-    termoBusca = rsidCompleto;
-  }
+function extrairClinVarDoMyVariant(variant: any) {
+  const bruto = variant?.clinvar_myvariant;
+  if (!bruto) return null;
 
-  const buscaUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term=${termoBusca}&retmode=json&retmax=20`;
-  const buscaResposta = await fetch(buscaUrl, { headers: { "User-Agent": "ProntuarioGranFiori/1.0" } });
-  if (!buscaResposta.ok) return null;
-  const buscaDados = await buscaResposta.json();
-  const ids: string[] = buscaDados?.esearchresult?.idlist ?? [];
-  if (ids.length === 0) return null;
+  console.log("[genetica] clinvar do MyVariant (bruto):", JSON.stringify(bruto)?.slice(0, 800));
 
-  const resumoUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=${ids.join(
-    ","
-  )}&retmode=json`;
-  const resumoResposta = await fetch(resumoUrl, { headers: { "User-Agent": "ProntuarioGranFiori/1.0" } });
-  if (!resumoResposta.ok) return null;
-  const resumoDados = await resumoResposta.json();
-  console.log("[genetica] ClinVar bruto (1º registro):", JSON.stringify(resumoDados?.result?.[ids[0]])?.slice(0, 800));
+  // clinvar pode vir como um objeto único ou uma lista, dependendo da variante
+  const registrosBrutos = Array.isArray(bruto) ? bruto : [bruto];
 
-  const registros = ids
-    .map((id) => resumoDados?.result?.[id])
-    .filter(Boolean)
-    .filter((r: any) => {
-      // Trava de segurança: descarta registro se o cromossomo não bater com o esperado
-      // (evita mostrar uma variante errada por causa de uma busca imprecisa).
-      if (!chrom) return true;
-      const locs = r.variation_set?.[0]?.variation_loc ?? [];
-      if (locs.length === 0) return true; // sem info de posição, deixa passar sem travar
-      return locs.some((l: any) => String(l.chr) === String(chrom));
-    })
-    .map((r: any) => {
-      // ClinVar mudou o esquema: campos de classificação agora ficam dentro de
-      // "germline_classification" em vez de "clinical_significance" direto.
-      const classificacao = r.germline_classification ?? r.clinical_significance ?? {};
-      const traits = classificacao.trait_set ?? r.trait_set ?? [];
-      return {
-        accession: r.accession ?? null,
-        significancia_clinica: classificacao.description ?? null,
-        review_status: classificacao.review_status ?? null,
-        condicoes: traits.map((t: any) => t.trait_name).filter(Boolean),
-        ultima_atualizacao: classificacao.last_evaluated ?? null,
-      };
-    });
+  return registrosBrutos.map((r: any) => {
+    const rcv = Array.isArray(r.rcv) ? r.rcv : r.rcv ? [r.rcv] : [];
+    const condicoes = rcv
+      .map((x: any) => x.conditions?.name ?? x.condition?.name)
+      .filter(Boolean);
 
-  return registros;
+    return {
+      accession: r.variant_id ?? r.allele_id ?? null,
+      significancia_clinica: r.clinical_significance ?? r.rcv?.clinical_significance ?? null,
+      review_status: r.rcv?.[0]?.review_status ?? r.review_status ?? null,
+      condicoes: condicoes.length > 0 ? condicoes : r.trait?.map((t: any) => t.name).filter(Boolean) ?? [],
+      ultima_atualizacao: r.last_evaluated ?? null,
+    };
+  });
 }
 
 // =========================================================
@@ -191,10 +165,8 @@ export async function POST(request: NextRequest) {
     const genotypeNormalizado = normalizarGenotipo(rsid, genotype, variant);
     const geneSymbol = extrairGene(variant);
 
-    const [gene, clinvar] = await Promise.all([
-      geneSymbol ? consultarMyGene(geneSymbol) : Promise.resolve(null),
-      consultarClinVar(rsid, variant?.chromosome ?? null, variant?.position ?? null),
-    ]);
+    const [gene] = await Promise.all([geneSymbol ? consultarMyGene(geneSymbol) : Promise.resolve(null)]);
+    const clinvar = extrairClinVarDoMyVariant(variant);
 
     const resultado = {
       input: { rsid, genotype },
