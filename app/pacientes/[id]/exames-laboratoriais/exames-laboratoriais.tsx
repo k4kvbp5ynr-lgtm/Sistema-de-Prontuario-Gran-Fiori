@@ -109,6 +109,34 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     return calcularStatus(min, max, v);
   }
 
+  async function salvarOuAtualizarResultado(dados: {
+    marcador_id: string | null;
+    nome_livre: string | null;
+    valor: number;
+    data_exame: string;
+    status: string | null;
+    registrado_por: string;
+    extraido_por_ia?: boolean;
+    unidade?: string | null;
+    min_referencia_livre?: number | null;
+    max_referencia_livre?: number | null;
+  }) {
+    let query = supabase
+      .from("resultados_exames_paciente")
+      .select("id")
+      .eq("paciente_id", pacienteId)
+      .eq("data_exame", dados.data_exame);
+
+    query = dados.marcador_id ? query.eq("marcador_id", dados.marcador_id) : query.is("marcador_id", null).eq("nome_livre", dados.nome_livre);
+
+    const { data: existente } = await query.maybeSingle();
+
+    if (existente) {
+      return supabase.from("resultados_exames_paciente").update(dados).eq("id", existente.id);
+    }
+    return supabase.from("resultados_exames_paciente").insert({ paciente_id: pacienteId, ...dados });
+  }
+
   async function salvarResultado(e: React.FormEvent) {
     e.preventDefault();
     if (!marcadorSelecionado || !valor) return;
@@ -127,9 +155,9 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
     const valorNum = parseFloat(valor.replace(",", "."));
     const status = calcularStatusMarcador(marcadorSelecionado, valorNum);
 
-    const { error } = await supabase.from("resultados_exames_paciente").insert({
-      paciente_id: pacienteId,
+    const { error } = await salvarOuAtualizarResultado({
       marcador_id: marcadorSelecionado.id,
+      nome_livre: null,
       valor: valorNum,
       data_exame: dataExame,
       status,
@@ -209,9 +237,9 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
       if (item.marcador_id && !temReferenciaLivre) {
         const marcador = marcadores.find((m) => m.id === item.marcador_id);
         const status = marcador ? calcularStatusMarcador(marcador, valorNum) : null;
-        await supabase.from("resultados_exames_paciente").insert({
-          paciente_id: pacienteId,
+        await salvarOuAtualizarResultado({
           marcador_id: item.marcador_id,
+          nome_livre: null,
           valor: valorNum,
           data_exame: item.dataFinal,
           status,
@@ -225,8 +253,7 @@ export default function ExamesLaboratoriais({ pacienteId, sexoPaciente }: { paci
         const minRef = item.minRefFinal !== "" ? parseFloat(String(item.minRefFinal).replace(",", ".")) : null;
         const maxRef = item.maxRefFinal !== "" ? parseFloat(String(item.maxRefFinal).replace(",", ".")) : null;
         const status = calcularStatus(minRef, maxRef, valorNum);
-        await supabase.from("resultados_exames_paciente").insert({
-          paciente_id: pacienteId,
+        await salvarOuAtualizarResultado({
           marcador_id: item.marcador_id || null,
           nome_livre: item.marcador_id ? null : item.nome_extraido_do_laudo,
           valor: valorNum,
