@@ -89,6 +89,85 @@ function limparTextoLaudo(textoOriginal: string): string {
   return linhasLimpas.join("\n");
 }
 
+function normalizarNome(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+// Extrai só a unidade do final de um texto de referência da base, ex: "12 a 16 g/dL" -> "g/dl"
+function extrairUnidade(textoReferencia: string | null): string | null {
+  if (!textoReferencia) return null;
+  const match = textoReferencia.match(/([a-zA-Zµ%]+(?:\/[a-zA-Z0-9µ]+)?)\s*$/);
+  return match ? match[1].toLowerCase().replace(/\s+/g, "") : null;
+}
+
+// Regex pra linha no formato "Nome do exame 1,28 mg/dL 0,70 a 1,30 mg/dL" (com variações "de X até Y", "X a Y")
+const REGEX_LINHA_RANGE =
+  /^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9°\s\-\(\)\/\.]{2,60}?)\s+(-?\d+[.,]\d+|\-?\d+)\s+([a-zA-Zµ%]+(?:\/[a-zA-Z0-9µ]+)?)\s+(?:de\s+)?(-?\d+[.,]?\d*)\s+(?:a|até)\s+(-?\d+[.,]?\d*)\s*([a-zA-Zµ%]+(?:\/[a-zA-Z0-9µ]+)?)?\s*$/;
+
+type ExameResolvidoLocalmente = {
+  nome_extraido_do_laudo: string;
+  marcador_id: string;
+  valor_original: number;
+  unidade_original: string;
+  valor_convertido: number;
+  observacao_conversao: null;
+  min_referencia_livre: null;
+  max_referencia_livre: null;
+  data_exame: string | null;
+};
+
+function resolverLocalmente(
+  textoLimpo: string,
+  marcadores: { id: string; nome: string; valor_ideal_mulheres_texto: string | null; valor_ideal_homens_texto: string | null }[],
+  dataExame: string | null
+): { resolvidos: ExameResolvidoLocalmente[]; textoRestante: string } {
+  const porNomeNormalizado = new Map(marcadores.map((m) => [normalizarNome(m.nome), m]));
+  const resolvidos: ExameResolvidoLocalmente[] = [];
+  const linhasRestantes: string[] = [];
+
+  for (const linha of textoLimpo.split("\n")) {
+    const linhaTrim = linha.trim();
+    const match = linhaTrim.match(REGEX_LINHA_RANGE);
+
+    if (match) {
+      const [, nomeExtraido, valorTexto, unidade, , , unidade2] = match;
+      const marcador = porNomeNormalizado.get(normalizarNome(nomeExtraido));
+      const unidadeLinha = unidade.toLowerCase().replace(/\s+/g, "");
+      const unidadeBase = extrairUnidade(marcador?.valor_ideal_mulheres_texto ?? marcador?.valor_ideal_homens_texto ?? null);
+
+      if (marcador && unidadeBase && unidadeLinha === unidadeBase) {
+        resolvidos.push({
+          nome_extraido_do_laudo: nomeExtraido.trim(),
+          marcador_id: marcador.id,
+          valor_original: parseFloat(valorTexto.replace(",", ".")),
+          unidade_original: unidade2 || unidade,
+          valor_convertido: parseFloat(valorTexto.replace(",", ".")),
+          observacao_conversao: null,
+          min_referencia_livre: null,
+          max_referencia_livre: null,
+          data_exame: dataExame,
+        });
+        continue; // linha resolvida localmente, não vai pro texto que sobra pra IA
+      }
+    }
+    linhasRestantes.push(linha);
+  }
+
+  return { resolvidos, textoRestante: linhasRestantes.join("\n") };
+}
+
+function extrairDataColeta(texto: string): string | null {
+  const match = texto.match(/DATA\s+(?:DE\s+)?COLETA[^\d]*(\d{2})\/(\d{2})\/(\d{4})/i) || texto.match(/Data\s+da\s+coleta[^\d]*(\d{2})\/(\d{2})\/(\d{4})/i);
+  if (!match) return null;
+  const [, dia, mes, ano] = match;
+  return `${ano}-${mes}-${dia}`;
+}
+
 export async function POST(request: NextRequest) {
   console.time("[extrair-exames] TOTAL");
   const resumo: Record<string, any> = {};
@@ -156,9 +235,34 @@ export async function POST(request: NextRequest) {
   }
   console.timeEnd("[extrair-exames] TEXT_CLEANING");
 
+  console.time("[extrair-exames] LOCAL_PARSER");
+  let resolvidosLocalmente: ExameResolvidoLocalmente[] = [];
+  if (textoParaEnviar) {
+    const dataColeta = extrairDataColeta(textoParaEnviar);
+    const { resolvidos, textoRestante } = resolverLocalmente(textoParaEnviar, Array.isArray(marcadores) ? marcadores : [], dataColeta);
+    resolvidosLocalmente = resolvidos;
+    textoParaEnviar = textoRestante;
+  }
+  resumo.localResultsCount = resolvidosLocalmente.length;
+  console.timeEnd("[extrair-exames] LOCAL_PARSER");
+
   const base64 = bytes.toString("base64");
-  resumo.modoEnvio = textoParaEnviar ? "texto" : "pdf_como_imagem";
-  resumo.charsSentToAnthropic = textoParaEnviar ? textoParaEnviar.length + listaReferencia.length : null;
+  const usouTextoOriginalmente = !!textoExtraido;
+  resumo.modoEnvio = usouTextoOriginalmente ? "texto" : "pdf_como_imagem";
+  resumo.charsSentToAnthropic = textoParaEnviar ? textoParaEnviar.length + listaReferencia.length : 0;
+
+  // Se o parser local já resolveu tudo (raro, mas possível em laudos pequenos e simples),
+  // nem precisa chamar a IA.
+  if (usouTextoOriginalmente && !textoParaEnviar?.trim()) {
+    resumo.anthropicCalls = 0;
+    resumo.ambiguousResultsCount = 0;
+    resumo.totalExamesExtraidos = resolvidosLocalmente.length;
+    resumo.marcadoresIdentificados = resolvidosLocalmente.length;
+    console.timeEnd("[extrair-exames] TOTAL");
+    console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
+    return NextResponse.json({ exames: resolvidosLocalmente });
+  }
+
   resumo.anthropicCalls = 1;
 
   try {
@@ -241,15 +345,14 @@ export async function POST(request: NextRequest) {
       max_referencia_livre: item.max_referencia_livre ?? null,
     }));
 
-    resumo.localResultsCount = 0; // hoje toda a extração ainda passa pela IA, nenhuma é resolvida localmente
     resumo.ambiguousResultsCount = exames.length;
-    resumo.totalExamesExtraidos = exames.length;
-    resumo.marcadoresIdentificados = exames.filter((e: any) => e.marcador_id).length;
+    resumo.totalExamesExtraidos = exames.length + resolvidosLocalmente.length;
+    resumo.marcadoresIdentificados = exames.filter((e: any) => e.marcador_id).length + resolvidosLocalmente.length;
     console.timeEnd("[extrair-exames] NORMALIZATION");
     console.timeEnd("[extrair-exames] TOTAL");
     console.log("[extrair-exames] resumo:", JSON.stringify(resumo));
 
-    return NextResponse.json({ exames });
+    return NextResponse.json({ exames: [...resolvidosLocalmente, ...exames] });
   } catch (erro: any) {
     console.timeEnd("[extrair-exames] TOTAL");
     console.log("[extrair-exames] resumo (erro):", JSON.stringify(resumo));
