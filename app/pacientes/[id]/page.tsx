@@ -140,14 +140,26 @@ export default async function DetalhePacientePage({
               )}
               {enc.evolucoes?.map((ev: any) => (
                 <div key={ev.id} style={{ marginTop: 8 }}>
-                  {ev.motivo_consulta && <p><b>Motivo:</b> {ev.motivo_consulta}</p>}
-                  {ev.anamnese && <p><b>Anamnese:</b> {ev.anamnese}</p>}
-                  {ev.exame_fisico && <p><b>Exame físico:</b> {ev.exame_fisico}</p>}
-                  {ev.observacoes && <p><b>Observações:</b> {ev.observacoes}</p>}
+                  {ev.motivo_consulta && (
+                    <p style={{ whiteSpace: "pre-wrap" }}><b>Motivo:</b> {ev.motivo_consulta}</p>
+                  )}
+                  {ev.anamnese && (
+                    <p style={{ whiteSpace: "pre-wrap" }}><b>Anamnese / Exame físico / Observações:</b>{"\n"}{ev.anamnese}</p>
+                  )}
+                  {ev.exame_fisico && (
+                    <p style={{ whiteSpace: "pre-wrap" }}><b>Exame físico:</b>{"\n"}{ev.exame_fisico}</p>
+                  )}
+                  {ev.observacoes && (
+                    <p style={{ whiteSpace: "pre-wrap" }}><b>Observações:</b>{"\n"}{ev.observacoes}</p>
+                  )}
                   {ev.evolucoes_diagnostico?.map((d: any, i: number) => (
                     <div key={i}>
-                      {d.diagnostico_cid && <p><b>Diagnóstico:</b> {d.diagnostico_cid}</p>}
-                      {d.conduta && <p><b>Conduta:</b> {d.conduta}</p>}
+                      {d.diagnostico_cid && (
+                        <p style={{ whiteSpace: "pre-wrap" }}><b>Diagnóstico:</b> {d.diagnostico_cid}</p>
+                      )}
+                      {d.conduta && (
+                        <p style={{ whiteSpace: "pre-wrap" }}><b>Conduta:</b>{"\n"}{d.conduta}</p>
+                      )}
                     </div>
                   ))}
                   {!souRecepcao && (

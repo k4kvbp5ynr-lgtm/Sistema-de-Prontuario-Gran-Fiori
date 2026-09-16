@@ -157,10 +157,10 @@ export default function EdicaoVersionada({ evolucao }: { evolucao: Evolucao }) {
               <p style={{ margin: "0 0 8px", fontStyle: "italic", color: "var(--cor-status-abaixo-texto)" }}>
                 Motivo: {v.motivo_alteracao ?? "—"}
               </p>
-              {v.motivo_consulta && <p style={{ margin: "3px 0" }}><b>Motivo:</b> {v.motivo_consulta}</p>}
-              {v.anamnese && <p style={{ margin: "3px 0" }}><b>Anamnese:</b> {v.anamnese}</p>}
-              {v.diagnostico_cid && <p style={{ margin: "3px 0" }}><b>Diagnóstico:</b> {v.diagnostico_cid}</p>}
-              {v.conduta && <p style={{ margin: "3px 0" }}><b>Conduta:</b> {v.conduta}</p>}
+              {v.motivo_consulta && <p style={{ margin: "3px 0", whiteSpace: "pre-wrap" }}><b>Motivo:</b> {v.motivo_consulta}</p>}
+              {v.anamnese && <p style={{ margin: "3px 0", whiteSpace: "pre-wrap" }}><b>Anamnese:</b>{"\n"}{v.anamnese}</p>}
+              {v.diagnostico_cid && <p style={{ margin: "3px 0", whiteSpace: "pre-wrap" }}><b>Diagnóstico:</b> {v.diagnostico_cid}</p>}
+              {v.conduta && <p style={{ margin: "3px 0", whiteSpace: "pre-wrap" }}><b>Conduta:</b>{"\n"}{v.conduta}</p>}
             </div>
           ))}
         </div>

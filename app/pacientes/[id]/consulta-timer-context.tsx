@@ -35,9 +35,10 @@ export function ConsultaTimerProvider({ children }: { children: ReactNode }) {
     if (!rodando || !inicioRef.current) return null;
     const duracaoFinal = Math.floor((Date.now() - inicioRef.current) / 1000);
     if (intervalRef.current) clearInterval(intervalRef.current);
+    inicioRef.current = null;
     setRodando(false);
-    setTravado(true);
-    setSegundosDecorridos(duracaoFinal);
+    setTravado(false);
+    setSegundosDecorridos(0);
     return duracaoFinal;
   }
 

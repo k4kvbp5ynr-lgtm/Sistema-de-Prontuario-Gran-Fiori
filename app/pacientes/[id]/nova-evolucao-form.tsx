@@ -8,7 +8,7 @@ import { useConsultaTimer } from "./consulta-timer-context";
 export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pacienteId: string; podeUsarIA?: boolean }) {
   const router = useRouter();
   const supabase = createClient();
-  const { pararEObterDuracao } = useConsultaTimer();
+  const { pararEObterDuracao, rodando } = useConsultaTimer();
 
   const [tipoAtendimento, setTipoAtendimento] = useState("consulta_medica");
   const [motivo, setMotivo] = useState("");
@@ -67,6 +67,14 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
+
+    // Trava de segurança: evita salvar consultas duplicadas por cliques repetidos.
+    // Só salva se o cronômetro estiver rodando (consulta aberta de fato).
+    if (!rodando) {
+      setErro('Para salvar, é preciso clicar em "Iniciar consulta" primeiro.');
+      return;
+    }
+
     setErro(null);
     setSalvando(true);
 
