@@ -18,6 +18,15 @@ type Paciente = {
   altura: number | null;
 };
 
+function calcularIdade(dataNasc: string): number {
+  const hoje = new Date();
+  const nasc = new Date(dataNasc);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+}
+
 export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
   const router = useRouter();
   const supabase = createClient();
@@ -95,30 +104,33 @@ export default function CadastroPaciente({ paciente }: { paciente: Paciente }) {
   }
 
   if (!editando) {
+    const idade = paciente.data_nascimento ? calcularIdade(paciente.data_nascimento) : null;
+    const sexoAbrev = paciente.sexo === "masculino" ? "M" : paciente.sexo === "feminino" ? "F" : null;
+    const imc = paciente.peso && paciente.altura ? paciente.peso / Math.pow(paciente.altura / 100, 2) : null;
+    const codigo = paciente.cpf ? paciente.cpf.replace(/\D/g, "").slice(-4) : null;
+
+    const partes = [
+      idade != null ? `${idade} a` : null,
+      sexoAbrev,
+      paciente.peso != null ? `${paciente.peso} kg` : null,
+      paciente.altura != null ? `${(paciente.altura / 100).toFixed(2)} m` : null,
+      imc ? `IMC ${imc.toFixed(1)}` : null,
+      codigo ? `#${codigo}` : null,
+    ].filter(Boolean);
+
     return (
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 0 }}>
         {fotoUrl && (
-          <img
-            src={fotoUrl}
-            alt=""
-            style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover" }}
-          />
+          <img src={fotoUrl} alt="" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
         )}
         <div>
-          <h1 style={{ margin: 0 }}>{paciente.nome}</h1>
-          <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>
-            CPF: {paciente.cpf ?? "—"}
-            {paciente.data_nascimento &&
-              ` · Nascimento: ${new Date(paciente.data_nascimento).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
-          </p>
-          <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>
-            {paciente.telefone ?? "—"} · {paciente.email ?? "—"}
-          </p>
-          <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>{paciente.endereco ?? "—"}</p>
-          <p style={{ margin: "4px 0", fontSize: "0.9rem" }}>
-            {paciente.peso != null ? `${paciente.peso} kg` : "Peso —"} · {paciente.altura != null ? `${paciente.altura} cm` : "Altura —"}
-          </p>
-          <button type="button" onClick={() => setEditando(true)} style={{ marginTop: 8 }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--cor-texto)" }}>{paciente.nome}</h1>
+          {partes.length > 0 && (
+            <p style={{ margin: "2px 0 0", fontSize: 12, fontFamily: "var(--fonte-mono)", color: "var(--cor-texto-fraco)" }}>
+              {partes.join(" · ")}
+            </p>
+          )}
+          <button type="button" onClick={() => setEditando(true)} className="botao-secundario" style={{ marginTop: 8, fontSize: 12, padding: "6px 12px" }}>
             Editar cadastro
           </button>
         </div>
