@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import BuscaPacientes from "./busca-pacientes";
+import FollowupsPendentes from "./followups-pendentes";
 import MenuLateral from "../menu-lateral";
 import { itensMenuPrincipal } from "../itens-menu-principal";
 
@@ -59,6 +60,8 @@ export default async function PacientesPage() {
       </div>
 
       {error && <p className="erro">Erro ao carregar pacientes: {error.message}</p>}
+
+      <FollowupsPendentes />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginTop: 18 }}>
         <CardMetrica label="Total de pacientes" numero={totalPacientes ?? 0} />

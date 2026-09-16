@@ -37,6 +37,7 @@ export default function ProcedimentosRealizados({ pacienteId }: { pacienteId: st
   const [concentracao, setConcentracao] = useState("");
   const [via, setVia] = useState("");
   const [guiadoUsg, setGuiadoUsg] = useState(false);
+  const [criarFollowup, setCriarFollowup] = useState(true);
   const [dataProcedimento, setDataProcedimento] = useState(new Date().toISOString().slice(0, 10));
   const [observacoes, setObservacoes] = useState("");
 
@@ -81,28 +82,47 @@ export default function ProcedimentosRealizados({ pacienteId }: { pacienteId: st
       data: { user },
     } = await supabase.auth.getUser();
 
-    const { error } = await supabase.from("procedimentos_realizados").insert({
-      paciente_id: pacienteId,
-      profissional_id: user?.id,
-      nome_procedimento: nome.trim(),
-      regiao_anatomica: regiao || null,
-      lateralidade: lateralidade || null,
-      produto: produto || null,
-      lote: lote || null,
-      validade_produto: validade || null,
-      volume_aplicado: volume || null,
-      concentracao: concentracao || null,
-      via_administracao: via || null,
-      guiado_por_usg: guiadoUsg,
-      data_procedimento: dataProcedimento,
-      observacoes: observacoes || null,
-      registrado_por: user?.id,
-    });
+    const { data: procedimentoSalvo, error } = await supabase
+      .from("procedimentos_realizados")
+      .insert({
+        paciente_id: pacienteId,
+        profissional_id: user?.id,
+        nome_procedimento: nome.trim(),
+        regiao_anatomica: regiao || null,
+        lateralidade: lateralidade || null,
+        produto: produto || null,
+        lote: lote || null,
+        validade_produto: validade || null,
+        volume_aplicado: volume || null,
+        concentracao: concentracao || null,
+        via_administracao: via || null,
+        guiado_por_usg: guiadoUsg,
+        data_procedimento: dataProcedimento,
+        observacoes: observacoes || null,
+        registrado_por: user?.id,
+      })
+      .select()
+      .single();
 
     setSalvando(false);
     if (error) {
       setErro("Erro ao salvar: " + error.message);
       return;
+    }
+
+    if (criarFollowup && procedimentoSalvo) {
+      const base = new Date(dataProcedimento + "T00:00:00");
+      const tarefas = [7, 30, 90].map((dias) => {
+        const data = new Date(base);
+        data.setDate(data.getDate() + dias);
+        return {
+          paciente_id: pacienteId,
+          procedimento_id: procedimentoSalvo.id,
+          rotulo: `Follow-up D+${dias} — ${nome.trim()}`,
+          data_prevista: data.toISOString().slice(0, 10),
+        };
+      });
+      await supabase.from("tarefas_followup").insert(tarefas);
     }
 
     limparForm();
@@ -197,6 +217,11 @@ export default function ProcedimentosRealizados({ pacienteId }: { pacienteId: st
 
           <label style={{ fontSize: 11 }}>Observações</label>
           <textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={2} style={{ width: "100%", padding: 8 }} />
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginTop: 8, marginBottom: 10 }}>
+            <input type="checkbox" checked={criarFollowup} onChange={(e) => setCriarFollowup(e.target.checked)} style={{ width: "auto", marginBottom: 0 }} />
+            Criar follow-ups automáticos (D+7, D+30, D+90)
+          </label>
 
           <button type="submit" disabled={salvando || !nome.trim()} style={{ fontSize: 12 }}>
             {salvando ? "Salvando..." : "Salvar procedimento"}
