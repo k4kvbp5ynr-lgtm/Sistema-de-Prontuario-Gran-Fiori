@@ -10,6 +10,7 @@ import ConsultaGenetica from "./consulta-genetica";
 import SubmenuPilulas, { ItemSubmenu } from "./submenu-pilulas";
 import BotaoSalvarConsulta from "./botao-salvar-consulta";
 import FaixaSegurancaClinica from "./faixa-seguranca-clinica";
+import EdicaoVersionada from "./edicao-versionada";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -43,7 +44,7 @@ export default async function DetalhePacientePage({
       id, data_hora, tipo_atendimento, duracao_segundos,
       usuarios!profissional_id ( nome, perfil ),
       evolucoes (
-        id, motivo_consulta, anamnese, exame_fisico, observacoes,
+        id, motivo_consulta, anamnese, exame_fisico, observacoes, versao_atual, ultima_alteracao_em,
         evolucoes_diagnostico ( diagnostico_cid, conduta )
       ),
       anexos_exames ( id, nome_arquivo, caminho_storage )
@@ -149,6 +150,19 @@ export default async function DetalhePacientePage({
                       {d.conduta && <p><b>Conduta:</b> {d.conduta}</p>}
                     </div>
                   ))}
+                  {!souRecepcao && (
+                    <EdicaoVersionada
+                      evolucao={{
+                        id: ev.id,
+                        motivo_consulta: ev.motivo_consulta,
+                        anamnese: ev.anamnese,
+                        diagnostico_cid: ev.evolucoes_diagnostico?.[0]?.diagnostico_cid ?? null,
+                        conduta: ev.evolucoes_diagnostico?.[0]?.conduta ?? null,
+                        versao_atual: ev.versao_atual ?? 1,
+                        ultima_alteracao_em: ev.ultima_alteracao_em ?? null,
+                      }}
+                    />
+                  )}
                 </div>
               ))}
               {enc.anexos_exames?.length > 0 && (
