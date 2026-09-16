@@ -19,11 +19,22 @@ type Procedimento = {
   observacoes: string | null;
 };
 
+type Followup = {
+  id: string;
+  procedimento_id: string | null;
+  rotulo: string;
+  data_prevista: string;
+  status: string;
+  observacao: string | null;
+  concluido_em: string | null;
+};
+
 const VIAS = ["Intra-articular", "Periarticular", "Intramuscular", "Subcutânea", "Peritendínea", "Perineural", "Outra"];
 
 export default function ProcedimentosRealizados({ pacienteId }: { pacienteId: string }) {
   const supabase = createClient();
   const [lista, setLista] = useState<Procedimento[]>([]);
+  const [followups, setFollowups] = useState<Followup[]>([]);
   const [formAberto, setFormAberto] = useState(false);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
 
@@ -51,6 +62,13 @@ export default function ProcedimentosRealizados({ pacienteId }: { pacienteId: st
       .eq("paciente_id", pacienteId)
       .order("data_procedimento", { ascending: false });
     setLista(data ?? []);
+
+    const { data: fups } = await supabase
+      .from("tarefas_followup")
+      .select("id, procedimento_id, rotulo, data_prevista, status, observacao, concluido_em")
+      .eq("paciente_id", pacienteId)
+      .order("data_prevista");
+    setFollowups(fups ?? []);
   }
 
   useEffect(() => {
@@ -264,6 +282,39 @@ export default function ProcedimentosRealizados({ pacienteId }: { pacienteId: st
                 {p.via_administracao && <p style={{ margin: "3px 0" }}><b>Via:</b> {p.via_administracao}</p>}
                 <p style={{ margin: "3px 0" }}><b>Guiado por USG:</b> {p.guiado_por_usg ? "Sim" : "Não"}</p>
                 {p.observacoes && <p style={{ margin: "3px 0", whiteSpace: "pre-wrap" }}><b>Observações:</b> {p.observacoes}</p>}
+
+                {followups.filter((f) => f.procedimento_id === p.id).length > 0 && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--cor-borda)" }}>
+                    <p style={{ fontWeight: 700, margin: "0 0 6px" }}>Follow-ups deste procedimento</p>
+                    {followups
+                      .filter((f) => f.procedimento_id === p.id)
+                      .map((f) => (
+                        <div key={f.id} style={{ marginBottom: 6 }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "1px 8px",
+                              borderRadius: 8,
+                              marginRight: 6,
+                              background:
+                                f.status === "feito" ? "var(--cor-status-dentro-fundo)" : f.status === "pulado" ? "var(--cor-fundo-card-alt)" : "var(--cor-status-abaixo-fundo)",
+                              color:
+                                f.status === "feito" ? "var(--cor-status-dentro-texto)" : f.status === "pulado" ? "var(--cor-texto-fraco)" : "var(--cor-status-abaixo-texto)",
+                            }}
+                          >
+                            {f.status === "feito" ? "feito" : f.status === "pulado" ? "pulado" : "pendente"}
+                          </span>
+                          {f.rotulo} — previsto {new Date(f.data_prevista + "T00:00:00").toLocaleDateString("pt-BR")}
+                          {f.concluido_em && ` · concluído ${new Date(f.concluido_em).toLocaleDateString("pt-BR")}`}
+                          {f.observacao && (
+                            <span style={{ display: "block", color: "var(--cor-texto-fraco)", marginTop: 2 }}>"{f.observacao}"</span>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
