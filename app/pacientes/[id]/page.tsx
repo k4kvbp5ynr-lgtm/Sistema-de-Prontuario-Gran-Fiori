@@ -11,6 +11,7 @@ import SubmenuPilulas, { ItemSubmenu } from "./submenu-pilulas";
 import BotaoSalvarConsulta from "./botao-salvar-consulta";
 import FaixaSegurancaClinica from "./faixa-seguranca-clinica";
 import EdicaoVersionada from "./edicao-versionada";
+import EscalasDesfecho from "./escalas-desfecho";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -111,6 +112,12 @@ export default async function DetalhePacientePage({
       id: "genetica",
       label: "Genética",
       conteudo: <ConsultaGenetica pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "escalas",
+      label: "Escalas de desfecho",
+      conteudo: <EscalasDesfecho pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
