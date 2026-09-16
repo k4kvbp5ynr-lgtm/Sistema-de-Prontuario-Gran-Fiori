@@ -128,32 +128,56 @@ export default function Chat({ meuId }: { meuId: string }) {
     fimDaListaRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens]);
 
+  function iniciais(nome: string) {
+    return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+  }
+
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 120px)", border: "1px solid var(--cor-borda)", borderRadius: 8, overflow: "hidden" }}>
-      <div style={{ width: 220, borderRight: "1px solid var(--cor-borda)", overflowY: "auto", background: "var(--cor-fundo-card)" }}>
+    <div style={{ display: "flex", height: "calc(100vh - 120px)", border: "1px solid var(--cor-borda)", borderRadius: 14, overflow: "hidden" }}>
+      <div style={{ width: 236, borderRight: "1px solid var(--cor-borda)", overflowY: "auto", background: "var(--cor-sidebar)" }}>
+        <p style={{ fontSize: 16, fontWeight: 700, margin: "14px 14px 10px", color: "var(--cor-texto)" }}>Equipe</p>
         {contatos.map((c) => (
           <div
             key={c.id}
             onClick={() => abrirConversa(c)}
             style={{
-              padding: "10px 12px",
+              padding: "10px 14px",
               cursor: "pointer",
-              background: contatoSelecionado?.id === c.id ? "var(--cor-fundo-card-alt)" : "transparent",
-              borderBottom: "1px solid var(--cor-borda)",
+              background: contatoSelecionado?.id === c.id ? "var(--cor-marca-fundo)" : "transparent",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: "0.9rem", fontWeight: "bold" }}>{c.nome}</div>
-              <div style={{ fontSize: "0.75rem", color: "var(--cor-texto-fraco)" }}>{PERFIS[c.perfil] ?? c.perfil}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "var(--cor-marca-fundo)",
+                  color: "var(--cor-marca-clara)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                {iniciais(c.nome)}
+              </span>
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{c.nome}</div>
+                <div style={{ fontSize: 11, color: "var(--cor-texto-fraco)" }}>{PERFIS[c.perfil] ?? c.perfil}</div>
+              </div>
             </div>
             {naoLidas[c.id] > 0 && (
               <span
                 style={{
-                  background: "var(--cor-erro)",
-                  color: "white",
+                  background: "var(--cor-marca)",
+                  color: "var(--cor-sobre-marca)",
                   borderRadius: "50%",
                   width: 20,
                   height: 20,
@@ -161,6 +185,8 @@ export default function Chat({ meuId }: { meuId: string }) {
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "0.7rem",
+                  fontWeight: 700,
+                  flexShrink: 0,
                 }}
               >
                 {naoLidas[c.id]}
@@ -176,29 +202,50 @@ export default function Chat({ meuId }: { meuId: string }) {
           <p style={{ margin: "auto", color: "var(--cor-texto-fraco)" }}>Escolha uma pessoa pra conversar.</p>
         ) : (
           <>
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--cor-borda)", fontWeight: "bold" }}>
-              {contatoSelecionado.nome}
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--cor-borda)", display: "flex", alignItems: "center", gap: 10 }}>
+              <span
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "var(--cor-marca-fundo)",
+                  color: "var(--cor-marca-clara)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                {iniciais(contatoSelecionado.nome)}
+              </span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{contatoSelecionado.nome}</div>
+              </div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-              {mensagens.map((m) => (
-                <div
-                  key={m.id}
-                  style={{
-                    alignSelf: m.remetente_id === meuId ? "flex-end" : "flex-start",
-                    background: m.remetente_id === meuId ? "var(--cor-marca)" : "var(--cor-fundo-card-alt)",
-                    color: m.remetente_id === meuId ? "white" : "#333",
-                    padding: "8px 12px",
-                    borderRadius: 12,
-                    maxWidth: "70%",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  {m.conteudo}
-                  <div style={{ fontSize: "0.65rem", opacity: 0.7, marginTop: 4 }}>
-                    {new Date(m.criado_em).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
+              {mensagens.map((m) => {
+                const minha = m.remetente_id === meuId;
+                return (
+                  <div
+                    key={m.id}
+                    style={{
+                      alignSelf: minha ? "flex-end" : "flex-start",
+                      background: minha ? "var(--cor-marca)" : "var(--cor-fundo-card-alt)",
+                      color: minha ? "var(--cor-sobre-marca)" : "var(--cor-texto)",
+                      padding: "10px 13px",
+                      borderRadius: minha ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                      maxWidth: "72%",
+                      fontSize: 13,
+                    }}
+                  >
+                    {m.conteudo}
+                    <div style={{ fontSize: 10, opacity: 0.7, marginTop: 4, textAlign: "right" }}>
+                      {new Date(m.criado_em).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={fimDaListaRef} />
             </div>
             <form onSubmit={enviar} style={{ display: "flex", gap: 8, padding: 12, borderTop: "1px solid var(--cor-borda)" }}>
@@ -206,7 +253,7 @@ export default function Chat({ meuId }: { meuId: string }) {
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder="Digite uma mensagem..."
-                style={{ flex: 1 }}
+                style={{ flex: 1, borderRadius: 24 }}
               />
               <button type="submit" disabled={!texto.trim() || enviando}>
                 Enviar

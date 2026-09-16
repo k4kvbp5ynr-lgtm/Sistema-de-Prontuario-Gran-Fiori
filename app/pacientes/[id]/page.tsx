@@ -75,13 +75,14 @@ export default async function DetalhePacientePage({
           <AnexosExames pacienteId={paciente.id} />
         </>
       ) : (
-        <>
-          <h2 style={{ fontSize: "1.1rem" }}>Nova consulta</h2>
-          <NovaEvolucaoForm pacienteId={paciente.id} podeUsarIA={podeUsarIA} />
-          <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
-          <h2 style={{ fontSize: "1.1rem" }}>Prescrição desta consulta (opcional)</h2>
-          <NovaPrescricaoForm pacienteId={paciente.id} />
-        </>
+        <div style={{ display: "grid", gridTemplateColumns: "1.15fr 1fr", gap: 16, alignItems: "start" }}>
+          <div style={{ background: "var(--cor-fundo-card)", border: "1px solid var(--cor-borda)", borderRadius: 14, padding: 18 }}>
+            <NovaEvolucaoForm pacienteId={paciente.id} podeUsarIA={podeUsarIA} />
+          </div>
+          <div style={{ background: "var(--cor-fundo-card)", border: "1px solid var(--cor-borda)", borderRadius: 14, padding: 18 }}>
+            <NovaPrescricaoForm pacienteId={paciente.id} />
+          </div>
+        </div>
       ),
     },
     {

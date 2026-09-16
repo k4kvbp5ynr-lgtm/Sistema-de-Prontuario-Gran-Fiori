@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useConsultaTimer } from "./consulta-timer-context";
 
@@ -198,70 +197,74 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
   }
 
   return (
-    <form onSubmit={salvar} style={{ marginTop: 24, marginBottom: 32 }}>
-      <h2 style={{ fontSize: "1.1rem" }}>Registrar nova consulta</h2>
+    <form id="form-nova-evolucao" onSubmit={salvar} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--cor-texto-fraco)", margin: "0 0 10px" }}>
+        Registrar nova consulta
+      </p>
       {erro && <p className="erro">{erro}</p>}
 
-      <label>Tipo de atendimento</label>
-      <select
-        value={tipoAtendimento}
-        onChange={(e) => setTipoAtendimento(e.target.value)}
-        style={{ marginBottom: 12, padding: 8, width: "100%" }}
-      >
-        <option value="consulta_medica">Consulta médica</option>
-        <option value="fisioterapia">Fisioterapia</option>
-        <option value="enfermagem">Enfermagem</option>
-        <option value="procedimento">Procedimento</option>
-      </select>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10 }}>
+        <div>
+          <label>Tipo de atendimento</label>
+          <select value={tipoAtendimento} onChange={(e) => setTipoAtendimento(e.target.value)}>
+            <option value="consulta_medica">Consulta médica</option>
+            <option value="fisioterapia">Fisioterapia</option>
+            <option value="enfermagem">Enfermagem</option>
+            <option value="procedimento">Procedimento</option>
+          </select>
+        </div>
+        <div>
+          <label>Motivo da consulta</label>
+          <input value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+        </div>
+      </div>
 
-      <input
-        placeholder="Motivo da consulta"
-        value={motivo}
-        onChange={(e) => setMotivo(e.target.value)}
-      />
+      <label>Anamnese / Exame físico / Observações</label>
       <textarea
-        placeholder="Anamnese / Exame físico / Observações"
         value={anamnese}
         onChange={(e) => setAnamnese(e.target.value)}
         rows={7}
-        style={{ width: "100%", marginBottom: 12, padding: 8 }}
+        style={{ width: "100%", marginBottom: 12, padding: 12, flex: 1, lineHeight: 1.65 }}
       />
 
-      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
-      <p style={{ fontSize: "0.85rem", color: "var(--cor-marca)", marginBottom: 8 }}>
-        Diagnóstico e conduta (não visível à recepção)
-      </p>
-
-      {podeUsarIA && (
-        <>
-          <button type="button" onClick={buscarSugestaoIA} disabled={buscandoSugestao} style={{ marginBottom: 12, background: "var(--cor-ia)" }}>
-            {buscandoSugestao ? "Consultando IA..." : "🤖 Gerar sugestão de IA"}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "6px 0 14px", paddingTop: 14, borderTop: "1px solid var(--cor-borda)" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--cor-marca-clara)", margin: 0 }}>
+          Diagnóstico e conduta (não visível à recepção)
+        </p>
+        {podeUsarIA && (
+          <button
+            type="button"
+            onClick={buscarSugestaoIA}
+            disabled={buscandoSugestao}
+            style={{ background: "var(--cor-ia-fundo)", color: "var(--cor-ia)", fontSize: 12, padding: "8px 14px", flexShrink: 0 }}
+          >
+            {buscandoSugestao ? "Consultando IA..." : "Gerar sugestão de IA"}
           </button>
-          {erroSugestao && <p className="erro">{erroSugestao}</p>}
-        </>
-      )}
+        )}
+      </div>
+      {erroSugestao && <p className="erro">{erroSugestao}</p>}
 
       {sugestaoIA && (
         <div
           style={{
             border: "1px solid var(--cor-ia)",
-            borderRadius: 6,
-            padding: 12,
+            borderRadius: 11,
+            padding: 14,
             marginBottom: 12,
             background: "var(--cor-ia-fundo)",
             fontSize: "0.9rem",
             whiteSpace: "pre-wrap",
           }}
         >
-          <p style={{ margin: "0 0 8px", fontWeight: "bold", color: "var(--cor-ia)" }}>
-            🤖 Sugestão gerada por IA — revise criticamente antes de usar. Nunca é comunicada automaticamente ao
-            paciente; a decisão é sempre sua.
+          <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 11, color: "var(--cor-ia)" }}>
+            SUGESTÃO GERADA POR IA — REVISE CRITICAMENTE ANTES DE USAR. A DECISÃO É SEMPRE SUA.
           </p>
           {sugestaoIA}
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 10 }}>
             <button
               type="button"
               onClick={() => setConduta((atual) => (atual.trim() ? atual + "\n\n" + sugestaoIA : sugestaoIA))}
+              className="botao-secundario"
               style={{ fontSize: "0.8rem" }}
             >
               Inserir na conduta
@@ -270,74 +273,67 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         </div>
       )}
 
-      <input
-        placeholder="Diagnóstico / CID"
-        value={diagnostico}
-        onChange={(e) => setDiagnostico(e.target.value)}
-      />
-      <textarea
-        placeholder="Conduta"
-        value={conduta}
-        onChange={(e) => setConduta(e.target.value)}
-        rows={3}
-        style={{ width: "100%", marginBottom: 12, padding: 8 }}
-      />
-
-      <Link href={`/pacientes/${pacienteId}/receituario/novo`}>
-        <button type="button">Nova prescrição</button>
-      </Link>
-      {" "}
-      <Link href={`/pacientes/${pacienteId}/relatorio/novo`}>
-        <button type="button" style={{ background: "#8a6d3b" }}>
-          Novo relatório médico
-        </button>
-      </Link>
-
-      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--cor-borda)" }} />
-      <label>Anexar exame(s) desta consulta (opcional)</label>
-      <p style={{ fontSize: "0.85rem", margin: "0 0 8px", color: "var(--cor-texto-suave)" }}>
-        📋 Exame de análises clínicas (sangue)? Anexe o PDF e lance os resultados no ícone{" "}
-        <b>"Exames de análises clínicas"</b> no menu à esquerda.
-      </p>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-        <input
-          id="input-arquivo-consulta"
-          type="file"
-          accept=".pdf,image/*"
-          onChange={(e) => setArquivoTemp(e.target.files?.[0] ?? null)}
-        />
-        <button type="button" onClick={adicionarArquivo} disabled={!arquivoTemp}>
-          Adicionar à consulta
-        </button>
+      <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 10 }}>
+        <div>
+          <label>Diagnóstico / CID</label>
+          <input
+            value={diagnostico}
+            onChange={(e) => setDiagnostico(e.target.value)}
+            style={{ fontFamily: "var(--fonte-mono)", color: "var(--cor-marca-clara)" }}
+          />
+        </div>
+        <div>
+          <label>Conduta</label>
+          <textarea value={conduta} onChange={(e) => setConduta(e.target.value)} rows={3} style={{ width: "100%", marginBottom: 12, padding: 8 }} />
+        </div>
       </div>
 
-      {arquivos.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0, marginBottom: 12 }}>
-          {arquivos.map((f, i) => (
-            <li
-              key={i}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "4px 0",
-                fontSize: "0.9rem",
-              }}
-            >
-              <span>📎 {f.name}</span>
-              <button
-                type="button"
-                onClick={() => removerArquivo(i)}
-                style={{ background: "transparent", color: "var(--cor-erro)", padding: "2px 8px" }}
-              >
-                remover
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div style={{ borderTop: "1px solid var(--cor-borda)", paddingTop: 14, marginTop: 4 }}>
+        <label>Anexar exame(s) desta consulta (opcional)</label>
+        <p style={{ fontSize: "0.85rem", margin: "0 0 8px", color: "var(--cor-texto-suave)" }}>
+          Exame de análises clínicas (sangue)? Anexe o PDF e lance os resultados no ícone <b>"Exames de análises clínicas"</b> no menu.
+        </p>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+          <input
+            id="input-arquivo-consulta"
+            type="file"
+            accept=".pdf,image/*"
+            onChange={(e) => setArquivoTemp(e.target.files?.[0] ?? null)}
+            style={{ border: "1px dashed var(--cor-borda-input)", background: "transparent" }}
+          />
+          <button type="button" onClick={adicionarArquivo} disabled={!arquivoTemp} className="botao-secundario">
+            Adicionar à consulta
+          </button>
+        </div>
 
-      <button type="submit" disabled={salvando}>
+        {arquivos.length > 0 && (
+          <ul style={{ listStyle: "none", padding: 0, marginBottom: 12 }}>
+            {arquivos.map((f, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "4px 0",
+                  fontSize: "0.9rem",
+                }}
+              >
+                <span>{f.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removerArquivo(i)}
+                  style={{ background: "transparent", color: "var(--cor-erro)", padding: "2px 8px" }}
+                >
+                  remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <button type="submit" disabled={salvando} style={{ marginTop: 8, alignSelf: "flex-start" }}>
         {salvando ? "Salvando..." : "Salvar consulta"}
       </button>
     </form>

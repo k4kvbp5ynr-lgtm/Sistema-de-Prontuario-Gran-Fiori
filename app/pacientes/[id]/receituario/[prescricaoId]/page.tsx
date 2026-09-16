@@ -62,7 +62,7 @@ export default async function VisualizarReceitaPage({
           margin: "0 auto 32px",
           background: "white",
           padding: "48px 56px",
-          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontFamily: "var(--fonte-ui), "Plus Jakarta Sans", -apple-system, sans-serif",
           color: "#1a1a1a",
         }}
       >
@@ -92,7 +92,7 @@ export default async function VisualizarReceitaPage({
             <h1 style={{ fontSize: "1.5rem", margin: 0, letterSpacing: 1, color: "#1a1a1a" }}>
               {profissional?.nome ?? "—"}
             </h1>
-            <p style={{ margin: 0, color: "#a07a3f", fontSize: "0.85rem", letterSpacing: 1 }}>
+            <p style={{ margin: 0, color: "#1d5c57", fontSize: "0.85rem", letterSpacing: 1 }}>
               {template?.titulo_especialidade ?? ""}
             </p>
           </div>

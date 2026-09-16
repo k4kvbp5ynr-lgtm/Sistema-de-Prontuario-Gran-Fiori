@@ -23,6 +23,7 @@ export type DadosReceituario = {
 };
 
 const DOURADO = rgb(0.63, 0.48, 0.24);
+const TEAL_ESPECIALIDADE = rgb(0.114, 0.361, 0.341); // #1d5c57
 const CINZA = rgb(0.4, 0.4, 0.4);
 const PRETO = rgb(0.1, 0.1, 0.1);
 const LARGURA = 595.28;
@@ -107,7 +108,7 @@ export async function gerarReceituarioPDF(dados: DadosReceituario): Promise<Uint
     }
     const xTexto = MARGEM + (logoImagem ? 58 : 0);
     pagina.drawText(dados.profissionalNome, { x: xTexto, y: topoCabecalho - 4, size: 15, font: fonteNegrito, color: PRETO });
-    pagina.drawText(dados.especialidade, { x: xTexto, y: topoCabecalho - 20, size: 10, font: fonteNormal, color: DOURADO });
+    pagina.drawText(dados.especialidade, { x: xTexto, y: topoCabecalho - 20, size: 10, font: fonteNormal, color: TEAL_ESPECIALIDADE });
     pagina.drawText(`${dados.registroClasse}${dados.rqe ? " · " + dados.rqe : ""}`, {
       x: xTexto,
       y: topoCabecalho - 34,

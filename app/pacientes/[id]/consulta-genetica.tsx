@@ -230,7 +230,7 @@ export default function ConsultaGenetica({ pacienteId }: { pacienteId: string })
 
   return (
     <div>
-      <h2 style={{ fontSize: "1.1rem" }}>🧬 Consulta genética</h2>
+      <h2 style={{ fontSize: "1.1rem" }}>Consulta genética</h2>
       <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)" }}>
         Consulta determinística, sem uso de IA — MyVariant.info, MyGene.info, ClinVar/NCBI e GWAS Catalog (EMBL-EBI).
       </p>

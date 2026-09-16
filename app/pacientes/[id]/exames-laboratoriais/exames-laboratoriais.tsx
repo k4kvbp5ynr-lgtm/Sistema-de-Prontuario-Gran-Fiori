@@ -353,7 +353,7 @@ export default function ExamesLaboratoriais({
         {podeUsarIA && (
         <div style={{ background: "var(--cor-ia-fundo)", border: "1px solid var(--cor-ia)", borderRadius: 6, padding: 12, marginBottom: 16 }}>
           <p style={{ fontWeight: "bold", fontSize: "0.9rem", color: "var(--cor-ia)", margin: "0 0 8px" }}>
-            🤖 Extrair resultados de um PDF automaticamente (IA)
+            Extrair resultados de um PDF automaticamente (IA)
           </p>
             <input
               type="file"
@@ -660,7 +660,7 @@ export default function ExamesLaboratoriais({
                                         disabled={buscandoSugestaoLivre === linha.chave}
                                         style={{ fontSize: "0.8rem", background: "var(--cor-ia)" }}
                                       >
-                                        {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "🤖 Pedir sugestão de IA"}
+                                        {buscandoSugestaoLivre === linha.chave ? "Consultando IA..." : "Pedir sugestão de IA"}
                                       </button>
                                       )}
                                       {sugestaoLivre[linha.chave] && (
@@ -675,7 +675,7 @@ export default function ExamesLaboratoriais({
                                           }}
                                         >
                                           <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "var(--cor-ia)" }}>
-                                            🤖 Sugestão gerada por IA — revise antes de usar.
+                                            Sugestão gerada por IA — revise antes de usar.
                                           </p>
                                           {sugestaoLivre[linha.chave]}
                                         </div>

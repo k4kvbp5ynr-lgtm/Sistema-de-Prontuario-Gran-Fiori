@@ -7,7 +7,7 @@ import SeletorPaciente from "../pacientes/seletor-paciente";
 
 const HORA_INICIO = 8;
 const HORA_FIM = 21;
-const ALTURA_HORA = 56; // px por hora
+const ALTURA_HORA = 44; // px por hora
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 type Agendamento = {
@@ -281,6 +281,7 @@ export default function AgendaCalendario() {
               position: "relative",
               height: horas.length * ALTURA_HORA,
               borderLeft: "1px solid var(--cor-borda)",
+              backgroundImage: `repeating-linear-gradient(to bottom, var(--cor-fundo) 0 ${ALTURA_HORA - 1}px, #182527 ${ALTURA_HORA - 1}px ${ALTURA_HORA}px)`,
             }}
           >
             {horas.map((h) => (
@@ -292,7 +293,6 @@ export default function AgendaCalendario() {
                   top: (h - HORA_INICIO) * ALTURA_HORA,
                   width: "100%",
                   height: ALTURA_HORA,
-                  borderBottom: "1px solid #f0ede6",
                   cursor: "pointer",
                 }}
               />
@@ -320,11 +320,14 @@ export default function AgendaCalendario() {
                     left: 2,
                     right: 2,
                     background: profissional?.cor_agenda ?? "var(--cor-marca)",
-                    color: "white",
-                    borderRadius: 4,
-                    padding: "2px 6px",
-                    fontSize: "0.75rem",
+                    color: "#06211e",
+                    borderRadius: 6,
+                    padding: "3px 7px",
+                    fontSize: 11,
+                    lineHeight: "16px",
+                    whiteSpace: "nowrap",
                     overflow: "hidden",
+                    textOverflow: "ellipsis",
                     cursor: "pointer",
                     opacity: cancelado ? 0.4 : 1,
                     textDecoration: cancelado ? "line-through" : "none",

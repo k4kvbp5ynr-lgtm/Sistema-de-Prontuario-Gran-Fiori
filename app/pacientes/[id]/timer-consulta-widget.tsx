@@ -10,28 +10,40 @@ function formatarTempo(segundos: number): string {
   return `${m}:${s}`;
 }
 
+const estiloPilula: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "8px 16px",
+  borderRadius: 20,
+  border: "1px solid var(--cor-borda-input)",
+  fontSize: 13,
+  fontFamily: "var(--fonte-mono)",
+  fontWeight: 600,
+};
+
 export default function TimerConsultaWidget() {
   const { rodando, travado, segundosDecorridos, iniciar } = useConsultaTimer();
 
   if (travado) {
     return (
-      <span style={{ fontSize: "0.85rem", color: "var(--cor-sucesso)", fontWeight: "bold" }}>
-        ✓ Consulta registrada — {formatarTempo(segundosDecorridos)}
+      <span style={{ ...estiloPilula, color: "var(--cor-sucesso)", borderColor: "var(--cor-sucesso)" }}>
+        Consulta registrada — {formatarTempo(segundosDecorridos)}
       </span>
     );
   }
 
   if (rodando) {
     return (
-      <span style={{ fontSize: "0.95rem", color: "var(--cor-marca)", fontWeight: "bold", fontVariantNumeric: "tabular-nums" }}>
-        ⏱️ {formatarTempo(segundosDecorridos)}
+      <span style={{ ...estiloPilula, color: "var(--cor-marca-clara)", borderColor: "var(--cor-marca)" }}>
+        ◷ {formatarTempo(segundosDecorridos)}
       </span>
     );
   }
 
   return (
-    <button type="button" onClick={iniciar} style={{ fontSize: "0.85rem", background: "var(--cor-sucesso)" }}>
-      ▶ Iniciar consulta
+    <button type="button" onClick={iniciar} style={{ fontSize: 13 }}>
+      Iniciar consulta
     </button>
   );
 }

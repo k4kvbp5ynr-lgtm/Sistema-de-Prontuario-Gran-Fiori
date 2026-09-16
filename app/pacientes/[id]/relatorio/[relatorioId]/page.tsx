@@ -59,7 +59,7 @@ export default async function VisualizarRelatorioPage({
           margin: "0 auto 32px",
           background: "white",
           padding: "48px 56px",
-          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontFamily: "var(--fonte-ui), "Plus Jakarta Sans", -apple-system, sans-serif",
           color: "#1a1a1a",
           fontSize: "0.95rem",
           lineHeight: 1.5,

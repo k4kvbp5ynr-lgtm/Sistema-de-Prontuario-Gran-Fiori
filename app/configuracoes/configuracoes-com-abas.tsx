@@ -23,20 +23,20 @@ export default function ConfiguracoesComAbas({
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 4, borderBottom: "2px solid var(--cor-borda)", marginBottom: 20 }}>
+      <div style={{ display: "inline-flex", gap: 0, background: "var(--cor-fundo-card)", borderRadius: 22, padding: 4, marginBottom: 20 }}>
         {abas.map((aba) => (
           <button
             key={aba.id}
             type="button"
             onClick={() => setSelecionada(aba.id)}
             style={{
-              background: "none",
+              background: selecionada === aba.id ? "var(--cor-marca-fundo)" : "transparent",
               border: "none",
-              borderBottom: selecionada === aba.id ? "2px solid var(--cor-marca)" : "2px solid transparent",
-              marginBottom: -2,
-              padding: "10px 16px",
-              fontWeight: selecionada === aba.id ? "bold" : "normal",
-              color: selecionada === aba.id ? "var(--cor-marca)" : "var(--cor-texto-suave)",
+              borderRadius: 18,
+              padding: "8px 16px",
+              fontWeight: selecionada === aba.id ? 700 : 600,
+              fontSize: selecionada === aba.id ? 13 : 12,
+              color: selecionada === aba.id ? "var(--cor-marca-clara)" : "#a9b8b6",
               cursor: "pointer",
             }}
           >
