@@ -15,11 +15,13 @@ type Agendamento = {
   paciente_id: string | null;
   profissional_id: string;
   data_hora: string;
+  data_hora_fim: string | null;
   duracao_minutos: number;
   tipo_evento_id: string | null;
   titulo_livre: string | null;
   status: string;
   observacao: string | null;
+  serie_id: string | null;
   pacientes: { nome: string } | null;
 };
 
@@ -43,6 +45,7 @@ export default function AgendaCalendario() {
   const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
   const [linkFeed, setLinkFeed] = useState<string | null>(null);
   const [meuId, setMeuId] = useState<string | null>(null);
+  const [profissionaisVisiveis, setProfissionaisVisiveis] = useState<Set<string> | null>(null);
 
   // formulário de novo agendamento
   const [slotSelecionado, setSlotSelecionado] = useState<{ dia: Date; hora: number } | null>(null);
@@ -51,6 +54,10 @@ export default function AgendaCalendario() {
   const [tipoEventoId, setTipoEventoId] = useState("");
   const [tituloLivre, setTituloLivre] = useState("");
   const [duracao, setDuracao] = useState(30);
+  const [dataFim, setDataFim] = useState("");
+  const [horaFimManual, setHoraFimManual] = useState(""); // usado só quando é evento de vários dias
+  const [repetirSemanalmente, setRepetirSemanalmente] = useState(false);
+  const [repetirAte, setRepetirAte] = useState("");
   const [observacao, setObservacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -72,7 +79,7 @@ export default function AgendaCalendario() {
     const { data } = await supabase
       .from("agendamentos")
       .select(
-        "id, paciente_id, profissional_id, data_hora, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, pacientes ( nome )"
+        "id, paciente_id, profissional_id, data_hora, data_hora_fim, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, serie_id, pacientes ( nome )"
       )
       .gte("data_hora", inicio.toISOString())
       .lt("data_hora", fim.toISOString())
@@ -98,7 +105,10 @@ export default function AgendaCalendario() {
       .select("id, nome, cor_agenda")
       .eq("ativo", true)
       .order("nome")
-      .then(({ data }) => setUsuariosAgenda(data ?? []));
+      .then(({ data }) => {
+        setUsuariosAgenda(data ?? []);
+        setProfissionaisVisiveis(new Set((data ?? []).map((u) => u.id)));
+      });
 
     supabase
       .from("tipos_evento")
@@ -118,6 +128,10 @@ export default function AgendaCalendario() {
     setTipoEventoId("");
     setTituloLivre("");
     setDuracao(30);
+    setDataFim(dia.toISOString().slice(0, 10));
+    setHoraFimManual("");
+    setRepetirSemanalmente(false);
+    setRepetirAte("");
     setObservacao("");
     setErro(null);
   }
@@ -131,22 +145,69 @@ export default function AgendaCalendario() {
       setErro("Esse tipo de evento exige selecionar um paciente.");
       return;
     }
+    if (repetirSemanalmente && !repetirAte) {
+      setErro('Informe até quando repetir, ou desmarque "Repetir semanalmente".');
+      return;
+    }
 
     setErro(null);
     setSalvando(true);
 
-    const dataHora = new Date(slotSelecionado.dia);
-    dataHora.setHours(slotSelecionado.hora, 0, 0, 0);
+    const inicioBase = new Date(slotSelecionado.dia);
+    inicioBase.setHours(slotSelecionado.hora, 0, 0, 0);
 
-    const { error } = await supabase.from("agendamentos").insert({
-      paciente_id: tipoSelecionado?.requer_paciente ? pacienteId : null,
-      profissional_id: profissionalId,
-      data_hora: dataHora.toISOString(),
-      duracao_minutos: duracao,
-      tipo_evento_id: tipoEventoId,
-      titulo_livre: tipoSelecionado?.requer_paciente ? null : tituloLivre || null,
-      observacao: observacao || null,
+    // Fim: se a data de fim informada for diferente do dia inicial, é um evento de
+    // vários dias (ex: férias) e usa o horário de fim manual (ou 23:59); senão, é o
+    // mesmo dia e o fim vem da duração escolhida.
+    const diaFimEscolhido = dataFim ? new Date(dataFim + "T00:00:00") : null;
+    const ehVariosDias = diaFimEscolhido && diaFimEscolhido.toDateString() !== inicioBase.toDateString();
+
+    function calcularFim(inicio: Date): { fim: Date; duracaoMin: number } {
+      if (ehVariosDias && diaFimEscolhido) {
+        const fim = new Date(diaFimEscolhido);
+        if (horaFimManual) {
+          const [h, m] = horaFimManual.split(":").map(Number);
+          fim.setHours(h, m, 0, 0);
+        } else {
+          fim.setHours(23, 59, 0, 0);
+        }
+        const duracaoMin = Math.round((fim.getTime() - inicio.getTime()) / 60000);
+        return { fim, duracaoMin };
+      }
+      const fim = new Date(inicio.getTime() + duracao * 60000);
+      return { fim, duracaoMin: duracao };
+    }
+
+    const serieId = repetirSemanalmente ? crypto.randomUUID() : null;
+    const ocorrencias: Date[] = [inicioBase];
+
+    if (repetirSemanalmente && repetirAte) {
+      const limite = new Date(repetirAte + "T23:59:59");
+      let proxima = new Date(inicioBase);
+      while (true) {
+        proxima = new Date(proxima);
+        proxima.setDate(proxima.getDate() + 7);
+        if (proxima > limite) break;
+        ocorrencias.push(proxima);
+      }
+    }
+
+    const linhas = ocorrencias.map((inicio) => {
+      const { fim, duracaoMin } = calcularFim(inicio);
+      return {
+        paciente_id: tipoSelecionado?.requer_paciente ? pacienteId : null,
+        profissional_id: profissionalId,
+        data_hora: inicio.toISOString(),
+        data_hora_fim: fim.toISOString(),
+        duracao_minutos: duracaoMin,
+        tipo_evento_id: tipoEventoId,
+        titulo_livre: tipoSelecionado?.requer_paciente ? null : tituloLivre || null,
+        observacao: observacao || null,
+        serie_id: serieId,
+      };
     });
+
+    const { error } = await supabase.from("agendamentos").insert(linhas);
 
     setSalvando(false);
 
@@ -159,14 +220,26 @@ export default function AgendaCalendario() {
     carregar();
   }
 
-  async function atualizarStatus(id: string, status: string) {
-    await supabase.from("agendamentos").update({ status }).eq("id", id);
+  async function atualizarStatus(agendamento: Agendamento, status: string, escopo: "esta" | "futuras" = "esta") {
+    if (escopo === "futuras" && agendamento.serie_id) {
+      await supabase
+        .from("agendamentos")
+        .update({ status })
+        .eq("serie_id", agendamento.serie_id)
+        .gte("data_hora", agendamento.data_hora);
+    } else {
+      await supabase.from("agendamentos").update({ status }).eq("id", agendamento.id);
+    }
     setDetalheId(null);
     carregar();
   }
 
-  async function excluirAgendamento(id: string) {
-    await supabase.from("agendamentos").delete().eq("id", id);
+  async function excluirAgendamento(agendamento: Agendamento, escopo: "esta" | "futuras" = "esta") {
+    if (escopo === "futuras" && agendamento.serie_id) {
+      await supabase.from("agendamentos").delete().eq("serie_id", agendamento.serie_id).gte("data_hora", agendamento.data_hora);
+    } else {
+      await supabase.from("agendamentos").delete().eq("id", agendamento.id);
+    }
     setDetalheId(null);
     carregar();
   }
@@ -180,8 +253,25 @@ export default function AgendaCalendario() {
 
   function agendamentosDoDia(dia: Date) {
     return agendamentos.filter((a) => {
+      if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
       const d = new Date(a.data_hora);
+      const ehMultiDia = a.data_hora_fim && new Date(a.data_hora_fim).toDateString() !== d.toDateString();
+      if (ehMultiDia) return false; // esses vão na faixa de vários dias, não na grade de horas
       return d.toDateString() === dia.toDateString();
+    });
+  }
+
+  const eventosMultiDia = agendamentos.filter((a) => {
+    if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
+    return a.data_hora_fim && new Date(a.data_hora_fim).toDateString() !== new Date(a.data_hora).toDateString();
+  });
+
+  function alternarProfissionalVisivel(id: string) {
+    setProfissionaisVisiveis((atual) => {
+      const novo = new Set(atual ?? []);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
     });
   }
 
@@ -230,14 +320,85 @@ export default function AgendaCalendario() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12, fontSize: "0.85rem" }}>
-        {usuariosAgenda.map((u) => (
-          <span key={u.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 12, height: 12, borderRadius: "50%", background: u.cor_agenda, display: "inline-block" }} />
-            {u.nome}
-          </span>
-        ))}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12, fontSize: "0.85rem" }}>
+        {usuariosAgenda.map((u) => {
+          const visivel = !profissionaisVisiveis || profissionaisVisiveis.has(u.id);
+          return (
+            <button
+              key={u.id}
+              type="button"
+              onClick={() => alternarProfissionalVisivel(u.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "5px 12px",
+                borderRadius: 16,
+                background: visivel ? "var(--cor-fundo-card-alt)" : "transparent",
+                border: "1px solid var(--cor-borda-input)",
+                opacity: visivel ? 1 : 0.45,
+                fontSize: 12,
+                color: "var(--cor-texto-suave)",
+              }}
+            >
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: u.cor_agenda, display: "inline-block" }} />
+              {u.nome}
+            </button>
+          );
+        })}
       </div>
+
+      {eventosMultiDia.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "50px repeat(6, 1fr)",
+            border: "1px solid var(--cor-borda)",
+            borderBottom: "none",
+          }}
+        >
+          <div style={{ fontSize: 10, color: "var(--cor-texto-muito-fraco)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            Vários dias
+          </div>
+          <div style={{ gridColumn: "2 / span 6", position: "relative", minHeight: 28, padding: "3px 0" }}>
+            {eventosMultiDia.map((a, i) => {
+              const inicio = new Date(a.data_hora);
+              const fim = new Date(a.data_hora_fim!);
+              // posição em número de dias desde a segunda-feira da semana visível (0 a 5)
+              const colInicio = Math.max(0, Math.round((new Date(inicio.toDateString()).getTime() - new Date(dias[0].toDateString()).getTime()) / 86400000));
+              const colFim = Math.min(5, Math.round((new Date(fim.toDateString()).getTime() - new Date(dias[0].toDateString()).getTime()) / 86400000));
+              if (colFim < 0 || colInicio > 5) return null; // fora da semana visível
+              const profissional = usuariosAgenda.find((u) => u.id === a.profissional_id);
+              const tipoEvento = tiposEvento.find((t) => t.id === a.tipo_evento_id);
+              const rotulo = a.pacientes?.nome ?? a.titulo_livre ?? tipoEvento?.nome ?? "Evento";
+              return (
+                <div
+                  key={a.id}
+                  onClick={() => setDetalheId(a.id)}
+                  style={{
+                    position: "absolute",
+                    top: i * 24,
+                    left: `${(colInicio / 6) * 100}%`,
+                    width: `${((colFim - colInicio + 1) / 6) * 100}%`,
+                    height: 20,
+                    background: profissional?.cor_agenda ?? "var(--cor-marca)",
+                    color: "#06211e",
+                    borderRadius: 6,
+                    padding: "2px 8px",
+                    fontSize: 11,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    cursor: "pointer",
+                  }}
+                >
+                  {rotulo}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "50px repeat(6, 1fr)", border: "1px solid var(--cor-borda)" }}>
         <div></div>
@@ -416,6 +577,31 @@ export default function AgendaCalendario() {
                 <option value={90}>90 min</option>
               </select>
 
+              <label>Data de fim (só se o evento durar vários dias, ex: férias)</label>
+              <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+              {dataFim && slotSelecionado && new Date(dataFim).toDateString() !== slotSelecionado.dia.toDateString() && (
+                <>
+                  <label style={{ fontSize: 11 }}>Horário de término no último dia (opcional, padrão 23:59)</label>
+                  <input type="time" value={horaFimManual} onChange={(e) => setHoraFimManual(e.target.value)} />
+                </>
+              )}
+
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={repetirSemanalmente}
+                  onChange={(e) => setRepetirSemanalmente(e.target.checked)}
+                  style={{ width: "auto", marginBottom: 0 }}
+                />
+                Repetir semanalmente (mesmo dia da semana e horário)
+              </label>
+              {repetirSemanalmente && (
+                <>
+                  <label style={{ fontSize: 11 }}>Repetir até (data)</label>
+                  <input type="date" value={repetirAte} onChange={(e) => setRepetirAte(e.target.value)} />
+                </>
+              )}
+
               <label>Observação</label>
               <input value={observacao} onChange={(e) => setObservacao(e.target.value)} />
 
@@ -460,28 +646,50 @@ export default function AgendaCalendario() {
               {usuariosAgenda.find((u) => u.id === agendamentoDetalhe.profissional_id)?.nome} ·{" "}
               {new Date(agendamentoDetalhe.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} ·{" "}
               {tiposEvento.find((t) => t.id === agendamentoDetalhe.tipo_evento_id)?.nome} ·{" "}
-              {agendamentoDetalhe.duracao_minutos} min
+              {agendamentoDetalhe.data_hora_fim &&
+              new Date(agendamentoDetalhe.data_hora_fim).toDateString() !== new Date(agendamentoDetalhe.data_hora).toDateString()
+                ? `até ${new Date(agendamentoDetalhe.data_hora_fim).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+                : `${agendamentoDetalhe.duracao_minutos} min`}
             </p>
             {agendamentoDetalhe.observacao && <p style={{ fontSize: "0.9rem" }}>{agendamentoDetalhe.observacao}</p>}
             <p style={{ fontSize: "0.9rem" }}>
               Status atual: <b>{agendamentoDetalhe.status}</b>
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
-              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "confirmado")}>
+              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe, "confirmado")}>
                 Confirmar
               </button>
-              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "realizado")}>
+              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe, "realizado")}>
                 Marcar realizado
               </button>
-              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "faltou")}>
+              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe, "faltou")}>
                 Faltou
               </button>
-              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe.id, "cancelado")} style={{ background: "var(--cor-erro)" }}>
-                Cancelar
+            </div>
+
+            {agendamentoDetalhe.serie_id && (
+              <p style={{ fontSize: 11, color: "var(--cor-texto-fraco)", margin: "10px 0 4px" }}>
+                Este evento faz parte de uma série recorrente. Cancelar/excluir "esta e as futuras" não afeta ocorrências passadas.
+              </p>
+            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+              <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe, "cancelado", "esta")} style={{ background: "var(--cor-erro)" }}>
+                Cancelar só esta
               </button>
-              <button type="button" onClick={() => excluirAgendamento(agendamentoDetalhe.id)} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
-                Excluir
+              {agendamentoDetalhe.serie_id && (
+                <button type="button" onClick={() => atualizarStatus(agendamentoDetalhe, "cancelado", "futuras")} style={{ background: "var(--cor-erro)" }}>
+                  Cancelar esta e as futuras
+                </button>
+              )}
+              <button type="button" onClick={() => excluirAgendamento(agendamentoDetalhe, "esta")} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
+                Excluir só esta
               </button>
+              {agendamentoDetalhe.serie_id && (
+                <button type="button" onClick={() => excluirAgendamento(agendamentoDetalhe, "futuras")} style={{ background: "transparent", color: "var(--cor-texto-suave)" }}>
+                  Excluir esta e as futuras
+                </button>
+              )}
             </div>
           </div>
         </div>

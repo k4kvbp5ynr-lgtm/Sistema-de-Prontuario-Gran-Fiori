@@ -13,6 +13,7 @@ import FaixaSegurancaClinica from "./faixa-seguranca-clinica";
 import EdicaoVersionada from "./edicao-versionada";
 import EscalasDesfecho from "./escalas-desfecho";
 import ProcedimentosRealizados from "./procedimentos-realizados";
+import LaudoUsg from "./laudo-usg";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -125,6 +126,12 @@ export default async function DetalhePacientePage({
       id: "procedimentos-realizados",
       label: "Procedimentos realizados",
       conteudo: <ProcedimentosRealizados pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "laudo-usg",
+      label: "Laudo de USG",
+      conteudo: <LaudoUsg pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
