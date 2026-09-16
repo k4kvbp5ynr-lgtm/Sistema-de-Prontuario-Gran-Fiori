@@ -9,21 +9,21 @@ export type ItemMenuLateral =
   | { tipo: "acao"; id: string; label: string; icone: string; conteudo: ReactNode }; // ex: botão de sair
 
 function BotaoTema() {
-  const [escuro, setEscuro] = useState(false);
+  const [claro, setClaro] = useState(false);
 
   useEffect(() => {
-    setEscuro(document.documentElement.getAttribute("data-theme") === "dark");
+    setClaro(document.documentElement.getAttribute("data-theme") === "light");
   }, []);
 
   function alternar() {
-    const novoEscuro = !escuro;
-    setEscuro(novoEscuro);
-    if (novoEscuro) {
-      document.documentElement.setAttribute("data-theme", "dark");
-      localStorage.setItem("tema", "dark");
+    const novoClaro = !claro;
+    setClaro(novoClaro);
+    if (novoClaro) {
+      document.documentElement.setAttribute("data-theme", "light");
+      localStorage.setItem("tema", "light");
     } else {
       document.documentElement.removeAttribute("data-theme");
-      localStorage.setItem("tema", "light");
+      localStorage.setItem("tema", "dark");
     }
   }
 
@@ -32,9 +32,9 @@ function BotaoTema() {
       type="button"
       onClick={alternar}
       style={{ border: "none", background: "none", padding: 0, cursor: "pointer", width: "100%" }}
-      title={escuro ? "Mudar para Light On" : "Mudar para Light Off"}
+      title={claro ? "Mudar para tema escuro" : "Mudar para tema claro"}
     >
-      <BotaoMenu icone={escuro ? "☀️" : "🌙"} label={escuro ? "Light On" : "Light Off"} ativo={false} />
+      <BotaoMenu icone={claro ? "☀️" : "🌙"} label={claro ? "Light On" : "Light Off"} ativo={false} />
     </button>
   );
 }
