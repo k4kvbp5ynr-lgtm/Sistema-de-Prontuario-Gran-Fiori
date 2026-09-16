@@ -21,12 +21,10 @@ export default function FollowupsPendentes() {
   const [observacaoTexto, setObservacaoTexto] = useState("");
 
   async function carregar() {
-    const hoje = new Date().toISOString().slice(0, 10);
     const { data } = await supabase
       .from("tarefas_followup")
       .select("id, paciente_id, rotulo, data_prevista, observacao, pacientes ( nome, telefone )")
       .eq("status", "pendente")
-      .lte("data_prevista", hoje)
       .order("data_prevista");
     setTarefas((data as any) ?? []);
     setCarregado(true);
@@ -50,15 +48,30 @@ export default function FollowupsPendentes() {
     carregar();
   }
 
+  const hoje = new Date().toISOString().slice(0, 10);
+  const em14dias = new Date();
+  em14dias.setDate(em14dias.getDate() + 14);
+  const limite14 = em14dias.toISOString().slice(0, 10);
+
+  const [verTodos, setVerTodos] = useState(false);
+  const visiveis = verTodos ? tarefas : tarefas.filter((t) => t.data_prevista <= limite14);
+
   if (!carregado || tarefas.length === 0) return null;
 
   return (
     <div style={{ background: "var(--cor-fundo-card)", border: "1px solid var(--cor-borda)", borderRadius: 14, padding: 16, marginTop: 18 }}>
-      <p style={{ margin: "0 0 10px", fontSize: 15, fontWeight: 700 }}>
-        Follow-ups pendentes <span style={{ fontWeight: 400, color: "var(--cor-texto-fraco)" }}>({tarefas.length})</span>
-      </p>
-      {tarefas.map((t) => {
-        const atrasado = t.data_prevista < new Date().toISOString().slice(0, 10);
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <p style={{ margin: "0 0 10px", fontSize: 15, fontWeight: 700 }}>
+          Follow-ups pendentes <span style={{ fontWeight: 400, color: "var(--cor-texto-fraco)" }}>({tarefas.length})</span>
+        </p>
+        {tarefas.length > visiveis.length || verTodos ? (
+          <button type="button" onClick={() => setVerTodos(!verTodos)} className="botao-secundario" style={{ fontSize: 11, padding: "4px 10px" }}>
+            {verTodos ? "Mostrar só próximos 14 dias" : `Ver todos (${tarefas.length})`}
+          </button>
+        ) : null}
+      </div>
+      {visiveis.map((t) => {
+        const atrasado = t.data_prevista < hoje;
         return (
           <div key={t.id} style={{ borderTop: "1px solid var(--cor-borda)", padding: "10px 0" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>

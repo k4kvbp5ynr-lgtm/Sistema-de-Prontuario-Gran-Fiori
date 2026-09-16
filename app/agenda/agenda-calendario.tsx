@@ -22,6 +22,7 @@ type Agendamento = {
   status: string;
   observacao: string | null;
   serie_id: string | null;
+  dia_inteiro: boolean;
   pacientes: { nome: string } | null;
 };
 
@@ -53,10 +54,12 @@ export default function AgendaCalendario() {
   const [pacienteId, setPacienteId] = useState("");
   const [tipoEventoId, setTipoEventoId] = useState("");
   const [tituloLivre, setTituloLivre] = useState("");
-  const [duracao, setDuracao] = useState(30);
+  const [diaInteiro, setDiaInteiro] = useState(false);
+  const [horaInicio, setHoraInicio] = useState("08:00");
+  const [horaFim, setHoraFim] = useState("08:30");
   const [dataFim, setDataFim] = useState("");
-  const [horaFimManual, setHoraFimManual] = useState(""); // usado só quando é evento de vários dias
   const [repetirSemanalmente, setRepetirSemanalmente] = useState(false);
+  const [diasSemanaRepeticao, setDiasSemanaRepeticao] = useState<Set<number>>(new Set());
   const [repetirAte, setRepetirAte] = useState("");
   const [observacao, setObservacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -79,7 +82,7 @@ export default function AgendaCalendario() {
     const { data } = await supabase
       .from("agendamentos")
       .select(
-        "id, paciente_id, profissional_id, data_hora, data_hora_fim, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, serie_id, pacientes ( nome )"
+        "id, paciente_id, profissional_id, data_hora, data_hora_fim, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, serie_id, dia_inteiro, pacientes ( nome )"
       )
       .gte("data_hora", inicio.toISOString())
       .lt("data_hora", fim.toISOString())
@@ -127,10 +130,12 @@ export default function AgendaCalendario() {
     setPacienteId("");
     setTipoEventoId("");
     setTituloLivre("");
-    setDuracao(30);
+    setDiaInteiro(false);
+    setHoraInicio(`${String(hora).padStart(2, "0")}:00`);
+    setHoraFim(`${String(Math.min(hora + 1, HORA_FIM)).padStart(2, "0")}:00`);
     setDataFim(dia.toISOString().slice(0, 10));
-    setHoraFimManual("");
     setRepetirSemanalmente(false);
+    setDiasSemanaRepeticao(new Set([dia.getDay()]));
     setRepetirAte("");
     setObservacao("");
     setErro(null);
@@ -145,54 +150,52 @@ export default function AgendaCalendario() {
       setErro("Esse tipo de evento exige selecionar um paciente.");
       return;
     }
-    if (repetirSemanalmente && !repetirAte) {
-      setErro('Informe até quando repetir, ou desmarque "Repetir semanalmente".');
+    if (repetirSemanalmente && (!repetirAte || diasSemanaRepeticao.size === 0)) {
+      setErro('Selecione ao menos um dia da semana e até quando repetir, ou desmarque "Repetir".');
       return;
     }
 
     setErro(null);
     setSalvando(true);
 
-    const inicioBase = new Date(slotSelecionado.dia);
-    inicioBase.setHours(slotSelecionado.hora, 0, 0, 0);
+    const [hIni, mIni] = diaInteiro ? [HORA_INICIO, 0] : horaInicio.split(":").map(Number);
+    const [hFimDia, mFimDia] = diaInteiro ? [HORA_FIM, 0] : horaFim.split(":").map(Number);
 
-    // Fim: se a data de fim informada for diferente do dia inicial, é um evento de
-    // vários dias (ex: férias) e usa o horário de fim manual (ou 23:59); senão, é o
-    // mesmo dia e o fim vem da duração escolhida.
-    const diaFimEscolhido = dataFim ? new Date(dataFim + "T00:00:00") : null;
-    const ehVariosDias = diaFimEscolhido && diaFimEscolhido.toDateString() !== inicioBase.toDateString();
+    const inicioBase = new Date(slotSelecionado.dia);
+    inicioBase.setHours(hIni, mIni, 0, 0);
+
+    const diaFimEscolhido = dataFim ? new Date(dataFim + "T00:00:00") : new Date(slotSelecionado.dia);
+    const ehVariosDias = diaFimEscolhido.toDateString() !== inicioBase.toDateString();
 
     function calcularFim(inicio: Date): { fim: Date; duracaoMin: number } {
-      if (ehVariosDias && diaFimEscolhido) {
-        const fim = new Date(diaFimEscolhido);
-        if (horaFimManual) {
-          const [h, m] = horaFimManual.split(":").map(Number);
-          fim.setHours(h, m, 0, 0);
-        } else {
-          fim.setHours(23, 59, 0, 0);
+      const fim = new Date(ehVariosDias ? diaFimEscolhido : inicio);
+      fim.setHours(hFimDia, mFimDia, 0, 0);
+      const duracaoMin = Math.max(1, Math.round((fim.getTime() - inicio.getTime()) / 60000));
+      return { fim, duracaoMin };
+    }
+
+    // Gera as datas de início de cada ocorrência: sem repetição = só a data escolhida;
+    // com repetição = todo dia entre o início e "repetir até" cujo dia da semana esteja marcado.
+    const ocorrenciasInicio: Date[] = [];
+    if (repetirSemanalmente && repetirAte) {
+      const limite = new Date(repetirAte + "T23:59:59");
+      const cursor = new Date(inicioBase);
+      cursor.setHours(0, 0, 0, 0);
+      while (cursor <= limite) {
+        if (diasSemanaRepeticao.has(cursor.getDay())) {
+          const dataOcorrencia = new Date(cursor);
+          dataOcorrencia.setHours(hIni, mIni, 0, 0);
+          if (dataOcorrencia >= inicioBase) ocorrenciasInicio.push(dataOcorrencia);
         }
-        const duracaoMin = Math.round((fim.getTime() - inicio.getTime()) / 60000);
-        return { fim, duracaoMin };
+        cursor.setDate(cursor.getDate() + 1);
       }
-      const fim = new Date(inicio.getTime() + duracao * 60000);
-      return { fim, duracaoMin: duracao };
+    } else {
+      ocorrenciasInicio.push(inicioBase);
     }
 
     const serieId = repetirSemanalmente ? crypto.randomUUID() : null;
-    const ocorrencias: Date[] = [inicioBase];
 
-    if (repetirSemanalmente && repetirAte) {
-      const limite = new Date(repetirAte + "T23:59:59");
-      let proxima = new Date(inicioBase);
-      while (true) {
-        proxima = new Date(proxima);
-        proxima.setDate(proxima.getDate() + 7);
-        if (proxima > limite) break;
-        ocorrencias.push(proxima);
-      }
-    }
-
-    const linhas = ocorrencias.map((inicio) => {
+    const linhas = ocorrenciasInicio.map((inicio) => {
       const { fim, duracaoMin } = calcularFim(inicio);
       return {
         paciente_id: tipoSelecionado?.requer_paciente ? pacienteId : null,
@@ -204,6 +207,7 @@ export default function AgendaCalendario() {
         titulo_livre: tipoSelecionado?.requer_paciente ? null : tituloLivre || null,
         observacao: observacao || null,
         serie_id: serieId,
+        dia_inteiro: diaInteiro,
       };
     });
 
@@ -254,6 +258,7 @@ export default function AgendaCalendario() {
   function agendamentosDoDia(dia: Date) {
     return agendamentos.filter((a) => {
       if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
+      if (a.dia_inteiro) return false; // esses vão na faixa de cima
       const d = new Date(a.data_hora);
       const ehMultiDia = a.data_hora_fim && new Date(a.data_hora_fim).toDateString() !== d.toDateString();
       if (ehMultiDia) return false; // esses vão na faixa de vários dias, não na grade de horas
@@ -263,6 +268,7 @@ export default function AgendaCalendario() {
 
   const eventosMultiDia = agendamentos.filter((a) => {
     if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
+    if (a.dia_inteiro) return true;
     return a.data_hora_fim && new Date(a.data_hora_fim).toDateString() !== new Date(a.data_hora).toDateString();
   });
 
@@ -568,23 +574,26 @@ export default function AgendaCalendario() {
                 </>
               )}
 
-              <label>Duração (minutos)</label>
-              <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} style={{ padding: 8, width: "100%", marginBottom: 12 }}>
-                <option value={15}>15 min</option>
-                <option value={30}>30 min</option>
-                <option value={45}>45 min</option>
-                <option value={60}>60 min</option>
-                <option value={90}>90 min</option>
-              </select>
+              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={diaInteiro} onChange={(e) => setDiaInteiro(e.target.checked)} style={{ width: "auto", marginBottom: 0 }} />
+                Dia inteiro
+              </label>
+
+              {!diaInteiro && (
+                <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11 }}>Hora de início</label>
+                    <input type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11 }}>Hora de fim</label>
+                    <input type="time" value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
+                  </div>
+                </div>
+              )}
 
               <label>Data de fim (só se o evento durar vários dias, ex: férias)</label>
               <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-              {dataFim && slotSelecionado && new Date(dataFim).toDateString() !== slotSelecionado.dia.toDateString() && (
-                <>
-                  <label style={{ fontSize: 11 }}>Horário de término no último dia (opcional, padrão 23:59)</label>
-                  <input type="time" value={horaFimManual} onChange={(e) => setHoraFimManual(e.target.value)} />
-                </>
-              )}
 
               <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                 <input
@@ -593,10 +602,42 @@ export default function AgendaCalendario() {
                   onChange={(e) => setRepetirSemanalmente(e.target.checked)}
                   style={{ width: "auto", marginBottom: 0 }}
                 />
-                Repetir semanalmente (mesmo dia da semana e horário)
+                Repetir
               </label>
               {repetirSemanalmente && (
                 <>
+                  <label style={{ fontSize: 11 }}>Em quais dias da semana</label>
+                  <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+                    {DIAS_SEMANA.map((label, indice) => {
+                      const ativo = diasSemanaRepeticao.has(indice);
+                      return (
+                        <button
+                          key={indice}
+                          type="button"
+                          onClick={() =>
+                            setDiasSemanaRepeticao((atual) => {
+                              const novo = new Set(atual);
+                              if (novo.has(indice)) novo.delete(indice);
+                              else novo.add(indice);
+                              return novo;
+                            })
+                          }
+                          style={{
+                            width: 36,
+                            height: 32,
+                            borderRadius: 8,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: ativo ? "var(--cor-marca-fundo)" : "transparent",
+                            border: ativo ? "1px solid var(--cor-marca)" : "1px solid var(--cor-borda-input)",
+                            color: ativo ? "var(--cor-marca-clara)" : "var(--cor-texto-suave)",
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <label style={{ fontSize: 11 }}>Repetir até (data)</label>
                   <input type="date" value={repetirAte} onChange={(e) => setRepetirAte(e.target.value)} />
                 </>
