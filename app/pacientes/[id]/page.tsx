@@ -9,6 +9,7 @@ import NovaPrescricaoForm from "./receituario/novo-prescricao-form";
 import ConsultaGenetica from "./consulta-genetica";
 import SubmenuPilulas, { ItemSubmenu } from "./submenu-pilulas";
 import BotaoSalvarConsulta from "./botao-salvar-consulta";
+import FaixaSegurancaClinica from "./faixa-seguranca-clinica";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -177,16 +178,19 @@ export default async function DetalhePacientePage({
           itens={itens}
           itemInicial="anamnese"
           cabecalho={
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <CadastroPaciente paciente={paciente} />
-              </div>
-              {!souRecepcao && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <TimerConsultaWidget />
-                  <BotaoSalvarConsulta />
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <CadastroPaciente paciente={paciente} />
                 </div>
-              )}
+                {!souRecepcao && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <TimerConsultaWidget />
+                    <BotaoSalvarConsulta />
+                  </div>
+                )}
+              </div>
+              <FaixaSegurancaClinica pacienteId={paciente.id} />
             </div>
           }
         />

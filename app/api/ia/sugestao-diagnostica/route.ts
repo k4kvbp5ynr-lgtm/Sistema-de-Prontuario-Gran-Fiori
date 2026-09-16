@@ -6,13 +6,21 @@ export const runtime = "nodejs";
 const SYSTEM_PROMPT = `Você é um assistente de apoio à decisão clínica, usado por um médico dentro de um sistema de prontuário eletrônico.
 
 REGRAS OBRIGATÓRIAS, SEM EXCEÇÃO:
-1. Baseie o raciocínio clínico SOMENTE nas informações do paciente fornecidas abaixo (evolução clínica e exames). NUNCA invente, presuma ou complete dados do paciente que não estejam explicitamente presentes.
+1. Baseie o raciocínio clínico SOMENTE nas informações do paciente fornecidas abaixo (segurança clínica, evolução clínica e exames). NUNCA invente, presuma ou complete dados do paciente que não estejam explicitamente presentes.
 2. Você tem uma ferramenta para buscar artigos médicos no PubMed. Use-a quando for útil para fundamentar a sugestão com evidência científica atual — não é obrigatório em toda consulta, mas é recomendado quando há uma hipótese diagnóstica ou de conduta que se beneficia de respaldo na literatura.
 3. Ao usar artigos do PubMed: avalie e mencione a metodologia de cada um antes de usá-lo como respaldo (tipo de estudo — revisão sistemática/meta-análise pesa mais que relato de caso ou opinião —, ano de publicação, periódico). NUNCA cite um artigo sem indicar esse contexto de qualidade da evidência. Resuma os achados com suas próprias palavras, sem reproduzir textos longos do resumo original.
 4. Se a busca não retornar nada relevante, ou se os dados do paciente forem insuficientes, diga isso claramente ("dados insuficientes" ou "nenhuma evidência relevante encontrada") em vez de especular.
 5. Você é apenas uma ferramenta de apoio. A decisão clínica final, o diagnóstico e a conduta são sempre de responsabilidade exclusiva do médico, que deve revisar criticamente tudo antes de usar.
 6. Nunca comunique diagnóstico, prognóstico ou conduta diretamente ao paciente — sua resposta é vista apenas pelo médico.
-7. Estruture sua resposta final em três seções: "HIPÓTESES DIAGNÓSTICAS", "SUGESTÃO DE CONDUTA" e, se tiver usado o PubMed, "EVIDÊNCIA CIENTÍFICA CONSULTADA" (com título, periódico, ano, tipo de estudo e um resumo curto de cada artigo usado).`;
+
+7. SEGURANÇA MEDICAMENTOSA — obrigatório em toda resposta que envolva sugerir ou ajustar medicação:
+   a. Confira as alergias registradas antes de sugerir qualquer medicamento. Se sugerir algo da mesma classe de uma alergia registrada, sinalize isso explicitamente e com destaque.
+   b. Avalie interações entre o que você está sugerindo e as medicações que o paciente já usa. Descreva a interação, a gravidade e o que fazer (evitar, ajustar dose, monitorar).
+   c. Se houver anticoagulante ou antiagregante em uso e a conduta envolver procedimento invasivo (infiltração, bloqueio, punção, artrocentese), sinalize o risco de sangramento com destaque.
+   d. Se as listas de alergias ou medicações vierem vazias, NÃO trate isso como "paciente sem alergias" ou "paciente sem medicações" — trate como informação não coletada, e sugira ao médico confirmar com o paciente antes de prescrever.
+   e. Não invente interações. Se não tiver segurança sobre uma interação específica, diga isso em vez de afirmar que não existe.
+
+8. Estruture sua resposta final em: "ALERTAS DE SEGURANÇA" (primeiro, quando houver algo das regras do item 7 — se não houver nada relevante, omita a seção), "HIPÓTESES DIAGNÓSTICAS", "SUGESTÃO DE CONDUTA" e, se tiver usado o PubMed, "EVIDÊNCIA CIENTÍFICA CONSULTADA" (com título, periódico, ano, tipo de estudo e um resumo curto de cada artigo usado).`;
 
 const PUBMED_TOOL = {
   name: "buscar_artigos_pubmed",
@@ -107,7 +115,38 @@ export async function POST(request: NextRequest) {
     .order("data_exame", { ascending: false })
     .limit(20);
 
-  let contexto = "=== EVOLUÇÃO CLÍNICA ATUAL (em preenchimento) ===\n";
+  const { data: alergias } = await supabase
+    .from("alergias_paciente")
+    .select("substancia, reacao, gravidade")
+    .eq("paciente_id", pacienteId)
+    .eq("ativo", true);
+
+  const { data: medicacoes } = await supabase
+    .from("medicacoes_paciente")
+    .select("medicamento, dose, frequencia, anticoagulante")
+    .eq("paciente_id", pacienteId)
+    .eq("ativo", true);
+
+  let contexto = "=== SEGURANÇA CLÍNICA (ATENÇÃO PRIORITÁRIA) ===\n";
+  contexto += "Alergias registradas:\n";
+  if (alergias && alergias.length > 0) {
+    for (const a of alergias) {
+      contexto += `- ${a.substancia}${a.reacao ? ` (reação: ${a.reacao})` : ""}${a.gravidade ? ` — gravidade ${a.gravidade}` : ""}\n`;
+    }
+  } else {
+    contexto += "- Nenhuma alergia registrada no sistema. ATENÇÃO: ausência de registro não significa ausência de alergia; pode simplesmente não ter sido perguntado ainda.\n";
+  }
+
+  contexto += "Medicações em uso:\n";
+  if (medicacoes && medicacoes.length > 0) {
+    for (const m of medicacoes) {
+      contexto += `- ${m.medicamento}${m.dose ? ` ${m.dose}` : ""}${m.frequencia ? ` — ${m.frequencia}` : ""}${m.anticoagulante ? " [ANTICOAGULANTE/ANTIAGREGANTE]" : ""}\n`;
+    }
+  } else {
+    contexto += "- Nenhuma medicação em uso registrada no sistema. ATENÇÃO: ausência de registro não significa que o paciente não usa medicação; pode não ter sido perguntado ainda.\n";
+  }
+
+  contexto += "\n=== EVOLUÇÃO CLÍNICA ATUAL (em preenchimento) ===\n";
   contexto += `Motivo da consulta: ${motivoAtual || "não informado"}\n`;
   contexto += `Anamnese: ${anamneseAtual || "não informado"}\n`;
   contexto += `Exame físico: ${exameFisicoAtual || "não informado"}\n\n`;
