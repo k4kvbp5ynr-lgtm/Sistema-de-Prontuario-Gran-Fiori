@@ -9,6 +9,7 @@ export default function ConfiguracoesComAbas({
   equipe,
   rastreabilidade,
   recall,
+  indicadores,
 }: {
   assinaturas: ReactNode;
   procedimentos: ReactNode | null;
@@ -16,6 +17,7 @@ export default function ConfiguracoesComAbas({
   equipe: ReactNode | null;
   rastreabilidade: ReactNode | null;
   recall: ReactNode | null;
+  indicadores: ReactNode | null;
 }) {
   const abas = [
     { id: "assinaturas", label: "Assinaturas", conteudo: assinaturas },
@@ -24,6 +26,7 @@ export default function ConfiguracoesComAbas({
     { id: "equipe", label: "Equipe", conteudo: equipe },
     { id: "rastreabilidade", label: "Rastreabilidade", conteudo: rastreabilidade },
     { id: "recall", label: "Recall", conteudo: recall },
+    { id: "indicadores", label: "Indicadores", conteudo: indicadores },
   ].filter((aba) => aba.conteudo !== null);
   const [selecionada, setSelecionada] = useState("assinaturas");
 
