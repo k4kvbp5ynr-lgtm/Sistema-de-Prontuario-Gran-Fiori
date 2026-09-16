@@ -333,9 +333,6 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         )}
       </div>
 
-      <button type="submit" disabled={salvando} style={{ marginTop: 8, alignSelf: "flex-start" }}>
-        {salvando ? "Salvando..." : "Salvar consulta"}
-      </button>
     </form>
   );
 }

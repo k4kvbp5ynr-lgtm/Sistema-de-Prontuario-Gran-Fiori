@@ -8,6 +8,7 @@ import ExamesLaboratoriais from "./exames-laboratoriais/exames-laboratoriais";
 import NovaPrescricaoForm from "./receituario/novo-prescricao-form";
 import ConsultaGenetica from "./consulta-genetica";
 import SubmenuPilulas, { ItemSubmenu } from "./submenu-pilulas";
+import BotaoSalvarConsulta from "./botao-salvar-consulta";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -89,7 +90,7 @@ export default async function DetalhePacientePage({
       tipo: "painel",
       id: "exames-lab",
       label: "Exames de análises clínicas",
-      conteudo: <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} podeUsarIA={podeUsarIA} />,
+      conteudo: <ExamesLaboratoriais pacienteId={paciente.id} nomePaciente={paciente.nome} sexoPaciente={paciente.sexo} podeUsarIA={podeUsarIA} />,
     },
     {
       tipo: "painel",
@@ -180,7 +181,12 @@ export default async function DetalhePacientePage({
               <div style={{ flex: 1 }}>
                 <CadastroPaciente paciente={paciente} />
               </div>
-              {!souRecepcao && <TimerConsultaWidget />}
+              {!souRecepcao && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <TimerConsultaWidget />
+                  <BotaoSalvarConsulta />
+                </div>
+              )}
             </div>
           }
         />

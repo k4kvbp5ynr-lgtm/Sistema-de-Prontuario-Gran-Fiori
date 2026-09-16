@@ -128,6 +128,9 @@ export default function Chat({ meuId }: { meuId: string }) {
     fimDaListaRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens]);
 
+  const [buscaContato, setBuscaContato] = useState("");
+  const contatosFiltrados = contatos.filter((c) => c.nome.toLowerCase().includes(buscaContato.toLowerCase()));
+
   function iniciais(nome: string) {
     return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   }
@@ -136,7 +139,15 @@ export default function Chat({ meuId }: { meuId: string }) {
     <div style={{ display: "flex", height: "calc(100vh - 120px)", border: "1px solid var(--cor-borda)", borderRadius: 14, overflow: "hidden" }}>
       <div style={{ width: 236, borderRight: "1px solid var(--cor-borda)", overflowY: "auto", background: "var(--cor-sidebar)" }}>
         <p style={{ fontSize: 16, fontWeight: 700, margin: "14px 14px 10px", color: "var(--cor-texto)" }}>Equipe</p>
-        {contatos.map((c) => (
+        <div style={{ padding: "0 14px 10px" }}>
+          <input
+            value={buscaContato}
+            onChange={(e) => setBuscaContato(e.target.value)}
+            placeholder="Buscar pessoa"
+            style={{ borderRadius: 24, marginBottom: 0 }}
+          />
+        </div>
+        {contatosFiltrados.map((c) => (
           <div
             key={c.id}
             onClick={() => abrirConversa(c)}

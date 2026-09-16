@@ -49,10 +49,12 @@ const FUNDO_STATUS: Record<string, string> = {
 
 export default function ExamesLaboratoriais({
   pacienteId,
+  nomePaciente,
   sexoPaciente,
   podeUsarIA = true,
 }: {
   pacienteId: string;
+  nomePaciente?: string;
   sexoPaciente: string | null;
   podeUsarIA?: boolean;
 }) {
@@ -345,9 +347,11 @@ export default function ExamesLaboratoriais({
         background: "var(--cor-fundo-card)",
       }}
     >
-      <h2 style={{ fontSize: "1.1rem" }}>
-        Exames de análises clínicas {resultados.length > 0 && `(${linhas.length} marcadores)`}
-      </h2>
+      {nomePaciente && <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 2px", color: "var(--cor-texto)" }}>{nomePaciente}</h1>}
+      <p style={{ fontSize: 12, color: "var(--cor-texto-fraco)", margin: "0 0 14px" }}>
+        Exames de análises clínicas {linhas.length > 0 && `(${linhas.length} marcadores)`}
+        {datas.length > 0 && ` · ${datas.length} coleta${datas.length > 1 ? "s" : ""}`}
+      </p>
 
       <div style={{ padding: "0 0 16px" }}>
         {podeUsarIA && (

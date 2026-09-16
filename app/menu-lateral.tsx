@@ -163,10 +163,12 @@ export default function MenuLateral({
   itens,
   itemInicial,
   cabecalho,
+  extraSidebar,
 }: {
   itens: ItemMenuLateral[];
   itemInicial?: string;
   cabecalho?: ReactNode;
+  extraSidebar?: ReactNode;
 }) {
   const painelInicial = itens.find((i) => i.tipo === "painel" && i.id === itemInicial) as
     | Extract<ItemMenuLateral, { tipo: "painel" }>
@@ -261,6 +263,8 @@ export default function MenuLateral({
               );
             })}
         </div>
+
+        {extraSidebar}
 
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
           <BotaoTema />
