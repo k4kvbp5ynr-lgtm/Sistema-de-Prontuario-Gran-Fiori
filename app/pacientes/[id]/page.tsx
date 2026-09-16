@@ -12,6 +12,7 @@ import BotaoSalvarConsulta from "./botao-salvar-consulta";
 import FaixaSegurancaClinica from "./faixa-seguranca-clinica";
 import EdicaoVersionada from "./edicao-versionada";
 import EscalasDesfecho from "./escalas-desfecho";
+import ProcedimentosRealizados from "./procedimentos-realizados";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -118,6 +119,12 @@ export default async function DetalhePacientePage({
       id: "escalas",
       label: "Escalas de desfecho",
       conteudo: <EscalasDesfecho pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "procedimentos-realizados",
+      label: "Procedimentos realizados",
+      conteudo: <ProcedimentosRealizados pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",

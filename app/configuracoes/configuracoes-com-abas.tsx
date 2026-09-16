@@ -7,17 +7,20 @@ export default function ConfiguracoesComAbas({
   procedimentos,
   tiposEvento,
   equipe,
+  rastreabilidade,
 }: {
   assinaturas: ReactNode;
   procedimentos: ReactNode | null;
   tiposEvento: ReactNode | null;
   equipe: ReactNode | null;
+  rastreabilidade: ReactNode | null;
 }) {
   const abas = [
     { id: "assinaturas", label: "Assinaturas", conteudo: assinaturas },
     { id: "procedimentos", label: "Procedimentos", conteudo: procedimentos },
     { id: "tipos-evento", label: "Tipos de evento", conteudo: tiposEvento },
     { id: "equipe", label: "Equipe", conteudo: equipe },
+    { id: "rastreabilidade", label: "Rastreabilidade", conteudo: rastreabilidade },
   ].filter((aba) => aba.conteudo !== null);
   const [selecionada, setSelecionada] = useState("assinaturas");
 
