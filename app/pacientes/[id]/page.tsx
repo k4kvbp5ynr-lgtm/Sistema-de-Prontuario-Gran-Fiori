@@ -7,7 +7,7 @@ import ProcedimentosPaciente from "./procedimentos-paciente";
 import ExamesLaboratoriais from "./exames-laboratoriais/exames-laboratoriais";
 import NovaPrescricaoForm from "./receituario/novo-prescricao-form";
 import ConsultaGenetica from "./consulta-genetica";
-import MenuLateral, { ItemMenuLateral } from "../../menu-lateral";
+import SubmenuPilulas, { ItemSubmenu } from "./submenu-pilulas";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
 
@@ -63,13 +63,12 @@ export default async function DetalhePacientePage({
     );
   }
 
-  const itens: ItemMenuLateral[] = [
-    { tipo: "link", id: "voltar", label: "Voltar", icone: "⬅️", href: "/pacientes" },
+  const itens: ItemSubmenu[] = [
+    { tipo: "link", id: "voltar", label: "Voltar", href: "/pacientes" },
     {
       tipo: "painel",
       id: "anamnese",
       label: "Anamnese",
-      icone: "📝",
       conteudo: souRecepcao ? (
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Anexar exames</h2>
@@ -89,35 +88,30 @@ export default async function DetalhePacientePage({
       tipo: "painel",
       id: "exames-lab",
       label: "Exames de análises clínicas",
-      icone: "🧪",
       conteudo: <ExamesLaboratoriais pacienteId={paciente.id} sexoPaciente={paciente.sexo} podeUsarIA={podeUsarIA} />,
     },
     {
       tipo: "painel",
       id: "exames-avulsos",
       label: "Exames avulsos",
-      icone: "📎",
       conteudo: <AnexosExames pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
       id: "procedimentos",
       label: "Procedimentos (reembolso)",
-      icone: "🩺",
       conteudo: <ProcedimentosPaciente pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
       id: "genetica",
       label: "Genética",
-      icone: "🧬",
       conteudo: <ConsultaGenetica pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
       id: "historico",
       label: "Histórico",
-      icone: "🕒",
       conteudo: (
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Histórico</h2>
@@ -176,18 +170,20 @@ export default async function DetalhePacientePage({
 
   return (
     <ConsultaTimerProvider>
-      <MenuLateral
-        itens={itens}
-        itemInicial="anamnese"
-        cabecalho={
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <CadastroPaciente paciente={paciente} />
+      <div style={{ padding: "22px 26px" }}>
+        <SubmenuPilulas
+          itens={itens}
+          itemInicial="anamnese"
+          cabecalho={
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <CadastroPaciente paciente={paciente} />
+              </div>
+              {!souRecepcao && <TimerConsultaWidget />}
             </div>
-            {!souRecepcao && <TimerConsultaWidget />}
-          </div>
-        }
-      />
+          }
+        />
+      </div>
     </ConsultaTimerProvider>
   );
 }
