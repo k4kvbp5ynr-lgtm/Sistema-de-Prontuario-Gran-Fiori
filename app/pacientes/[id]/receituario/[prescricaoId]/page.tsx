@@ -62,7 +62,7 @@ export default async function VisualizarReceitaPage({
           margin: "0 auto 32px",
           background: "white",
           padding: "48px 56px",
-          fontFamily: "var(--fonte-ui), "Plus Jakarta Sans", -apple-system, sans-serif",
+          fontFamily: "var(--fonte-ui), 'Plus Jakarta Sans', -apple-system, sans-serif",
           color: "#1a1a1a",
         }}
       >
