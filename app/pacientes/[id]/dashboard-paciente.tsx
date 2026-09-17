@@ -39,19 +39,22 @@ function Secao({ titulo, children, temConteudo }: { titulo: string; children: Re
   );
 }
 
-function GraficoTendencia({ label, unidade, serie }: { label: string; unidade?: string; serie: { data: string; valor: number }[] }) {
+function GraficoTendencia({ label, unidade, serie, decimal }: { label: string; unidade?: string; serie: { data: string; valor: number }[]; decimal?: boolean }) {
   if (serie.length < 2) return null;
   return (
-    <div style={{ marginBottom: 16 }}>
-      <p style={{ fontSize: 12, fontWeight: 600, margin: "0 0 4px" }}>
+    <div style={{ marginBottom: 20 }}>
+      <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>
         {label} {unidade && `(${unidade})`}
       </p>
-      <ResponsiveContainer width="100%" height={120}>
-        <LineChart data={serie}>
-          <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={10} />
-          <YAxis fontSize={10} domain={["auto", "auto"]} />
-          <Tooltip labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} />
-          <Line type="monotone" dataKey="valor" stroke="#3d9a91" strokeWidth={2} dot />
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <XAxis dataKey="data" tickFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")} fontSize={11} />
+          <YAxis fontSize={11} domain={[0, "auto"]} tickFormatter={(v) => (decimal ? v.toFixed(1) : String(v))} width={44} />
+          <Tooltip
+            labelFormatter={(d) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
+            formatter={(v: any) => [decimal ? Number(v).toFixed(1) : v, "Valor"]}
+          />
+          <Line type="monotone" dataKey="valor" stroke="#3d9a91" strokeWidth={2.5} dot={{ r: 4 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -153,19 +156,19 @@ export default function DashboardPaciente({ pacienteId }: { pacienteId: string }
   const nadaPreenchido = !temComposicao && !temGordura && !temHidratacao && !temCondicionamento && !temExames && !temEscalas;
 
   // Monta a lista de campos com tendência (2+ pontos) pra seção de gráficos
-  const TODOS_CAMPOS_LABEL: { chave: string; label: string; unidade?: string }[] = [
-    { chave: "peso_kg", label: "Peso", unidade: "kg" },
-    { chave: "imc", label: "IMC", unidade: "kg/m²" },
+  const TODOS_CAMPOS_LABEL: { chave: string; label: string; unidade?: string; decimal?: boolean }[] = [
+    { chave: "peso_kg", label: "Peso", unidade: "kg", decimal: true },
+    { chave: "imc", label: "IMC", unidade: "kg/m²", decimal: true },
     { chave: "circunferencia_abdominal_cm", label: "Circunf. abdominal", unidade: "cm" },
-    { chave: "percentual_gordura", label: "% Gordura", unidade: "%" },
-    { chave: "massa_gorda_kg", label: "Massa gorda", unidade: "kg" },
-    { chave: "massa_magra_kg", label: "Massa magra", unidade: "kg" },
-    { chave: "massa_muscular_kg", label: "Massa muscular", unidade: "kg" },
-    { chave: "razao_musculo_gordura", label: "Razão músculo/gordura" },
-    { chave: "agua_corporal_percentual", label: "Água corporal", unidade: "%" },
-    { chave: "indice_hidratacao", label: "Índice de hidratação" },
-    { chave: "angulo_fase_graus", label: "Ângulo de fase", unidade: "°" },
-    { chave: "vo2_max", label: "VO2 máx", unidade: "ml/kg/min" },
+    { chave: "percentual_gordura", label: "% Gordura", unidade: "%", decimal: true },
+    { chave: "massa_gorda_kg", label: "Massa gorda", unidade: "kg", decimal: true },
+    { chave: "massa_magra_kg", label: "Massa magra", unidade: "kg", decimal: true },
+    { chave: "massa_muscular_kg", label: "Massa muscular", unidade: "kg", decimal: true },
+    { chave: "razao_musculo_gordura", label: "Razão músculo/gordura", decimal: true },
+    { chave: "agua_corporal_percentual", label: "Água corporal", unidade: "%", decimal: true },
+    { chave: "indice_hidratacao", label: "Índice de hidratação", decimal: true },
+    { chave: "angulo_fase_graus", label: "Ângulo de fase", unidade: "°", decimal: true },
+    { chave: "vo2_max", label: "VO2 máx", unidade: "ml/kg/min", decimal: true },
     { chave: "fc_maxima", label: "FC máxima", unidade: "bpm" },
     { chave: "fc_limiar", label: "FC limiar", unidade: "bpm" },
     { chave: "recuperacao_fc_60s", label: "Recuperação FC (60s)", unidade: "bpm" },
@@ -243,9 +246,9 @@ export default function DashboardPaciente({ pacienteId }: { pacienteId: string }
             {verTendencias ? "Esconder gráficos de tendência" : `Ver gráficos de tendência (${campoComTendencia.length})`}
           </button>
           {verTendencias && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20 }}>
               {campoComTendencia.map((c) => (
-                <GraficoTendencia key={c.chave} label={c.label} unidade={c.unidade} serie={c.serie} />
+                <GraficoTendencia key={c.chave} label={c.label} unidade={c.unidade} serie={c.serie} decimal={c.decimal} />
               ))}
             </div>
           )}
