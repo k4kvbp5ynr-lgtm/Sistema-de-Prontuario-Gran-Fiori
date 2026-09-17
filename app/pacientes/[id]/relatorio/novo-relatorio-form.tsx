@@ -43,6 +43,33 @@ export default function NovoRelatorioForm({ pacienteId }: { pacienteId: string }
 
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [gerandoRascunho, setGerandoRascunho] = useState(false);
+  const [erroRascunho, setErroRascunho] = useState<string | null>(null);
+
+  async function gerarRascunhoIA() {
+    setErroRascunho(null);
+    setGerandoRascunho(true);
+    try {
+      const resposta = await fetch("/api/ia/rascunho-relatorio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pacienteId }),
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        setErroRascunho(dados.erro ?? "Erro ao gerar rascunho.");
+        setGerandoRascunho(false);
+        return;
+      }
+      setSintese(dados.rascunho.sintese_clinica ?? "");
+      setHipoteses(dados.rascunho.hipoteses_diagnosticas ?? "");
+      setProposta(dados.rascunho.proposta_terapeutica ?? "");
+      if (dados.rascunho.fundamentacao) setFundamentacao(dados.rascunho.fundamentacao);
+    } catch {
+      setErroRascunho("Erro de conexão com a IA.");
+    }
+    setGerandoRascunho(false);
+  }
 
   useEffect(() => {
     supabase
@@ -165,6 +192,20 @@ export default function NovoRelatorioForm({ pacienteId }: { pacienteId: string }
         <>
           <label>Região/articulação (ex: Joelho direito)</label>
           <input value={regiaoTitulo} onChange={(e) => setRegiaoTitulo(e.target.value)} required />
+
+          <div style={{ background: "var(--cor-ia-fundo)", border: "1px solid var(--cor-ia)", borderRadius: 10, padding: 12, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={{ fontSize: 12, fontWeight: 600, margin: 0 }}>Rascunho por IA</p>
+              <button type="button" onClick={gerarRascunhoIA} disabled={gerandoRascunho} style={{ fontSize: 11 }}>
+                {gerandoRascunho ? "Gerando..." : "Gerar rascunho com IA"}
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: "var(--cor-texto-fraco)", margin: "6px 0 0" }}>
+              Usa o histórico já registrado do paciente (evoluções, exames, procedimentos) pra propor um rascunho dos campos abaixo. Revise
+              tudo com cuidado antes de emitir — é só um ponto de partida.
+            </p>
+            {erroRascunho && <p className="erro" style={{ margin: "6px 0 0" }}>{erroRascunho}</p>}
+          </div>
 
           <label>Exame de referência</label>
           <input

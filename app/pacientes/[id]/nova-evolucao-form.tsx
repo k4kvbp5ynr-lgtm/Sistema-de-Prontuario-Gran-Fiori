@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useConsultaTimer } from "./consulta-timer-context";
+import BotaoDitado from "./botao-ditado";
 
 export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pacienteId: string; podeUsarIA?: boolean }) {
   const router = useRouter();
@@ -227,7 +228,10 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         </div>
       </div>
 
-      <label>Anamnese / Exame físico / Observações</label>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <label style={{ marginBottom: 0 }}>Anamnese / Exame físico / Observações</label>
+        <BotaoDitado onTexto={(texto) => setAnamnese((atual) => (atual ? `${atual} ${texto}` : texto))} />
+      </div>
       <textarea
         value={anamnese}
         onChange={(e) => setAnamnese(e.target.value)}
@@ -291,7 +295,10 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
           />
         </div>
         <div>
-          <label>Conduta</label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <label style={{ marginBottom: 0 }}>Conduta</label>
+            <BotaoDitado onTexto={(texto) => setConduta((atual) => (atual ? `${atual} ${texto}` : texto))} />
+          </div>
           <textarea value={conduta} onChange={(e) => setConduta(e.target.value)} rows={3} style={{ width: "100%", marginBottom: 12, padding: 8 }} />
         </div>
       </div>

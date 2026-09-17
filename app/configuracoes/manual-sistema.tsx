@@ -43,6 +43,10 @@ const SECOES: Secao[] = [
         texto: "Fica sempre visível no topo. Clique em \"Gerenciar\" para adicionar alergias e medicações em uso. Alergia grave e medicação anticoagulante aparecem em vermelho. Essas informações são lidas automaticamente pela IA de sugestão diagnóstica para checar interações — por isso vale a pena manter atualizado.",
       },
       {
+        titulo: "Ditado por voz",
+        texto: "Botão \"Ditar por voz\" acima dos campos de Anamnese e Conduta — usa o reconhecimento de fala nativo do navegador (Chrome/Edge), sem gravar nem guardar áudio no sistema. O navegador corta a sessão sozinho de tempos em tempos (comum acontecer a cada ~1 minuto) — o sistema detecta isso e reinicia automaticamente, então funciona contínuo por quanto tempo a consulta durar, sem perder trecho, desde que você não clique em parar. Importante: o áudio passa pelos servidores do Google durante o reconhecimento (não é 100% local) — não disponível no Safari/Firefox.",
+      },
+      {
         titulo: "Anamnese",
         texto: "Clique em \"Iniciar consulta\" antes de preencher — o sistema só deixa salvar com o cronômetro rodando (evita salvar a mesma consulta duas vezes por engano). Depois de salvar, o cronômetro volta sozinho para \"Iniciar consulta\", pronto para a próxima. O botão \"Gerar sugestão de IA\" usa o que está escrito na anamnese, mais o histórico do paciente, para sugerir hipóteses e conduta — a decisão final é sempre do profissional.",
       },
@@ -53,6 +57,10 @@ const SECOES: Secao[] = [
       {
         titulo: "Prescrição",
         texto: "Escolha o tipo (Simples / Controle especial / Antibiótico). \"Modelos salvos\" reaproveita prescrições que você já salvou antes. A assinatura eletrônica (selo \"assinatura A1\") usa o certificado cadastrado em Configurações → Assinaturas. Toda receita emitida entra automaticamente na lista de \"Exames avulsos\" do paciente, como um atalho pra reabrir depois — não duplica arquivo, é só um link pro documento já existente.",
+      },
+      {
+        titulo: "Relatório médico",
+        texto: "Documento de região única ou solicitação múltipla, com códigos TUSS e orçamento. No formulário de região única, o botão \"Gerar rascunho com IA\" propõe síntese clínica, hipóteses diagnósticas e proposta terapêutica com base no histórico já registrado (evoluções, exames, procedimentos) — sempre revise com cuidado, é só um ponto de partida, nunca a versão final.",
       },
       {
         titulo: "Exames de análises clínicas",
