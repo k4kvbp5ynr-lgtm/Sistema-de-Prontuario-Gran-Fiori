@@ -60,7 +60,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Relatório médico",
-        texto: "Documento de região única ou solicitação múltipla, com códigos TUSS e orçamento. No formulário de região única, o botão \"Gerar rascunho com IA\" propõe síntese clínica, hipóteses diagnósticas e proposta terapêutica com base no histórico já registrado (evoluções, exames, procedimentos) — sempre revise com cuidado, é só um ponto de partida, nunca a versão final.",
+        texto: "Documento de região única ou solicitação múltipla, com códigos TUSS e orçamento.",
       },
       {
         titulo: "Exames de análises clínicas",

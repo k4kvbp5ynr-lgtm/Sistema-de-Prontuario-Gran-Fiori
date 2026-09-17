@@ -6,9 +6,10 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
   const [gravando, setGravando] = useState(false);
   const [suportado, setSuportado] = useState(true);
   const reconhecimentoRef = useRef<any>(null);
-  // Guarda a INTENÇÃO do usuário (separado do estado real da API) — é o que decide
-  // se reinicia sozinho quando o navegador corta a sessão por conta própria.
   const deveContinuarRef = useRef(false);
+  // Guarda o trecho que o navegador ainda não confirmou como "final" — se o usuário
+  // clicar em parar no meio de uma frase (sem pausa antes), isso evita perder o trecho.
+  const pendenteRef = useRef("");
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -21,28 +22,38 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
       const reconhecimento = new SpeechRecognition();
       reconhecimento.lang = "pt-BR";
       reconhecimento.continuous = true;
-      reconhecimento.interimResults = false;
+      reconhecimento.interimResults = true;
 
       reconhecimento.onresult = (evento: any) => {
-        let textoNovo = "";
+        let textoFinalNovo = "";
+        let textoInterim = "";
         for (let i = evento.resultIndex; i < evento.results.length; i++) {
           if (evento.results[i].isFinal) {
-            textoNovo += evento.results[i][0].transcript;
+            textoFinalNovo += evento.results[i][0].transcript;
+          } else {
+            textoInterim += evento.results[i][0].transcript;
           }
         }
-        if (textoNovo.trim()) onTexto(textoNovo.trim());
+        if (textoFinalNovo.trim()) {
+          onTexto(textoFinalNovo.trim());
+          pendenteRef.current = "";
+        } else {
+          pendenteRef.current = textoInterim;
+        }
       };
 
-      // O navegador corta a sessão sozinho de tempos em tempos (limite de ~1 minuto
-      // é comum no Chrome), mesmo com "continuous". Se o usuário ainda quer gravar
-      // (não clicou em parar), reinicia na hora — fica contínuo por quanto tempo
-      // a consulta durar, sem perder trecho.
       reconhecimento.onend = () => {
+        // Flush de segurança: qualquer trecho ainda não confirmado quando a sessão
+        // encerra (seja por ter clicado em parar, seja por corte automático) entra
+        // no texto mesmo assim, em vez de ser descartado.
+        if (pendenteRef.current.trim()) {
+          onTexto(pendenteRef.current.trim());
+          pendenteRef.current = "";
+        }
         if (deveContinuarRef.current) {
           try {
             reconhecimento.start();
           } catch {
-            // já estava rodando ou deu erro momentâneo — tenta de novo em 300ms
             setTimeout(() => {
               if (deveContinuarRef.current) {
                 try {
@@ -57,7 +68,6 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
       };
 
       reconhecimento.onerror = (evento: any) => {
-        // "no-speech" e "aborted" são normais em pausas de fala — não trata como erro fatal
         if (evento.error === "no-speech" || evento.error === "aborted") return;
         deveContinuarRef.current = false;
         setGravando(false);
@@ -81,9 +91,10 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
     if (!reconhecimentoRef.current) return;
     if (gravando) {
       deveContinuarRef.current = false;
-      reconhecimentoRef.current.stop();
+      reconhecimentoRef.current.stop(); // onend cuida do flush do texto pendente
       setGravando(false);
     } else {
+      pendenteRef.current = "";
       deveContinuarRef.current = true;
       reconhecimentoRef.current.start();
       setGravando(true);
