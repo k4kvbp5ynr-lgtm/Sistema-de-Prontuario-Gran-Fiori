@@ -44,7 +44,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Ditado por voz",
-        texto: "Botão \"Ditar por voz\" acima dos campos de Anamnese e Conduta — usa o reconhecimento de fala nativo do navegador (Chrome/Edge), sem gravar nem guardar áudio no sistema. O navegador corta a sessão sozinho de tempos em tempos (comum acontecer a cada ~1 minuto) — o sistema detecta isso e reinicia automaticamente, então funciona contínuo por quanto tempo a consulta durar, sem perder trecho, desde que você não clique em parar. Importante: o áudio passa pelos servidores do Google durante o reconhecimento (não é 100% local) — não disponível no Safari/Firefox.",
+        texto: "Botão \"Ditar por voz\" acima dos campos de Anamnese e Conduta — usa o reconhecimento de fala nativo do navegador (Chrome/Edge), sem gravar nem guardar áudio no sistema. O navegador corta a sessão sozinho de tempos em tempos (comum acontecer a cada ~1 minuto) — o sistema detecta isso e reinicia automaticamente, então funciona contínuo por quanto tempo a consulta durar, sem perder trecho, desde que você não clique em parar. Ao lado, o botão \"Organizar com IA\" (só pra quem tem permissão de IA) pega o texto ditado — que costuma vir bagunçado, sem pontuação — e reescreve organizado e profissional, sem adicionar nem remover informação clínica, só limpando a forma. Importante: o áudio do ditado passa pelos servidores do Google durante o reconhecimento (não é 100% local) — não disponível no Safari/Firefox.",
       },
       {
         titulo: "Anamnese",

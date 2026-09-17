@@ -18,6 +18,30 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
   const [conduta, setConduta] = useState("");
   const [sugestaoIA, setSugestaoIA] = useState<string | null>(null);
   const [buscandoSugestao, setBuscandoSugestao] = useState(false);
+  const [organizandoIA, setOrganizandoIA] = useState(false);
+  const [erroOrganizarIA, setErroOrganizarIA] = useState<string | null>(null);
+
+  async function organizarComIA() {
+    if (!anamnese.trim()) return;
+    setErroOrganizarIA(null);
+    setOrganizandoIA(true);
+    try {
+      const resposta = await fetch("/api/ia/sintetizar-anamnese", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: anamnese }),
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        setErroOrganizarIA(dados.erro ?? "Erro ao organizar o texto.");
+      } else {
+        setAnamnese(dados.textoOrganizado);
+      }
+    } catch {
+      setErroOrganizarIA("Erro de conexão com a IA.");
+    }
+    setOrganizandoIA(false);
+  }
   const [erroSugestao, setErroSugestao] = useState<string | null>(null);
   const [usouIA, setUsouIA] = useState(false);
   const [arquivos, setArquivos] = useState<File[]>([]);
@@ -228,10 +252,18 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, gap: 8, flexWrap: "wrap" }}>
         <label style={{ marginBottom: 0 }}>Anamnese / Exame físico / Observações</label>
-        <BotaoDitado onTexto={(texto) => setAnamnese((atual) => (atual ? `${atual} ${texto}` : texto))} />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <BotaoDitado onTexto={(texto) => setAnamnese((atual) => (atual ? `${atual} ${texto}` : texto))} />
+          {podeUsarIA && (
+            <button type="button" onClick={organizarComIA} disabled={organizandoIA || !anamnese.trim()} className="botao-secundario" style={{ fontSize: 12 }}>
+              {organizandoIA ? "Organizando..." : "Organizar com IA"}
+            </button>
+          )}
+        </div>
       </div>
+      {erroOrganizarIA && <p className="erro">{erroOrganizarIA}</p>}
       <textarea
         value={anamnese}
         onChange={(e) => setAnamnese(e.target.value)}
