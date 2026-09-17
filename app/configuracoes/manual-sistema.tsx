@@ -36,7 +36,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Linha do tempo (dentro de Histórico)",
-        texto: "Fica no topo da aba Histórico, como uma faixa horizontal — consultas, exames, procedimentos, escalas, avaliações e documentos, em ordem cronológica da esquerda pra direita. Quando não cabe numa linha só, quebra pra linha de baixo automaticamente (não gera rolagem lateral). Filtros clicáveis por tipo. Cada item é clicável e leva direto pra aba/documento que ele representa: exame abre Exames, procedimento abre Procedimentos realizados, escala abre Escalas de desfecho, avaliação abre Avaliação física, e documentos (receita/relatório/recibo) abrem o PDF/tela do documento.",
+        texto: "Fica no topo da aba Histórico, como uma faixa horizontal — consultas, exames, procedimentos, escalas, avaliações e documentos, em ordem cronológica da esquerda pra direita. Quando não cabe numa linha só, quebra pra linha de baixo automaticamente (não gera rolagem lateral). Filtros clicáveis por tipo. Cada item é clicável: exame/procedimento/escala/avaliação leva pra aba certa; receita/relatório/recibo abre num pop-up por cima da tela (sem trocar de página), com botão \"Fechar\" — assim você não perde o lugar onde estava.",
       },
       {
         titulo: "Faixa de segurança clínica (alergias e medicações)",

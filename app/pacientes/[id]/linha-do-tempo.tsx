@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useSubmenuPilulas } from "./submenu-pilulas";
+import ModalDocumento from "./modal-documento";
 
 type EventoTimeline = {
   data: string;
@@ -52,6 +53,7 @@ export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
   const [eventos, setEventos] = useState<EventoTimeline[]>([]);
   const [carregado, setCarregado] = useState(false);
   const [filtrosAtivos, setFiltrosAtivos] = useState<Set<string>>(new Set(TODOS_TIPOS));
+  const [documentoAberto, setDocumentoAberto] = useState<{ href: string; titulo: string } | null>(null);
 
   async function carregar() {
     const lista: EventoTimeline[] = [];
@@ -206,9 +208,13 @@ export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
           let nó = conteudo;
           if (e.href) {
             nó = (
-              <Link href={e.href} style={{ textDecoration: "none", color: "inherit" }}>
+              <button
+                type="button"
+                onClick={() => setDocumentoAberto({ href: e.href!, titulo: e.titulo })}
+                style={{ background: "none", border: "none", padding: 0, margin: 0, color: "inherit", cursor: "pointer", textAlign: "center" }}
+              >
                 {conteudo}
-              </Link>
+              </button>
             );
           } else if (abaAlvo && submenu) {
             nó = (
@@ -235,6 +241,10 @@ export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
           );
         })}
       </div>
+
+      {documentoAberto && (
+        <ModalDocumento href={documentoAberto.href} titulo={documentoAberto.titulo} onFechar={() => setDocumentoAberto(null)} />
+      )}
     </div>
   );
 }
