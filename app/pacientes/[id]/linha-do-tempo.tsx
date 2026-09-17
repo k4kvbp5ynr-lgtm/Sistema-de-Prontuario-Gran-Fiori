@@ -130,10 +130,9 @@ export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
   const eventosFiltrados = eventos.filter((e) => filtrosAtivos.has(e.tipo));
 
   return (
-    <div>
-      <h2 style={{ fontSize: "1.1rem" }}>Linha do tempo</h2>
-      <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", marginBottom: 14 }}>
-        Tudo que já aconteceu com este paciente, em ordem cronológica — consultas, exames, procedimentos, escalas, avaliações e documentos.
+    <div style={{ marginBottom: 24, overflowX: "hidden" }}>
+      <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--cor-texto-fraco)", margin: "0 0 10px" }}>
+        Linha do tempo
       </p>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
@@ -166,38 +165,33 @@ export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
 
       {eventosFiltrados.length === 0 && <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)" }}>Nada encontrado com esses filtros.</p>}
 
-      <div style={{ position: "relative", paddingLeft: 20 }}>
-        <div style={{ position: "absolute", left: 4, top: 6, bottom: 6, width: 1, background: "var(--cor-borda)" }} />
-        {eventosFiltrados.map((e, i) => {
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 0, padding: "4px 0" }}>
+        {[...eventosFiltrados].reverse().map((e, i, arr) => {
           const conteudo = (
             <>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{e.titulo}</p>
-              {e.subtitulo && <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--cor-texto-fraco)" }}>{e.subtitulo}</p>}
+              <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--cor-texto-muito-fraco)", fontFamily: "var(--fonte-mono)", whiteSpace: "nowrap" }}>
+                {new Date(e.data).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+              </p>
+              <p style={{ margin: "2px 0 0", fontSize: 11.5, fontWeight: 600, maxWidth: 120, lineHeight: 1.3 }}>{e.titulo}</p>
+              {e.subtitulo && (
+                <p style={{ margin: "2px 0 0", fontSize: 10.5, color: "var(--cor-texto-fraco)", maxWidth: 120, lineHeight: 1.3 }}>{e.subtitulo}</p>
+              )}
             </>
           );
           return (
-            <div key={i} style={{ position: "relative", marginBottom: 18 }}>
-              <span
-                style={{
-                  position: "absolute",
-                  left: -20,
-                  top: 4,
-                  width: 9,
-                  height: 9,
-                  borderRadius: "50%",
-                  background: e.cor,
-                  border: "2px solid var(--cor-fundo)",
-                }}
-              />
-              <p style={{ margin: "0 0 2px", fontSize: 11, color: "var(--cor-texto-muito-fraco)", fontFamily: "var(--fonte-mono)" }}>
-                {new Date(e.data).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} · {ROTULOS[e.tipo]}
-              </p>
-              {e.href ? (
-                <Link href={e.href} style={{ textDecoration: "none", color: "inherit" }}>
-                  {conteudo}
-                </Link>
-              ) : (
-                conteudo
+            <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 130, textAlign: "center" }}>
+                <span style={{ width: 11, height: 11, borderRadius: "50%", background: e.cor, border: "2px solid var(--cor-fundo)", boxShadow: "0 0 0 1px var(--cor-borda)" }} />
+                {e.href ? (
+                  <Link href={e.href} style={{ textDecoration: "none", color: "inherit" }}>
+                    {conteudo}
+                  </Link>
+                ) : (
+                  conteudo
+                )}
+              </div>
+              {i < arr.length - 1 && (
+                <div style={{ width: 24, height: 1, background: "var(--cor-borda)", marginTop: 5, flexShrink: 0 }} />
               )}
             </div>
           );

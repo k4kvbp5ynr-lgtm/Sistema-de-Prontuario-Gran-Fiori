@@ -83,12 +83,6 @@ export default async function DetalhePacientePage({
     },
     {
       tipo: "painel",
-      id: "linha-do-tempo",
-      label: "Linha do tempo",
-      conteudo: <LinhaDoTempo pacienteId={paciente.id} />,
-    },
-    {
-      tipo: "painel",
       id: "anamnese",
       label: "Anamnese",
       conteudo: souRecepcao ? (
@@ -156,6 +150,7 @@ export default async function DetalhePacientePage({
       conteudo: (
         <>
           <h2 style={{ fontSize: "1.1rem" }}>Histórico</h2>
+          <LinhaDoTempo pacienteId={paciente.id} />
           {(!encontros || encontros.length === 0) && <p>Nenhuma consulta registrada ainda.</p>}
           {encontros?.map((enc: any) => (
             <div

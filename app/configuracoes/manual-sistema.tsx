@@ -35,8 +35,8 @@ const SECOES: Secao[] = [
         texto: "Botão \"Exportar PDF\" no cabeçalho da tela do paciente (visível pra todos os perfis). Gera um PDF único com dados cadastrais, alergias/medicações, histórico de consultas, exames laboratoriais, procedimentos, escalas de desfecho, avaliações físicas e lista de documentos emitidos — útil pra atender pedido de portabilidade de dados (LGPD) ou levar informação pra outro profissional.",
       },
       {
-        titulo: "Linha do tempo",
-        texto: "Junta consultas, exames, procedimentos, escalas de desfecho, avaliações físicas e documentos (receitas/relatórios/recibos) num só feed cronológico. Filtros clicáveis por tipo no topo. Itens de documento (receita/relatório/recibo) são clicáveis e abrem o documento direto.",
+        titulo: "Linha do tempo (dentro de Histórico)",
+        texto: "Fica no topo da aba Histórico, como uma faixa horizontal — consultas, exames, procedimentos, escalas, avaliações e documentos, em ordem cronológica da esquerda pra direita. Quando não cabe numa linha só, quebra pra linha de baixo automaticamente (não gera rolagem lateral). Filtros clicáveis por tipo. Itens de documento (receita/relatório/recibo) são clicáveis e abrem o documento direto.",
       },
       {
         titulo: "Faixa de segurança clínica (alergias e medicações)",
