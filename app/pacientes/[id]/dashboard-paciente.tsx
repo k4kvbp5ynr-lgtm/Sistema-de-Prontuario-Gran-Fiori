@@ -184,6 +184,21 @@ export default function DashboardPaciente({ pacienteId }: { pacienteId: string }
   ];
   const campoComTendencia = TODOS_CAMPOS_LABEL.map((c) => ({ ...c, serie: serieDoCampo(c.chave) })).filter((c) => c.serie.length >= 2);
 
+  // Escalas de desfecho — mesma lógica, agrupando por sigla (redundância proposital com a
+  // tela de Escalas de desfecho, pra dar visão completa num só lugar no Dashboard).
+  const escalasAgrupadas = new Map<string, { nome: string; pontos: { data: string; valor: number }[] }>();
+  for (const e of escalas) {
+    const sigla = e.escalas_desfecho?.sigla;
+    if (!sigla) continue;
+    if (!escalasAgrupadas.has(sigla)) escalasAgrupadas.set(sigla, { nome: e.escalas_desfecho?.nome ?? sigla, pontos: [] });
+    escalasAgrupadas.get(sigla)!.pontos.push({ data: e.data_aplicacao, valor: e.pontuacao });
+  }
+  const escalasComTendencia = Array.from(escalasAgrupadas.entries())
+    .map(([sigla, v]) => ({ chave: sigla, label: v.nome, serie: [...v.pontos].reverse() }))
+    .filter((e) => e.serie.length >= 2);
+
+  const totalGraficos = campoComTendencia.length + escalasComTendencia.length;
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -262,15 +277,18 @@ export default function DashboardPaciente({ pacienteId }: { pacienteId: string }
         ))}
       </Secao>
 
-      {campoComTendencia.length > 0 && (
+      {totalGraficos > 0 && (
         <div style={{ marginTop: 8 }}>
           <button type="button" onClick={() => setVerTendencias(!verTendencias)} className="botao-secundario" style={{ fontSize: 12, marginBottom: 12 }}>
-            {verTendencias ? "Esconder gráficos de tendência" : `Ver gráficos de tendência (${campoComTendencia.length})`}
+            {verTendencias ? "Esconder gráficos de tendência" : `Ver gráficos de tendência (${totalGraficos})`}
           </button>
           {verTendencias && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20 }}>
               {campoComTendencia.map((c) => (
                 <GraficoTendencia key={c.chave} label={c.label} unidade={c.unidade} serie={c.serie} decimal={c.decimal} />
+              ))}
+              {escalasComTendencia.map((e) => (
+                <GraficoTendencia key={e.chave} label={e.label} serie={e.serie} decimal />
               ))}
             </div>
           )}

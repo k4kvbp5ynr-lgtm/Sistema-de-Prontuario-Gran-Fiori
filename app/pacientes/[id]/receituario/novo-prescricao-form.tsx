@@ -54,6 +54,17 @@ export default function NovaPrescricaoForm({ pacienteId }: { pacienteId: string 
       return;
     }
 
+    // Salva automaticamente como anexo do paciente (sem duplicar arquivo — só um link
+    // interno pra o documento já existente), pra aparecer junto com os demais anexos.
+    const rotuloTipo = TIPOS_RECEITA.find((t) => t.valor === subtipo)?.label ?? "Receita";
+    await supabase.from("anexos_exames").insert({
+      paciente_id: pacienteId,
+      enviado_por: user.id,
+      nome_arquivo: `Receita (${rotuloTipo}) — ${new Date().toLocaleDateString("pt-BR")}`,
+      tipo: "receita",
+      link_interno: `/pacientes/${pacienteId}/receituario/${prescricao.id}`,
+    });
+
     router.push(`/pacientes/${pacienteId}/receituario/${prescricao.id}`);
   }
 

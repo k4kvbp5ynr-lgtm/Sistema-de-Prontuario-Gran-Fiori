@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 type Anexo = {
@@ -8,7 +9,8 @@ type Anexo = {
   nome_arquivo: string;
   tipo: string | null;
   descricao: string | null;
-  caminho_storage: string;
+  caminho_storage: string | null;
+  link_interno: string | null;
   criado_em: string;
 };
 
@@ -23,7 +25,7 @@ export default function AnexosExames({ pacienteId }: { pacienteId: string }) {
   async function carregarLista() {
     const { data } = await supabase
       .from("anexos_exames")
-      .select("id, nome_arquivo, tipo, descricao, caminho_storage, criado_em")
+      .select("id, nome_arquivo, tipo, descricao, caminho_storage, link_interno, criado_em")
       .eq("paciente_id", pacienteId)
       .is("encontro_id", null)
       .order("criado_em", { ascending: false });
@@ -142,9 +144,15 @@ export default function AnexosExames({ pacienteId }: { pacienteId: string }) {
               <br />
               <small>{new Date(a.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</small>
             </span>
-            <button type="button" onClick={() => baixar(a.caminho_storage)}>
-              Abrir
-            </button>
+            {a.link_interno ? (
+              <Link href={a.link_interno}>
+                <button type="button">Abrir</button>
+              </Link>
+            ) : (
+              <button type="button" onClick={() => a.caminho_storage && baixar(a.caminho_storage)}>
+                Abrir
+              </button>
+            )}
           </li>
         ))}
       </ul>
