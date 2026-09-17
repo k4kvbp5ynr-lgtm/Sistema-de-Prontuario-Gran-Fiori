@@ -86,6 +86,8 @@ export default function AvaliacaoFisicaForm({ pacienteId }: { pacienteId: string
   const [observacoes, setObservacoes] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [extraindo, setExtraindo] = useState(false);
+  const [avisoExtracao, setAvisoExtracao] = useState<string | null>(null);
 
   async function carregar() {
     const { data } = await supabase
@@ -108,6 +110,41 @@ export default function AvaliacaoFisicaForm({ pacienteId }: { pacienteId: string
     setCondicionamento("");
     setObservacoes("");
     setErro(null);
+  }
+
+  async function extrairDoPdf(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo) return;
+    setErro(null);
+    setAvisoExtracao(null);
+    setExtraindo(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("arquivo", arquivo);
+      const resposta = await fetch("/api/ia/extrair-avaliacao-fisica", { method: "POST", body: formData });
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        setErro(dados.erro ?? "Erro ao extrair dados do PDF.");
+        setExtraindo(false);
+        return;
+      }
+
+      const novos: Record<string, string> = { ...valores };
+      for (const campo of CAMPOS_NUMERICOS) {
+        const v = dados.extraido?.[campo];
+        if (v != null) novos[campo] = String(v).replace(".", ",");
+      }
+      setValores(novos);
+      if (dados.extraido?.condicionamento_fisico) setCondicionamento(dados.extraido.condicionamento_fisico);
+      if (dados.extraido?.data_avaliacao) setDataAvaliacao(dados.extraido.data_avaliacao);
+      if (dados.aviso) setAvisoExtracao(dados.aviso);
+    } catch {
+      setErro("Erro de conexão com a IA.");
+    }
+    setExtraindo(false);
+    e.target.value = "";
   }
 
   async function salvar(e: React.FormEvent) {
@@ -160,6 +197,19 @@ export default function AvaliacaoFisicaForm({ pacienteId }: { pacienteId: string
       {formAberto && (
         <form onSubmit={salvar} style={{ border: "1px solid var(--cor-borda)", borderRadius: 12, padding: 14, marginBottom: 16 }}>
           {erro && <p className="erro">{erro}</p>}
+
+          <div style={{ background: "var(--cor-ia-fundo)", border: "1px solid var(--cor-ia)", borderRadius: 10, padding: 12, marginBottom: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>
+              Extrair de um PDF (IA) — opcional
+            </label>
+            <input type="file" accept="application/pdf" onChange={extrairDoPdf} disabled={extraindo} style={{ marginBottom: 0 }} />
+            {extraindo && <p style={{ fontSize: 12, margin: "6px 0 0", color: "var(--cor-ia)" }}>Lendo o PDF e extraindo os dados...</p>}
+            {avisoExtracao && <p style={{ fontSize: 12, margin: "6px 0 0", color: "var(--cor-status-abaixo-texto)" }}>⚠ {avisoExtracao}</p>}
+            <p style={{ fontSize: 11, color: "var(--cor-texto-fraco)", margin: "6px 0 0" }}>
+              Preenche os campos abaixo automaticamente a partir do texto do PDF — revise antes de salvar. Funciona bem pra ventilometria; laudos de bioimpedância costumam ter a maioria dos valores em gráficos visuais, que essa extração não lê.
+            </p>
+          </div>
+
           <label style={{ fontSize: 11 }}>Data da avaliação</label>
           <input type="date" value={dataAvaliacao} onChange={(e) => setDataAvaliacao(e.target.value)} style={{ maxWidth: 200 }} />
 

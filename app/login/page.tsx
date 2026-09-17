@@ -106,8 +106,7 @@ export default function LoginPage() {
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: 420 }}>
           <p style={{ fontSize: 30, fontWeight: 700, color: "#f2f6f5", lineHeight: 1.25, margin: "0 0 18px", letterSpacing: "-0.01em" }}>
-            Medicina regenerativa,{" "}
-            <span style={{ color: "#7fd0c6" }}>guiada por precisão.</span>
+            Medicina de <span style={{ color: "#7fd0c6" }}>precisão.</span>
           </p>
           <p style={{ fontSize: 14, color: "#a9b8b6", lineHeight: 1.6, margin: 0 }}>
             Prontuário eletrônico da clínica — consultas, exames, procedimentos e evolução do paciente num só lugar.
