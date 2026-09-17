@@ -23,6 +23,14 @@ const SECOES: Secao[] = [
     titulo: "Dentro do prontuário do paciente",
     itens: [
       {
+        titulo: "Dashboard",
+        texto: "Primeiro ícone depois de \"Voltar\". Resumo visual do paciente — só mostra o que já tem dado preenchido em algum lugar (Avaliação física, exames, escalas), nunca aparece campo em branco. Cada indicador mostra o valor mais recente registrado daquele campo específico, mesmo que tenha vindo de avaliações diferentes. \"Ver gráficos de tendência\" mostra a evolução ao longo do tempo (inclusive das escalas de desfecho, de forma redundante com a tela própria delas). Tem botão de atualizar (↻) no canto — não precisa dar F5 na página depois de registrar algo novo.",
+      },
+      {
+        titulo: "Avaliação física",
+        texto: "Bioimpedância e ventilometria — ~30 campos (peso/IMC/TMB, gordura, massa magra/muscular, hidratação, ângulo de fase, VO2 máx, FC, pressão, condicionamento). Pode preencher manualmente ou usar \"Extrair de um PDF (IA)\" no topo do formulário, que lê o texto do laudo e pré-preenche — sempre revise antes de salvar. Funciona bem com laudos de ventilometria e com a versão \"Relatório\" (síntese em texto) de bioimpedância; a versão \"Bio\" (gráfica/gauges) só extrai poucos campos, porque a maioria dos valores é desenhada como gráfico, não como texto.",
+      },
+      {
         titulo: "Faixa de segurança clínica (alergias e medicações)",
         texto: "Fica sempre visível no topo. Clique em \"Gerenciar\" para adicionar alergias e medicações em uso. Alergia grave e medicação anticoagulante aparecem em vermelho. Essas informações são lidas automaticamente pela IA de sugestão diagnóstica para checar interações — por isso vale a pena manter atualizado.",
       },
@@ -36,7 +44,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Prescrição",
-        texto: "Escolha o tipo (Simples / Controle especial / Antibiótico). \"Modelos salvos\" reaproveita prescrições que você já salvou antes. A assinatura eletrônica (selo \"assinatura A1\") usa o certificado cadastrado em Configurações → Assinaturas.",
+        texto: "Escolha o tipo (Simples / Controle especial / Antibiótico). \"Modelos salvos\" reaproveita prescrições que você já salvou antes. A assinatura eletrônica (selo \"assinatura A1\") usa o certificado cadastrado em Configurações → Assinaturas. Toda receita emitida entra automaticamente na lista de \"Exames avulsos\" do paciente, como um atalho pra reabrir depois — não duplica arquivo, é só um link pro documento já existente.",
       },
       {
         titulo: "Exames de análises clínicas",
@@ -48,7 +56,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Escalas de desfecho",
-        texto: "Clique na sigla da escala (EVA, WOMAC, Lysholm, DASH, ODI, TSK) para abrir o questionário clicável — a pontuação final é sempre calculada pelo sistema, nunca digitada. Precisa responder todos os itens pra liberar salvar. O gráfico de evolução aparece sozinho a partir da 2ª aplicação da mesma escala.",
+        texto: "Clique na sigla da escala (EVA, WOMAC, Lysholm, DASH, ODI, TSK) para abrir o questionário clicável — a pontuação final é sempre calculada pelo sistema, nunca digitada. Precisa responder todos os itens pra liberar salvar. O gráfico de evolução aparece sozinho a partir da 2ª aplicação da mesma escala (e também aparece dentro do Dashboard).",
       },
       {
         titulo: "Procedimentos realizados",
@@ -60,7 +68,11 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Exames avulsos",
-        texto: "Para anexar qualquer documento de exame sem passar pela extração automática por IA (ex: exames de imagem, laudos externos).",
+        texto: "Para anexar qualquer documento sem passar pela extração automática por IA (ex: exames de imagem, laudos externos), ou pra ver as receitas emitidas (que entram aqui sozinhas).",
+      },
+      {
+        titulo: "Chat flutuante",
+        texto: "Bolinha no canto inferior direito, visível em qualquer aba da tela do paciente — abre o chat com a equipe sem precisar sair da consulta. Mostra contador de mensagens não lidas.",
       },
     ],
   },
@@ -126,7 +138,7 @@ export default function ManualSistema() {
     <div>
       <h2 style={{ fontSize: "1.1rem" }}>Manual do sistema</h2>
       <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", marginBottom: 20 }}>
-        Explicação rápida de cada função — clique num item para expandir.
+        Explicação rápida de cada função — clique num item para expandir. Toda tela do sistema tem um jeito de voltar (pelo menu lateral, pelas pílulas do paciente, ou pelo link "← Voltar" nas telas de documento).
       </p>
 
       {SECOES.map((secao) => (
