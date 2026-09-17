@@ -14,6 +14,7 @@ import EdicaoVersionada from "./edicao-versionada";
 import EscalasDesfecho from "./escalas-desfecho";
 import AvaliacaoFisicaForm from "./avaliacao-fisica-form";
 import DashboardPaciente from "./dashboard-paciente";
+import ChatFlutuante from "../chat-flutuante";
 import ProcedimentosRealizados from "./procedimentos-realizados";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
@@ -249,6 +250,7 @@ export default async function DetalhePacientePage({
           }
         />
       </div>
+      <ChatFlutuante />
     </ConsultaTimerProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import BotaoImprimir from "./botao-imprimir";
 import BotaoAssinarDigital from "./botao-assinar-digital";
+import BotaoVoltarPaciente from "../../../botao-voltar-paciente";
 
 export default async function VisualizarReceitaPage({
   params,
@@ -216,6 +217,9 @@ export default async function VisualizarReceitaPage({
 
   return (
     <div style={{ background: "var(--cor-fundo-card-alt)", minHeight: "100vh", padding: "32px 0" }}>
+      <div className="no-print" style={{ maxWidth: 720, margin: "0 auto 12px" }}>
+        <BotaoVoltarPaciente pacienteId={prescricao.paciente_id} />
+      </div>
       {duasVias ? (
         <>
           <Folha viaLabel="1ª via — Farmácia" />

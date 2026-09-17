@@ -1,4 +1,5 @@
 import NovoRelatorioForm from "../novo-relatorio-form";
+import BotaoVoltarPaciente from "../../../botao-voltar-paciente";
 
 export default async function NovoRelatorioPage({
   params,
@@ -6,5 +7,10 @@ export default async function NovoRelatorioPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <NovoRelatorioForm pacienteId={id} />;
+  return (
+    <>
+      <BotaoVoltarPaciente pacienteId={id} />
+      <NovoRelatorioForm pacienteId={id} />
+    </>
+  );
 }
