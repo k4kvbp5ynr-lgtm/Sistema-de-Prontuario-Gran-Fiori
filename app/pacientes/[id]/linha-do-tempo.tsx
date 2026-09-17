@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useSubmenuPilulas } from "./submenu-pilulas";
 
 type EventoTimeline = {
   data: string;
@@ -35,10 +36,19 @@ const ROTULOS: Record<string, string> = {
   recibo: "Recibo",
 };
 
+const ABA_POR_TIPO: Record<string, string> = {
+  consulta: "historico",
+  exame: "exames-lab",
+  procedimento: "procedimentos-realizados",
+  escala: "escalas",
+  avaliacao: "avaliacao-fisica",
+};
+
 const TODOS_TIPOS = Object.keys(ROTULOS);
 
 export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
   const supabase = createClient();
+  const submenu = useSubmenuPilulas();
   const [eventos, setEventos] = useState<EventoTimeline[]>([]);
   const [carregado, setCarregado] = useState(false);
   const [filtrosAtivos, setFiltrosAtivos] = useState<Set<string>>(new Set(TODOS_TIPOS));
@@ -167,28 +177,56 @@ export default function LinhaDoTempo({ pacienteId }: { pacienteId: string }) {
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 0, padding: "4px 0" }}>
         {[...eventosFiltrados].reverse().map((e, i, arr) => {
+          const abaAlvo = e.tipo !== "consulta" ? ABA_POR_TIPO[e.tipo] : null;
+          const clicavel = !!e.href || !!abaAlvo;
           const conteudo = (
             <>
               <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--cor-texto-muito-fraco)", fontFamily: "var(--fonte-mono)", whiteSpace: "nowrap" }}>
                 {new Date(e.data).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
               </p>
-              <p style={{ margin: "2px 0 0", fontSize: 11.5, fontWeight: 600, maxWidth: 120, lineHeight: 1.3 }}>{e.titulo}</p>
+              <p
+                style={{
+                  margin: "2px 0 0",
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  maxWidth: 120,
+                  lineHeight: 1.3,
+                  textDecoration: clicavel ? "underline" : "none",
+                  textDecorationColor: "var(--cor-borda-input)",
+                }}
+              >
+                {e.titulo}
+              </p>
               {e.subtitulo && (
                 <p style={{ margin: "2px 0 0", fontSize: 10.5, color: "var(--cor-texto-fraco)", maxWidth: 120, lineHeight: 1.3 }}>{e.subtitulo}</p>
               )}
             </>
           );
+
+          let nó = conteudo;
+          if (e.href) {
+            nó = (
+              <Link href={e.href} style={{ textDecoration: "none", color: "inherit" }}>
+                {conteudo}
+              </Link>
+            );
+          } else if (abaAlvo && submenu) {
+            nó = (
+              <button
+                type="button"
+                onClick={() => submenu.irPara(abaAlvo)}
+                style={{ background: "none", border: "none", padding: 0, margin: 0, color: "inherit", cursor: "pointer", textAlign: "center" }}
+              >
+                {conteudo}
+              </button>
+            );
+          }
+
           return (
             <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 130, textAlign: "center" }}>
                 <span style={{ width: 11, height: 11, borderRadius: "50%", background: e.cor, border: "2px solid var(--cor-fundo)", boxShadow: "0 0 0 1px var(--cor-borda)" }} />
-                {e.href ? (
-                  <Link href={e.href} style={{ textDecoration: "none", color: "inherit" }}>
-                    {conteudo}
-                  </Link>
-                ) : (
-                  conteudo
-                )}
+                {nó}
               </div>
               {i < arr.length - 1 && (
                 <div style={{ width: 24, height: 1, background: "var(--cor-borda)", marginTop: 5, flexShrink: 0 }} />
