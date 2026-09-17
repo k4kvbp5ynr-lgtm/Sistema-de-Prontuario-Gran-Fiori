@@ -15,6 +15,8 @@ import EscalasDesfecho from "./escalas-desfecho";
 import AvaliacaoFisicaForm from "./avaliacao-fisica-form";
 import DashboardPaciente from "./dashboard-paciente";
 import ChatFlutuante from "../chat-flutuante";
+import LinhaDoTempo from "./linha-do-tempo";
+import BotaoExportarPdf from "./botao-exportar-pdf";
 import ProcedimentosRealizados from "./procedimentos-realizados";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
@@ -78,6 +80,12 @@ export default async function DetalhePacientePage({
       id: "dashboard",
       label: "Dashboard",
       conteudo: <DashboardPaciente pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "linha-do-tempo",
+      label: "Linha do tempo",
+      conteudo: <LinhaDoTempo pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",
@@ -238,12 +246,15 @@ export default async function DetalhePacientePage({
                 <div style={{ flex: 1 }}>
                   <CadastroPaciente paciente={paciente} />
                 </div>
-                {!souRecepcao && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <TimerConsultaWidget />
-                    <BotaoSalvarConsulta />
-                  </div>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <BotaoExportarPdf pacienteId={paciente.id} />
+                  {!souRecepcao && (
+                    <>
+                      <TimerConsultaWidget />
+                      <BotaoSalvarConsulta />
+                    </>
+                  )}
+                </div>
               </div>
               <FaixaSegurancaClinica pacienteId={paciente.id} />
             </div>

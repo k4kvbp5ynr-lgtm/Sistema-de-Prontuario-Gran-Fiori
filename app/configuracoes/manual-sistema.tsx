@@ -31,6 +31,14 @@ const SECOES: Secao[] = [
         texto: "Bioimpedância e ventilometria — ~30 campos (peso/IMC/TMB, gordura, massa magra/muscular, hidratação, ângulo de fase, VO2 máx, FC, pressão, condicionamento). Pode preencher manualmente ou usar \"Extrair de um PDF (IA)\" no topo do formulário, que lê o texto do laudo e pré-preenche — sempre revise antes de salvar. Funciona bem com laudos de ventilometria e com a versão \"Relatório\" (síntese em texto) de bioimpedância; a versão \"Bio\" (gráfica/gauges) só extrai poucos campos, porque a maioria dos valores é desenhada como gráfico, não como texto.",
       },
       {
+        titulo: "Exportar PDF do prontuário",
+        texto: "Botão \"Exportar PDF\" no cabeçalho da tela do paciente (visível pra todos os perfis). Gera um PDF único com dados cadastrais, alergias/medicações, histórico de consultas, exames laboratoriais, procedimentos, escalas de desfecho, avaliações físicas e lista de documentos emitidos — útil pra atender pedido de portabilidade de dados (LGPD) ou levar informação pra outro profissional.",
+      },
+      {
+        titulo: "Linha do tempo",
+        texto: "Junta consultas, exames, procedimentos, escalas de desfecho, avaliações físicas e documentos (receitas/relatórios/recibos) num só feed cronológico. Filtros clicáveis por tipo no topo. Itens de documento (receita/relatório/recibo) são clicáveis e abrem o documento direto.",
+      },
+      {
         titulo: "Faixa de segurança clínica (alergias e medicações)",
         texto: "Fica sempre visível no topo. Clique em \"Gerenciar\" para adicionar alergias e medicações em uso. Alergia grave e medicação anticoagulante aparecem em vermelho. Essas informações são lidas automaticamente pela IA de sugestão diagnóstica para checar interações — por isso vale a pena manter atualizado.",
       },
