@@ -136,7 +136,7 @@ export default function Chat({ meuId, altura = "calc(100vh - 120px)" }: { meuId:
   }
 
   return (
-    <div style={{ display: "flex", height: altura, border: "1px solid var(--cor-borda)", borderRadius: 14, overflow: "hidden" }}>
+    <div style={{ display: "flex", height: altura, border: "1px solid var(--cor-borda)", borderRadius: 14, overflow: "hidden", background: "var(--cor-fundo-card)" }}>
       <div style={{ width: 236, borderRight: "1px solid var(--cor-borda)", overflowY: "auto", background: "var(--cor-sidebar)" }}>
         <p style={{ fontSize: 16, fontWeight: 700, margin: "14px 14px 10px", color: "var(--cor-texto)" }}>Equipe</p>
         <div style={{ padding: "0 14px 10px" }}>
