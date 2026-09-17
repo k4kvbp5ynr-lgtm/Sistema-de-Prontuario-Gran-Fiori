@@ -12,6 +12,8 @@ import BotaoSalvarConsulta from "./botao-salvar-consulta";
 import FaixaSegurancaClinica from "./faixa-seguranca-clinica";
 import EdicaoVersionada from "./edicao-versionada";
 import EscalasDesfecho from "./escalas-desfecho";
+import AvaliacaoFisicaForm from "./avaliacao-fisica-form";
+import DashboardPaciente from "./dashboard-paciente";
 import ProcedimentosRealizados from "./procedimentos-realizados";
 import { ConsultaTimerProvider } from "./consulta-timer-context";
 import TimerConsultaWidget from "./timer-consulta-widget";
@@ -72,6 +74,12 @@ export default async function DetalhePacientePage({
     { tipo: "link", id: "voltar", label: "Voltar", href: "/pacientes" },
     {
       tipo: "painel",
+      id: "dashboard",
+      label: "Dashboard",
+      conteudo: <DashboardPaciente pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
       id: "anamnese",
       label: "Anamnese",
       conteudo: souRecepcao ? (
@@ -119,6 +127,12 @@ export default async function DetalhePacientePage({
       id: "escalas",
       label: "Escalas de desfecho",
       conteudo: <EscalasDesfecho pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "avaliacao-fisica",
+      label: "Avaliação física",
+      conteudo: <AvaliacaoFisicaForm pacienteId={paciente.id} />,
     },
     {
       tipo: "painel",

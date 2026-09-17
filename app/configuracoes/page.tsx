@@ -7,6 +7,7 @@ import GestaoEquipe from "../equipe/gestao-equipe";
 import BuscaPorLote from "./busca-por-lote";
 import RecallPacientesInativos from "./recall-pacientes";
 import Indicadores from "./indicadores";
+import ManualSistema from "./manual-sistema";
 import MenuLateral from "../menu-lateral";
 import { itensMenuPrincipal } from "../itens-menu-principal";
 
@@ -31,6 +32,7 @@ export default async function ConfiguracoesPage() {
       rastreabilidade={restringirAbas ? null : <BuscaPorLote />}
       recall={restringirAbas ? null : <RecallPacientesInativos />}
       indicadores={restringirAbas ? null : <Indicadores />}
+      manual={<ManualSistema />}
     />
   );
   return <MenuLateral itens={itensMenuPrincipal("configuracoes", conteudo)} itemInicial="configuracoes" />;

@@ -258,7 +258,7 @@ export default function AgendaCalendario() {
   function agendamentosDoDia(dia: Date) {
     return agendamentos.filter((a) => {
       if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
-      if (a.dia_inteiro) return false; // esses vão na faixa de cima
+      if (a.dia_inteiro) return false; // esses têm renderização própria (coluna inteira)
       const d = new Date(a.data_hora);
       const ehMultiDia = a.data_hora_fim && new Date(a.data_hora_fim).toDateString() !== d.toDateString();
       if (ehMultiDia) return false; // esses vão na faixa de vários dias, não na grade de horas
@@ -266,9 +266,20 @@ export default function AgendaCalendario() {
     });
   }
 
+  function diaInteiroDoDia(dia: Date) {
+    return agendamentos.filter((a) => {
+      if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
+      if (!a.dia_inteiro) return false;
+      const inicio = new Date(a.data_hora.split("T")[0] + "T00:00:00");
+      const fim = a.data_hora_fim ? new Date(a.data_hora_fim.split("T")[0] + "T00:00:00") : inicio;
+      const diaAlvo = new Date(dia.toDateString());
+      return diaAlvo >= inicio && diaAlvo <= fim;
+    });
+  }
+
   const eventosMultiDia = agendamentos.filter((a) => {
     if (profissionaisVisiveis && !profissionaisVisiveis.has(a.profissional_id)) return false;
-    if (a.dia_inteiro) return true;
+    if (a.dia_inteiro) return false; // agora renderizado dentro da própria coluna do dia
     return a.data_hora_fim && new Date(a.data_hora_fim).toDateString() !== new Date(a.data_hora).toDateString();
   });
 
@@ -441,29 +452,62 @@ export default function AgendaCalendario() {
           ))}
         </div>
 
-        {dias.map((dia, i) => (
+        {dias.map((dia, i) => {
+          const diaInteiroEventos = diaInteiroDoDia(dia);
+          const corDiaInteiro = diaInteiroEventos[0] ? usuariosAgenda.find((u) => u.id === diaInteiroEventos[0].profissional_id)?.cor_agenda : null;
+          return (
           <div
             key={i}
+            onClick={() => diaInteiroEventos[0] && setDetalheId(diaInteiroEventos[0].id)}
             style={{
               position: "relative",
               height: horas.length * ALTURA_HORA,
               borderLeft: "1px solid var(--cor-borda)",
-              backgroundImage: `repeating-linear-gradient(to bottom, var(--cor-fundo) 0 ${ALTURA_HORA - 1}px, #182527 ${ALTURA_HORA - 1}px ${ALTURA_HORA}px)`,
+              cursor: diaInteiroEventos.length > 0 ? "pointer" : undefined,
+              background: diaInteiroEventos.length > 0 ? corDiaInteiro ?? "var(--cor-marca)" : undefined,
+              backgroundImage:
+                diaInteiroEventos.length > 0
+                  ? undefined
+                  : `repeating-linear-gradient(to bottom, var(--cor-fundo) 0 ${ALTURA_HORA - 1}px, #182527 ${ALTURA_HORA - 1}px ${ALTURA_HORA}px)`,
+              opacity: diaInteiroEventos.length > 0 ? 0.85 : 1,
             }}
           >
-            {horas.map((h) => (
+            {diaInteiroEventos.length > 0 && (
               <div
-                key={h}
-                onClick={() => abrirNovoSlot(dia, h)}
                 style={{
                   position: "absolute",
-                  top: (h - HORA_INICIO) * ALTURA_HORA,
-                  width: "100%",
-                  height: ALTURA_HORA,
-                  cursor: "pointer",
+                  top: 6,
+                  left: 4,
+                  right: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#06211e",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
-              />
-            ))}
+              >
+                {diaInteiroEventos.map((a) => {
+                  const tipoEvento = tiposEvento.find((t) => t.id === a.tipo_evento_id);
+                  return a.pacientes?.nome ?? a.titulo_livre ?? tipoEvento?.nome ?? "Dia inteiro";
+                }).join(" · ")}
+              </div>
+            )}
+
+            {diaInteiroEventos.length === 0 &&
+              horas.map((h) => (
+                <div
+                  key={h}
+                  onClick={() => abrirNovoSlot(dia, h)}
+                  style={{
+                    position: "absolute",
+                    top: (h - HORA_INICIO) * ALTURA_HORA,
+                    width: "100%",
+                    height: ALTURA_HORA,
+                    cursor: "pointer",
+                  }}
+                />
+              ))}
 
             {agendamentosDoDia(dia).map((a) => {
               const d = new Date(a.data_hora);
@@ -506,7 +550,8 @@ export default function AgendaCalendario() {
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Formulário de novo agendamento */}
