@@ -23,7 +23,9 @@ type Agendamento = {
   observacao: string | null;
   serie_id: string | null;
   dia_inteiro: boolean;
-  pacientes: { nome: string } | null;
+  eh_teleconsulta: boolean;
+  link_telemedicina: string | null;
+  pacientes: { nome: string; telefone: string | null } | null;
 };
 
 type Paciente = { id: string; nome: string };
@@ -55,6 +57,7 @@ export default function AgendaCalendario() {
   const [tipoEventoId, setTipoEventoId] = useState("");
   const [tituloLivre, setTituloLivre] = useState("");
   const [diaInteiro, setDiaInteiro] = useState(false);
+  const [ehTeleconsulta, setEhTeleconsulta] = useState(false);
   const [horaInicio, setHoraInicio] = useState("08:00");
   const [horaFim, setHoraFim] = useState("08:30");
   const [dataFim, setDataFim] = useState("");
@@ -82,7 +85,7 @@ export default function AgendaCalendario() {
     const { data } = await supabase
       .from("agendamentos")
       .select(
-        "id, paciente_id, profissional_id, data_hora, data_hora_fim, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, serie_id, dia_inteiro, pacientes ( nome )"
+        "id, paciente_id, profissional_id, data_hora, data_hora_fim, duracao_minutos, tipo_evento_id, titulo_livre, status, observacao, serie_id, dia_inteiro, eh_teleconsulta, link_telemedicina, pacientes ( nome, telefone )"
       )
       .gte("data_hora", inicio.toISOString())
       .lt("data_hora", fim.toISOString())
@@ -131,6 +134,7 @@ export default function AgendaCalendario() {
     setTipoEventoId("");
     setTituloLivre("");
     setDiaInteiro(false);
+    setEhTeleconsulta(false);
     setHoraInicio(`${String(hora).padStart(2, "0")}:00`);
     setHoraFim(`${String(Math.min(hora + 1, HORA_FIM)).padStart(2, "0")}:00`);
     setDataFim(dia.toISOString().slice(0, 10));
@@ -208,6 +212,9 @@ export default function AgendaCalendario() {
         observacao: observacao || null,
         serie_id: serieId,
         dia_inteiro: diaInteiro,
+        eh_teleconsulta: ehTeleconsulta,
+        // Sala própria por ocorrência — cada data/horário tem seu link, mesmo dentro de uma série recorrente
+        link_telemedicina: ehTeleconsulta ? `https://meet.jit.si/GranFiori-${crypto.randomUUID().slice(0, 8)}` : null,
       };
     });
 
@@ -624,6 +631,11 @@ export default function AgendaCalendario() {
                 Dia inteiro
               </label>
 
+              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={ehTeleconsulta} onChange={(e) => setEhTeleconsulta(e.target.checked)} style={{ width: "auto", marginBottom: 0 }} />
+                Teleconsulta (gera link de vídeo automaticamente)
+              </label>
+
               {!diaInteiro && (
                 <div style={{ display: "flex", gap: 10 }}>
                   <div style={{ flex: 1 }}>
@@ -738,6 +750,54 @@ export default function AgendaCalendario() {
                 : `${agendamentoDetalhe.duracao_minutos} min`}
             </p>
             {agendamentoDetalhe.observacao && <p style={{ fontSize: "0.9rem" }}>{agendamentoDetalhe.observacao}</p>}
+
+            {agendamentoDetalhe.eh_teleconsulta && agendamentoDetalhe.link_telemedicina && (
+              <div style={{ border: "1px solid var(--cor-ia)", background: "var(--cor-ia-fundo)", borderRadius: 10, padding: 12, margin: "10px 0" }}>
+                <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700 }}>Sala de videochamada (Jitsi Meet)</p>
+                <p style={{ margin: "0 0 10px", fontSize: 11.5, wordBreak: "break-all", color: "var(--cor-texto-suave)" }}>
+                  {agendamentoDetalhe.link_telemedicina}
+                </p>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <a href={agendamentoDetalhe.link_telemedicina} target="_blank" rel="noreferrer">
+                    <button type="button" style={{ fontSize: 11 }}>
+                      Abrir sala
+                    </button>
+                  </a>
+                  <button
+                    type="button"
+                    className="botao-secundario"
+                    style={{ fontSize: 11 }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(agendamentoDetalhe.link_telemedicina!);
+                      alert("Link copiado!");
+                    }}
+                  >
+                    Copiar link
+                  </button>
+                  {agendamentoDetalhe.pacientes?.telefone && (
+                    <a
+                      href={`https://wa.me/${agendamentoDetalhe.pacientes.telefone.replace(/\D/g, "").replace(/^(?!55)/, "55")}?text=${encodeURIComponent(
+                        `Olá, ${agendamentoDetalhe.pacientes.nome.split(" ")[0]}! Segue o link da sua teleconsulta na Gran Fiori em ${new Date(
+                          agendamentoDetalhe.data_hora
+                        ).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}: ${agendamentoDetalhe.link_telemedicina}`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <button type="button" className="botao-secundario" style={{ fontSize: 11 }}>
+                        Enviar por WhatsApp
+                      </button>
+                    </a>
+                  )}
+                </div>
+                {!agendamentoDetalhe.pacientes?.telefone && (
+                  <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--cor-texto-fraco)" }}>
+                    Paciente sem telefone cadastrado — copie o link e envie manualmente.
+                  </p>
+                )}
+              </div>
+            )}
+
             <p style={{ fontSize: "0.9rem" }}>
               Status atual: <b>{agendamentoDetalhe.status}</b>
             </p>

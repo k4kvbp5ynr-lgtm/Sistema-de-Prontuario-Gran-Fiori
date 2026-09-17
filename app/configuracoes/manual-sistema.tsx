@@ -96,6 +96,10 @@ const SECOES: Secao[] = [
         texto: "Marque \"Dia inteiro\" para compromissos sem horário fixo, ou preencha \"Data de fim\" diferente do início para algo que dura vários dias (ex: férias). Esses aparecem numa faixa própria acima da grade de horas, não dentro dela.",
       },
       {
+        titulo: "Teleconsulta",
+        texto: "Marque o checkbox \"Teleconsulta\" ao criar o agendamento — o sistema gera sozinho uma sala de vídeo (Jitsi Meet, sem precisar de conta) e guarda o link nesse agendamento específico. No detalhe do evento aparecem os botões \"Abrir sala\", \"Copiar link\" e \"Enviar por WhatsApp\" (usa o telefone cadastrado do paciente; se não tiver telefone, só fica a opção de copiar e enviar manualmente). Numa série recorrente, cada ocorrência tem sua própria sala.",
+      },
+      {
         titulo: "Repetição",
         texto: "Marque \"Repetir\", escolha os dias da semana (pode marcar mais de um) e até quando repetir. Ao cancelar ou excluir depois, o sistema pergunta se é só aquela ocorrência ou \"esta e as futuras\" da série — ocorrências passadas nunca são afetadas.",
       },
