@@ -64,50 +64,58 @@ function GraficoTendencia({ label, unidade, serie, decimal }: { label: string; u
 export default function DashboardPaciente({ pacienteId }: { pacienteId: string }) {
   const supabase = createClient();
   const [carregado, setCarregado] = useState(false);
+  const [atualizando, setAtualizando] = useState(false);
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]); // todas, mais antiga primeiro
   const [paciente, setPaciente] = useState<any>(null);
   const [exames, setExames] = useState<any[]>([]);
   const [escalas, setEscalas] = useState<any[]>([]);
   const [verTendencias, setVerTendencias] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data: pac } = await supabase.from("pacientes").select("peso, altura, data_nascimento, sexo").eq("id", pacienteId).single();
-      setPaciente(pac);
+  async function carregarTudo(mostrarSpinnerPequeno = false) {
+    if (mostrarSpinnerPequeno) setAtualizando(true);
 
-      const { data: avs } = await supabase
-        .from("avaliacoes_fisicas")
-        .select("*")
-        .eq("paciente_id", pacienteId)
-        .order("data_avaliacao", { ascending: true });
-      setAvaliacoes(avs ?? []);
+    const { data: pac } = await supabase.from("pacientes").select("peso, altura, data_nascimento, sexo").eq("id", pacienteId).single();
+    setPaciente(pac);
 
-      const { data: ultimaData } = await supabase
+    const { data: avs } = await supabase
+      .from("avaliacoes_fisicas")
+      .select("*")
+      .eq("paciente_id", pacienteId)
+      .order("data_avaliacao", { ascending: true });
+    setAvaliacoes(avs ?? []);
+
+    const { data: ultimaData } = await supabase
+      .from("resultados_exames_paciente")
+      .select("data_exame")
+      .eq("paciente_id", pacienteId)
+      .order("data_exame", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (ultimaData?.data_exame) {
+      const { data: res } = await supabase
         .from("resultados_exames_paciente")
-        .select("data_exame")
+        .select("status")
         .eq("paciente_id", pacienteId)
-        .order("data_exame", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq("data_exame", ultimaData.data_exame);
+      setExames(res ?? []);
+    } else {
+      setExames([]);
+    }
 
-      if (ultimaData?.data_exame) {
-        const { data: res } = await supabase
-          .from("resultados_exames_paciente")
-          .select("status")
-          .eq("paciente_id", pacienteId)
-          .eq("data_exame", ultimaData.data_exame);
-        setExames(res ?? []);
-      }
+    const { data: esc } = await supabase
+      .from("respostas_escala")
+      .select("pontuacao, data_aplicacao, escalas_desfecho(sigla, nome, maior_e_melhor)")
+      .eq("paciente_id", pacienteId)
+      .order("data_aplicacao", { ascending: false });
+    setEscalas((esc as any) ?? []);
 
-      const { data: esc } = await supabase
-        .from("respostas_escala")
-        .select("pontuacao, data_aplicacao, escalas_desfecho(sigla, nome, maior_e_melhor)")
-        .eq("paciente_id", pacienteId)
-        .order("data_aplicacao", { ascending: false });
-      setEscalas((esc as any) ?? []);
+    setCarregado(true);
+    setAtualizando(false);
+  }
 
-      setCarregado(true);
-    })();
+  useEffect(() => {
+    carregarTudo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pacienteId]);
 
@@ -178,7 +186,21 @@ export default function DashboardPaciente({ pacienteId }: { pacienteId: string }
 
   return (
     <div>
-      <h2 style={{ fontSize: "1.1rem" }}>Dashboard</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2 style={{ fontSize: "1.1rem", margin: 0 }}>Dashboard</h2>
+        <button
+          type="button"
+          onClick={() => carregarTudo(true)}
+          disabled={atualizando}
+          className="botao-secundario"
+          style={{ fontSize: 12, padding: "5px 12px", display: "flex", alignItems: "center", gap: 6 }}
+          title="Atualizar dados"
+        >
+          <span style={{ display: "inline-block", animation: atualizando ? "girar 0.8s linear infinite" : undefined }}>↻</span>
+          {atualizando ? "Atualizando..." : "Atualizar"}
+        </button>
+        <style>{`@keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
       <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", marginBottom: 16 }}>
         Resumo visual do paciente — só aparece o que já foi preenchido em algum lugar do prontuário. Cada campo mostra o valor mais recente registrado, mesmo que tenha sido em avaliações diferentes.
       </p>

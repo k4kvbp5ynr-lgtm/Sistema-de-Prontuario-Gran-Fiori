@@ -6,6 +6,8 @@ export const maxDuration = 300;
 
 const SYSTEM_PROMPT = `Você extrai dados de laudos de exames laboratoriais (PDF) para um sistema de prontuário eletrônico.
 
+FORMATO DO TEXTO QUE VOCÊ VAI RECEBER: cada linha representa uma linha visual do laudo original, com os pedaços de texto dessa linha unidos por " | ", na ordem da esquerda para a direita (ex: "Hemoglobina | 14,2 g/dL | 12 a 16 g/dL"). Isso ajuda você a saber quais pedaços pertencem ao mesmo exame — mas o layout varia entre laboratórios, então use o bom senso: às vezes o nome do exame e seu valor ficam em linhas diferentes (quando o laudo original os desenhava em blocos separados), às vezes uma linha só tem parte da informação.
+
 REGRAS OBRIGATÓRIAS:
 1. Extraia APENAS exames que estejam explicitamente escritos no documento, com o valor numérico exato que aparece. NUNCA invente, estime ou complete um valor que não esteja no documento.
 
@@ -240,20 +242,78 @@ export async function POST(request: NextRequest) {
 
   const bytes = Buffer.from(await arquivo.arrayBuffer());
 
+  // O pdf-parse, por padrão, concatena os textos na ordem em que aparecem dentro do
+  // arquivo PDF — que muitas vezes NÃO é a ordem visual esquerda->direita, principalmente
+  // em laudos com colunas (nome / valor / referência). Isso é a causa raiz confirmada do
+  // "embaralhamento" de exames que já tivemos antes. Aqui, customizamos o "pagerender" do
+  // pdf-parse (ele aceita esse hook e já usa o pdfjs-dist internamente, então não precisa
+  // de nenhuma dependência nova) pra agrupar por linha (Y aproximado) e ordenar por coluna
+  // (X crescente) dentro de cada linha, unindo com " | " — fica parecido com uma tabela
+  // markdown, o que ajuda a IA a não misturar nome/valor/referência de exames diferentes.
+  function renderizarPaginaEmOrdemVisual(dadosPagina: any) {
+    const opcoes = { normalizeWhitespace: false, disableCombineTextItems: false };
+    return dadosPagina.getTextContent(opcoes).then((conteudoTexto: any) => {
+      const itens = conteudoTexto.items
+        .filter((item: any) => item.str && item.str.trim().length > 0)
+        .map((item: any) => ({ texto: item.str, x: item.transform[4], y: item.transform[5] }));
+
+      // Agrupa por linha: Y dentro de 2pt é considerada a mesma linha (evita problema de
+      // igualdade exata de ponto flutuante que o pdf-parse padrão usa).
+      const TOLERANCIA_Y = 2;
+      const linhas: { y: number; itens: { texto: string; x: number }[] }[] = [];
+      for (const item of itens) {
+        let linha = linhas.find((l) => Math.abs(l.y - item.y) <= TOLERANCIA_Y);
+        if (!linha) {
+          linha = { y: item.y, itens: [] };
+          linhas.push(linha);
+        }
+        linha.itens.push({ texto: item.texto, x: item.x });
+      }
+
+      // Ordena as linhas de cima pra baixo (Y maior = mais alto na página, em PDF)
+      linhas.sort((a, b) => b.y - a.y);
+
+      const textoFinal = linhas
+        .map((linha) => {
+          linha.itens.sort((a, b) => a.x - b.x); // esquerda -> direita, dentro da linha
+          return linha.itens.map((i) => i.texto).join(" | ");
+        })
+        .join("\n");
+
+      return textoFinal;
+    });
+  }
+
   console.time("[extrair-exames] PDF_EXTRACTION");
   let textoExtraido: string | null = null;
   try {
     const { default: pdfParse } = await import("pdf-parse");
-    const resultado = await pdfParse(bytes);
+    const resultado = await pdfParse(bytes, { pagerender: renderizarPaginaEmOrdemVisual });
     resumo.pdfPages = resultado.numpages ?? null;
     resumo.originalTextLength = resultado.text?.length ?? 0;
     if (resultado.text && resultado.text.trim().length > 200) {
       textoExtraido = resultado.text;
     }
   } catch (erroExtracao: any) {
-    console.log("[extrair-exames] falha ao extrair texto localmente, seguindo com PDF como imagem:", erroExtracao?.message);
+    console.log("[extrair-exames] falha na extração em ordem visual, tentando modo padrão do pdf-parse:", erroExtracao?.message);
+    // Se o pagerender customizado falhar por qualquer motivo, cai pro comportamento
+    // padrão do pdf-parse em vez de quebrar a extração inteira.
+    try {
+      const { default: pdfParse } = await import("pdf-parse");
+      const resultado = await pdfParse(bytes);
+      resumo.pdfPages = resultado.numpages ?? null;
+      resumo.originalTextLength = resultado.text?.length ?? 0;
+      if (resultado.text && resultado.text.trim().length > 200) {
+        textoExtraido = resultado.text;
+      }
+    } catch (erroFallback: any) {
+      console.log("[extrair-exames] falha também no modo padrão, seguindo com PDF como imagem:", erroFallback?.message);
+    }
   }
   console.timeEnd("[extrair-exames] PDF_EXTRACTION");
+  if (textoExtraido) {
+    console.log("[extrair-exames] amostra do texto (ordem visual):", textoExtraido.slice(0, 400));
+  }
 
   console.time("[extrair-exames] TEXT_CLEANING");
   let textoParaEnviar = textoExtraido;
