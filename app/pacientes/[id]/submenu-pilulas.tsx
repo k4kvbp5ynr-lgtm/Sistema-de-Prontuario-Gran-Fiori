@@ -132,7 +132,7 @@ export default function SubmenuPilulas({
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {cabecalho}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", overflowX: "auto", paddingBottom: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {itemVoltar && (
             <>
               <Link

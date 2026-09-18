@@ -11,7 +11,7 @@ const SECOES: Secao[] = [
     itens: [
       {
         titulo: "Lista de pacientes",
-        texto: "Tela inicial. A busca é um dropdown: digite o nome e clique no resultado — a lista completa nunca fica exposta. Os cards do topo (Total de pacientes, Consultas este mês, Atendidos hoje) e a tabela \"Atendidos recentemente\" são só leitura, calculados a partir dos agendamentos e consultas já registrados.",
+        texto: "Tela inicial. A busca é um dropdown: digite o nome e clique no resultado — a lista completa nunca fica exposta. Os cards do topo (Total de pacientes, Consultas este mês, Atendidos hoje) e a tabela \"Atendidos recentemente\" só aparecem pra recepção e administradores — médicos, fisioterapeutas e enfermagem não-admin não veem essa parte, só a busca e os follow-ups pendentes.",
       },
       {
         titulo: "Cadastro de novo paciente",
