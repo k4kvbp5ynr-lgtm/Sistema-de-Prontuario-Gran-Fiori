@@ -38,9 +38,14 @@ async function renovarTokenSeNecessario(supabase: any, conexao: any) {
 async function buscarOura(caminho: string, token: string, dataInicio: string, dataFim: string) {
   const url = `https://api.ouraring.com/v2/usercollection/${caminho}?start_date=${dataInicio}&end_date=${dataFim}`;
   const resposta = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!resposta.ok) return [];
+  if (!resposta.ok) {
+    const corpo = await resposta.text();
+    console.log(`[oura] ERRO em ${caminho} — status ${resposta.status}: ${corpo.slice(0, 300)}`);
+    return { dados: [], erro: `${caminho}: status ${resposta.status} — ${corpo.slice(0, 150)}` };
+  }
   const dados = await resposta.json();
-  return dados.data ?? [];
+  console.log(`[oura] ${caminho} — ${dados.data?.length ?? 0} registro(s)`);
+  return { dados: dados.data ?? [], erro: null };
 }
 
 export async function POST(request: NextRequest) {
@@ -76,14 +81,20 @@ export async function POST(request: NextRequest) {
       buscarOura("daily_spo2", token, dataInicio, dataFim),
     ]);
 
-    if (readiness[0]) console.log("[oura] amostra readiness:", JSON.stringify(readiness[0]).slice(0, 500));
-    if (sleep[0]) console.log("[oura] amostra sleep:", JSON.stringify(sleep[0]).slice(0, 500));
+    const errosApi = [readiness.erro, sleep.erro, activity.erro, spo2.erro].filter(Boolean);
+    if (errosApi.length === 4) {
+      // Todas as 4 chamadas falharam — quase certeza de token/escopo inválido, não "sem dados"
+      return NextResponse.json({ erro: "A Oura recusou todas as chamadas: " + errosApi.join(" | ") }, { status: 502 });
+    }
+
+    if (readiness.dados[0]) console.log("[oura] amostra readiness:", JSON.stringify(readiness.dados[0]).slice(0, 500));
+    if (sleep.dados[0]) console.log("[oura] amostra sleep:", JSON.stringify(sleep.dados[0]).slice(0, 500));
 
     const porDia = new Map<string, any>();
-    for (const r of readiness) {
+    for (const r of readiness.dados) {
       porDia.set(r.day, { ...porDia.get(r.day), readiness_score: r.score, fc_repouso: r.contributors?.resting_heart_rate ?? null, bruto_readiness: r });
     }
-    for (const s of sleep) {
+    for (const s of sleep.dados) {
       const existente = porDia.get(s.day) ?? {};
       porDia.set(s.day, {
         ...existente,
@@ -95,10 +106,10 @@ export async function POST(request: NextRequest) {
         bruto_sleep: s,
       });
     }
-    for (const a of activity) {
+    for (const a of activity.dados) {
       porDia.set(a.day, { ...porDia.get(a.day), activity_score: a.score, bruto_activity: a });
     }
-    for (const sp of spo2) {
+    for (const sp of spo2.dados) {
       porDia.set(sp.day, { ...porDia.get(sp.day), spo2: sp.spo2_percentage?.average ?? null, bruto_spo2: sp });
     }
 
@@ -124,7 +135,11 @@ export async function POST(request: NextRequest) {
 
     await supabase.from("wearable_connections").update({ ultima_sincronizacao: new Date().toISOString() }).eq("paciente_id", pacienteId).eq("provider", "oura");
 
-    return NextResponse.json({ ok: true, diasSincronizados: linhas.length });
+    return NextResponse.json({
+      ok: true,
+      diasSincronizados: linhas.length,
+      avisoParcial: errosApi.length > 0 ? `Algumas chamadas falharam: ${errosApi.join(" | ")}` : null,
+    });
   } catch (erro: any) {
     return NextResponse.json({ erro: erro.message }, { status: 500 });
   }

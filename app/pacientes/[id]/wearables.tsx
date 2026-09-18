@@ -88,6 +88,7 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
         setErro(dados.erro ?? "Erro ao sincronizar.");
       } else {
         setMensagem(`Sincronizado! ${dados.diasSincronizados} dia(s) atualizados.`);
+        if (dados.avisoParcial) setErro(dados.avisoParcial);
         carregar();
       }
     } catch {
