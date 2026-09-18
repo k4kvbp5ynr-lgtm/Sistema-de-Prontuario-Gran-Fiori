@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     const dadosToken = await respostaToken.json();
+    console.log("[oura] token recebido — escopo concedido:", dadosToken.scope, "| token_type:", dadosToken.token_type, "| expires_in:", dadosToken.expires_in);
     const expiresAt = new Date(Date.now() + dadosToken.expires_in * 1000).toISOString();
 
     const { error: erroSalvar } = await supabase.from("wearable_connections").upsert(

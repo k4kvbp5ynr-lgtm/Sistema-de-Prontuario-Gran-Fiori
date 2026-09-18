@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", process.env.OURA_CLIENT_ID);
   url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("scope", "daily heartrate personal");
+  url.searchParams.set("scope", "daily heartrate personal spo2");
   url.searchParams.set("state", state);
 
   return NextResponse.redirect(url.toString());
