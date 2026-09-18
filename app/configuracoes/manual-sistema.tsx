@@ -23,7 +23,7 @@ const SECOES: Secao[] = [
     titulo: "Dentro do prontuário do paciente",
     itens: [
       {
-        titulo: "Dashboard",
+        titulo: "Resumo (antes \"Dashboard\")",
         texto: "Primeiro ícone depois de \"Voltar\". Resumo visual do paciente — só mostra o que já tem dado preenchido em algum lugar (Avaliação física, exames, escalas), nunca aparece campo em branco. Cada indicador mostra o valor mais recente registrado daquele campo específico, mesmo que tenha vindo de avaliações diferentes. \"Ver gráficos de tendência\" mostra a evolução ao longo do tempo (inclusive das escalas de desfecho, de forma redundante com a tela própria delas). Tem botão de atualizar (↻) no canto — não precisa dar F5 na página depois de registrar algo novo.",
       },
       {
@@ -63,7 +63,7 @@ const SECOES: Secao[] = [
         texto: "Documento de região única ou solicitação múltipla, com códigos TUSS e orçamento.",
       },
       {
-        titulo: "Exames de análises clínicas",
+        titulo: "Exames laboratoriais (dentro do menu \"Exames ▾\")",
         texto: "Suba o PDF do laudo e a IA extrai os resultados automaticamente, revisando contra a base de valores de referência antes de salvar. A tabela reúne exames de datas diferentes lado a lado, com cor por status (verde=normal, vermelho=acima, amarelo=abaixo).",
       },
       {
@@ -71,15 +71,15 @@ const SECOES: Secao[] = [
         texto: "Busca por rsID + genótipo em bases públicas (MyVariant.info, MyGene.info, ClinVar, GWAS Catalog). Não usa IA — todo cálculo é determinístico. Os dados da variante ficam em cache: consultar o mesmo rsID para outro paciente não busca tudo de novo.",
       },
       {
-        titulo: "Escalas de desfecho",
+        titulo: "Escalas (antes \"Escalas de desfecho\")",
         texto: "Clique na sigla da escala (EVA, WOMAC, Lysholm, DASH, ODI, TSK) para abrir o questionário clicável — a pontuação final é sempre calculada pelo sistema, nunca digitada. Precisa responder todos os itens pra liberar salvar. O gráfico de evolução aparece sozinho a partir da 2ª aplicação da mesma escala (e também aparece dentro do Dashboard).",
       },
       {
         titulo: "Procedimentos realizados",
-        texto: "É o registro clínico do procedimento em si (protocolo, produto, lote, via, se foi guiado por USG) — diferente de \"Procedimentos (reembolso)\", que é sobre cobrança. Com o checkbox \"Criar follow-ups automáticos\" marcado, o sistema já agenda 3 tarefas de contato (D+7, D+30, D+90) que aparecem na tela inicial de Pacientes. Expandir um procedimento mostra o histórico desses follow-ups, incluindo a anotação de como foi o contato.",
+        texto: "É o registro clínico do procedimento em si (protocolo, produto, lote, via, se foi guiado por USG) — diferente de \"Solicitação / reembolso\", que é sobre cobrança. Ambos ficam dentro do menu \"Procedimentos ▾\". Com o checkbox \"Criar follow-ups automáticos\" marcado, o sistema já agenda 3 tarefas de contato (D+7, D+30, D+90) que aparecem na tela inicial de Pacientes. Expandir um procedimento mostra o histórico desses follow-ups, incluindo a anotação de como foi o contato.",
       },
       {
-        titulo: "Procedimentos (reembolso)",
+        titulo: "Solicitação / reembolso (antes \"Procedimentos (reembolso)\", dentro do menu \"Procedimentos ▾\")",
         texto: "Aqui entra o valor cobrado e o código TUSS/CBHPM, usados para gerar o recibo/guia de reembolso que o paciente pede ao plano de saúde. É esse valor (\"valor cobrado\") que alimenta o Ticket médio em Indicadores.",
       },
       {
@@ -117,7 +117,7 @@ const SECOES: Secao[] = [
     titulo: "Configurações",
     itens: [
       { titulo: "Assinaturas", texto: "Cada usuário sobe sua própria assinatura (imagem) e certificado digital A1 aqui — a senha do certificado nunca é salva, só pedida na hora de assinar." },
-      { titulo: "Procedimentos", texto: "Catálogo de procedimentos com código TUSS/CBHPM e valor de tabela — é o valor sugerido ao lançar um item em \"Procedimentos (reembolso)\" do paciente." },
+      { titulo: "Procedimentos", texto: "Catálogo de procedimentos com código TUSS/CBHPM e valor de tabela — é o valor sugerido ao lançar um item em \"Solicitação / reembolso\" do paciente." },
       { titulo: "Tipos de evento", texto: "Define os tipos que aparecem ao criar um agendamento na Agenda (Consulta, Feriado, etc.) e se aquele tipo exige selecionar um paciente." },
       { titulo: "Equipe", texto: "Cadastro de usuários do sistema, perfil de acesso, permissão de uso de IA, e a cor que cada profissional usa na Agenda." },
       { titulo: "Rastreabilidade", texto: "Busca por número de lote — localiza todos os pacientes que receberam aquele lote, útil em caso de recall de produto (PRP, ácido hialurônico, toxina)." },
@@ -133,7 +133,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Ticket médio",
-        texto: "Vem do prontuário do paciente, aba \"Procedimentos (reembolso)\" — é a média do campo \"valor cobrado\" de todo item lançado ali no mês. Procedimentos sem valor preenchido não entram na conta. Não usa o \"Procedimentos realizados\" (esse não tem campo de valor, é só registro clínico).",
+        texto: "Vem do prontuário do paciente, menu \"Procedimentos ▾\" → \"Solicitação / reembolso\" — é a média do campo \"valor cobrado\" de todo item lançado ali no mês. Procedimentos sem valor preenchido não entram na conta. Não usa o \"Procedimentos realizados\" (esse não tem campo de valor, é só registro clínico).",
       },
       {
         titulo: "Procedimentos no mês",
@@ -158,7 +158,7 @@ export default function ManualSistema() {
     <div>
       <h2 style={{ fontSize: "1.1rem" }}>Manual do sistema</h2>
       <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", marginBottom: 20 }}>
-        Explicação rápida de cada função — clique num item para expandir. Toda tela do sistema tem um jeito de voltar (pelo menu lateral, pelas pílulas do paciente, ou pelo link "← Voltar" nas telas de documento).
+        Explicação rápida de cada função — clique num item para expandir. Toda tela do sistema tem um jeito de voltar (pelo menu lateral, pelas pílulas do paciente, ou pelo link "← Voltar" nas telas de documento). Dentro do paciente, as pílulas seguem a ordem do raciocínio clínico: Resumo → Anamnese → Avaliação física → Exames → Genética → Escalas → Procedimentos → Histórico. "Exames" e "Procedimentos" são menus (clique pra abrir as opções de dentro).
       </p>
 
       {SECOES.map((secao) => (

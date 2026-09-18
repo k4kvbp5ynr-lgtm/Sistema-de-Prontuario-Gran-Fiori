@@ -78,7 +78,7 @@ export default async function DetalhePacientePage({
     {
       tipo: "painel",
       id: "dashboard",
-      label: "Dashboard",
+      label: "Resumo",
       conteudo: <DashboardPaciente pacienteId={paciente.id} />,
     },
     {
@@ -103,21 +103,26 @@ export default async function DetalhePacientePage({
     },
     {
       tipo: "painel",
-      id: "exames-lab",
-      label: "Exames de análises clínicas",
-      conteudo: <ExamesLaboratoriais pacienteId={paciente.id} nomePaciente={paciente.nome} sexoPaciente={paciente.sexo} podeUsarIA={podeUsarIA} />,
+      id: "avaliacao-fisica",
+      label: "Avaliação física",
+      conteudo: <AvaliacaoFisicaForm pacienteId={paciente.id} />,
     },
     {
-      tipo: "painel",
-      id: "exames-avulsos",
-      label: "Exames avulsos",
-      conteudo: <AnexosExames pacienteId={paciente.id} />,
-    },
-    {
-      tipo: "painel",
-      id: "procedimentos",
-      label: "Procedimentos (reembolso)",
-      conteudo: <ProcedimentosPaciente pacienteId={paciente.id} />,
+      tipo: "grupo",
+      id: "exames",
+      label: "Exames",
+      itens: [
+        {
+          id: "exames-lab",
+          label: "Exames laboratoriais",
+          conteudo: <ExamesLaboratoriais pacienteId={paciente.id} nomePaciente={paciente.nome} sexoPaciente={paciente.sexo} podeUsarIA={podeUsarIA} />,
+        },
+        {
+          id: "exames-avulsos",
+          label: "Exames avulsos",
+          conteudo: <AnexosExames pacienteId={paciente.id} />,
+        },
+      ],
     },
     {
       tipo: "painel",
@@ -128,20 +133,25 @@ export default async function DetalhePacientePage({
     {
       tipo: "painel",
       id: "escalas",
-      label: "Escalas de desfecho",
+      label: "Escalas",
       conteudo: <EscalasDesfecho pacienteId={paciente.id} />,
     },
     {
-      tipo: "painel",
-      id: "avaliacao-fisica",
-      label: "Avaliação física",
-      conteudo: <AvaliacaoFisicaForm pacienteId={paciente.id} />,
-    },
-    {
-      tipo: "painel",
-      id: "procedimentos-realizados",
-      label: "Procedimentos realizados",
-      conteudo: <ProcedimentosRealizados pacienteId={paciente.id} />,
+      tipo: "grupo",
+      id: "procedimentos-grupo",
+      label: "Procedimentos",
+      itens: [
+        {
+          id: "procedimentos",
+          label: "Solicitação / reembolso",
+          conteudo: <ProcedimentosPaciente pacienteId={paciente.id} />,
+        },
+        {
+          id: "procedimentos-realizados",
+          label: "Procedimentos realizados",
+          conteudo: <ProcedimentosRealizados pacienteId={paciente.id} />,
+        },
+      ],
     },
     {
       tipo: "painel",
