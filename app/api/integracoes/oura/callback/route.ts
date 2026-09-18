@@ -27,8 +27,11 @@ export async function GET(request: NextRequest) {
   if (!process.env.OURA_CLIENT_ID || !process.env.OURA_CLIENT_SECRET) {
     return NextResponse.json({ erro: "Credenciais da Oura não configuradas no servidor." }, { status: 500 });
   }
+  if (!process.env.SITE_URL) {
+    return NextResponse.json({ erro: "SITE_URL não configurado no servidor." }, { status: 500 });
+  }
 
-  const redirectUri = `${request.nextUrl.origin}/api/integracoes/oura/callback`;
+  const redirectUri = `${process.env.SITE_URL}/api/integracoes/oura/callback`;
 
   try {
     const respostaToken = await fetch("https://api.ouraring.com/oauth/token", {

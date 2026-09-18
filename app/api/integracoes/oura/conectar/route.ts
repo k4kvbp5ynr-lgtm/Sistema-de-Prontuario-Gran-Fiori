@@ -20,8 +20,11 @@ export async function GET(request: NextRequest) {
   if (!process.env.OURA_CLIENT_ID) {
     return NextResponse.json({ erro: "OURA_CLIENT_ID não configurado no servidor." }, { status: 500 });
   }
+  if (!process.env.SITE_URL) {
+    return NextResponse.json({ erro: "SITE_URL não configurado no servidor — necessário pra gerar o link de retorno correto." }, { status: 500 });
+  }
 
-  const redirectUri = `${request.nextUrl.origin}/api/integracoes/oura/callback`;
+  const redirectUri = `${process.env.SITE_URL}/api/integracoes/oura/callback`;
   // "state" carrega o paciente que está sendo conectado — o callback usa isso pra saber
   // onde salvar o token. A sessão logada (Supabase) já protege contra CSRF de verdade.
   const state = pacienteId;
