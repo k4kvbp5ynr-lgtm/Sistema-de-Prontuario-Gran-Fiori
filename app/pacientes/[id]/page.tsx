@@ -15,6 +15,7 @@ import EscalasDesfecho from "./escalas-desfecho";
 import AvaliacaoFisicaForm from "./avaliacao-fisica-form";
 import DashboardPaciente from "./dashboard-paciente";
 import ChatFlutuante from "../chat-flutuante";
+import Wearables from "./wearables";
 import LinhaDoTempo from "./linha-do-tempo";
 import BotaoExportarPdf from "./botao-exportar-pdf";
 import ProcedimentosRealizados from "./procedimentos-realizados";
@@ -106,6 +107,12 @@ export default async function DetalhePacientePage({
       id: "avaliacao-fisica",
       label: "Avaliação física",
       conteudo: <AvaliacaoFisicaForm pacienteId={paciente.id} />,
+    },
+    {
+      tipo: "painel",
+      id: "wearables",
+      label: "Sono e recuperação",
+      conteudo: <Wearables pacienteId={paciente.id} />,
     },
     {
       tipo: "grupo",

@@ -39,6 +39,10 @@ const SECOES: Secao[] = [
         texto: "Fica no topo da aba Histórico, como uma faixa horizontal — consultas, exames, procedimentos, escalas, avaliações e documentos, em ordem cronológica da esquerda pra direita. Quando não cabe numa linha só, quebra pra linha de baixo automaticamente (não gera rolagem lateral). Filtros clicáveis por tipo. Cada item é clicável: exame/procedimento/escala/avaliação leva pra aba certa; receita/relatório/recibo abre num pop-up por cima da tela (sem trocar de página), com botão \"Fechar\" — assim você não perde o lugar onde estava.",
       },
       {
+        titulo: "Sono e recuperação (Oura Ring)",
+        texto: "Conecta o Oura Ring do paciente (fase de validação — 1 paciente por vez) e sincroniza readiness, sleep score, activity score, sono total, FC de repouso, HRV e SpO2 dos últimos 90 dias. Clique em \"Conectar Oura Ring\", autorize na tela da Oura, e depois em \"Sincronizar agora\" sempre que quiser atualizar. Requer as credenciais OURA_CLIENT_ID e OURA_CLIENT_SECRET configuradas no Vercel.",
+      },
+      {
         titulo: "Faixa de segurança clínica (alergias e medicações)",
         texto: "Fica sempre visível no topo. Clique em \"Gerenciar\" para adicionar alergias e medicações em uso. Alergia grave e medicação anticoagulante aparecem em vermelho. Essas informações são lidas automaticamente pela IA de sugestão diagnóstica para checar interações — por isso vale a pena manter atualizado.",
       },
