@@ -20,10 +20,12 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
   const [buscandoSugestao, setBuscandoSugestao] = useState(false);
   const [organizandoIA, setOrganizandoIA] = useState(false);
   const [erroOrganizarIA, setErroOrganizarIA] = useState<string | null>(null);
+  const [organizadoComSucesso, setOrganizadoComSucesso] = useState(false);
 
   async function organizarComIA() {
     if (!anamnese.trim()) return;
     setErroOrganizarIA(null);
+    setOrganizadoComSucesso(false);
     setOrganizandoIA(true);
     try {
       const resposta = await fetch("/api/ia/sintetizar-anamnese", {
@@ -36,6 +38,8 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         setErroOrganizarIA(dados.erro ?? "Erro ao organizar o texto.");
       } else {
         setAnamnese(dados.textoOrganizado);
+        setOrganizadoComSucesso(true);
+        setTimeout(() => setOrganizadoComSucesso(false), 4000);
       }
     } catch {
       setErroOrganizarIA("Erro de conexão com a IA.");
@@ -264,6 +268,7 @@ export default function NovaEvolucaoForm({ pacienteId, podeUsarIA = true }: { pa
         </div>
       </div>
       {erroOrganizarIA && <p className="erro">{erroOrganizarIA}</p>}
+      {organizadoComSucesso && <p style={{ color: "var(--cor-sucesso)", fontSize: 12, margin: "4px 0" }}>✓ Texto organizado pela IA.</p>}
       <textarea
         value={anamnese}
         onChange={(e) => setAnamnese(e.target.value)}

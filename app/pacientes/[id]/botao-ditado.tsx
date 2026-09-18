@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: string) => void }) {
   const [gravando, setGravando] = useState(false);
   const [suportado, setSuportado] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [recebeuAlgumaFala, setRecebeuAlgumaFala] = useState(false);
   const reconhecimentoRef = useRef<any>(null);
   const deveContinuarRef = useRef(false);
-  // Guarda o trecho que o navegador ainda não confirmou como "final" — se o usuário
-  // clicar em parar no meio de uma frase (sem pausa antes), isso evita perder o trecho.
   const pendenteRef = useRef("");
 
   useEffect(() => {
@@ -24,7 +24,13 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
       reconhecimento.continuous = true;
       reconhecimento.interimResults = true;
 
+      reconhecimento.onstart = () => {
+        setErro(null);
+        setRecebeuAlgumaFala(false);
+      };
+
       reconhecimento.onresult = (evento: any) => {
+        setRecebeuAlgumaFala(true);
         let textoFinalNovo = "";
         let textoInterim = "";
         for (let i = evento.resultIndex; i < evento.results.length; i++) {
@@ -43,9 +49,6 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
       };
 
       reconhecimento.onend = () => {
-        // Flush de segurança: qualquer trecho ainda não confirmado quando a sessão
-        // encerra (seja por ter clicado em parar, seja por corte automático) entra
-        // no texto mesmo assim, em vez de ser descartado.
         if (pendenteRef.current.trim()) {
           onTexto(pendenteRef.current.trim());
           pendenteRef.current = "";
@@ -67,10 +70,19 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
         }
       };
 
+      const MENSAGENS_ERRO: Record<string, string> = {
+        "not-allowed": "Permissão de microfone negada. Verifique o ícone de cadeado/microfone na barra de endereço e permita o acesso.",
+        "service-not-allowed":
+          "Este navegador bloqueou o serviço de reconhecimento de voz — costuma ser alguma extensão de privacidade/bloqueio de anúncios. Tente numa aba anônima ou desative extensões.",
+        "audio-capture": "Nenhum microfone encontrado. Verifique se há um microfone conectado e funcionando.",
+        network: "Erro de rede ao conectar no serviço de reconhecimento de voz. Verifique sua conexão com a internet.",
+      };
+
       reconhecimento.onerror = (evento: any) => {
         if (evento.error === "no-speech" || evento.error === "aborted") return;
         deveContinuarRef.current = false;
         setGravando(false);
+        setErro(MENSAGENS_ERRO[evento.error] ?? `Erro no reconhecimento de voz: ${evento.error}`);
       };
 
       return reconhecimento;
@@ -91,13 +103,18 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
     if (!reconhecimentoRef.current) return;
     if (gravando) {
       deveContinuarRef.current = false;
-      reconhecimentoRef.current.stop(); // onend cuida do flush do texto pendente
+      reconhecimentoRef.current.stop();
       setGravando(false);
     } else {
       pendenteRef.current = "";
       deveContinuarRef.current = true;
-      reconhecimentoRef.current.start();
-      setGravando(true);
+      setErro(null);
+      try {
+        reconhecimentoRef.current.start();
+        setGravando(true);
+      } catch (e: any) {
+        setErro("Não foi possível iniciar: " + (e?.message ?? "erro desconhecido"));
+      }
     }
   }
 
@@ -110,20 +127,26 @@ export default function BotaoDitado({ onTexto }: { onTexto: (textoReconhecido: s
   }
 
   return (
-    <button
-      type="button"
-      onClick={alternar}
-      className={gravando ? undefined : "botao-secundario"}
-      style={{
-        fontSize: 12,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        background: gravando ? "var(--cor-erro)" : undefined,
-      }}
-    >
-      <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: gravando ? "white" : "currentColor" }} />
-      {gravando ? "Gravando... (clique pra parar)" : "Ditar por voz"}
-    </button>
+    <div>
+      <button
+        type="button"
+        onClick={alternar}
+        className={gravando ? undefined : "botao-secundario"}
+        style={{
+          fontSize: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          background: gravando ? "var(--cor-erro)" : undefined,
+        }}
+      >
+        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: gravando ? "white" : "currentColor" }} />
+        {gravando ? "Gravando... (clique pra parar)" : "Ditar por voz"}
+      </button>
+      {gravando && !recebeuAlgumaFala && (
+        <p style={{ fontSize: 10.5, color: "var(--cor-texto-fraco)", margin: "4px 0 0" }}>Ouvindo... (nada reconhecido ainda)</p>
+      )}
+      {erro && <p style={{ fontSize: 11, color: "var(--cor-erro)", margin: "4px 0 0", maxWidth: 280 }}>{erro}</p>}
+    </div>
   );
 }
