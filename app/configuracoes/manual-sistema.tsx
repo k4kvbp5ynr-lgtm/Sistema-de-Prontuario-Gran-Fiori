@@ -39,8 +39,8 @@ const SECOES: Secao[] = [
         texto: "Fica no topo da aba Histórico, como uma faixa horizontal — consultas, exames, procedimentos, escalas, avaliações e documentos, em ordem cronológica da esquerda pra direita. Quando não cabe numa linha só, quebra pra linha de baixo automaticamente (não gera rolagem lateral). Filtros clicáveis por tipo. Cada item é clicável: exame/procedimento/escala/avaliação leva pra aba certa; receita/relatório/recibo abre num pop-up por cima da tela (sem trocar de página), com botão \"Fechar\" — assim você não perde o lugar onde estava.",
       },
       {
-        titulo: "Sono e recuperação (Oura Ring)",
-        texto: "Conecta o Oura Ring do paciente (fase de validação — 1 paciente por vez) e sincroniza readiness, sleep score, activity score, sono total, FC de repouso, HRV e SpO2 dos últimos 90 dias. Clique em \"Conectar Oura Ring\", autorize na tela da Oura, e depois em \"Sincronizar agora\" sempre que quiser atualizar. Requer as credenciais OURA_CLIENT_ID, OURA_CLIENT_SECRET e SITE_URL configuradas no Vercel. ATENÇÃO na tela de autorização da Oura: os itens de permissão já vêm marcados por padrão — clicar neles DESMARCA, não marca. Não toque em nada, só role até o botão de autorizar.",
+        titulo: "Sono e recuperação (Oura Ring e WHOOP)",
+        texto: "Conecta wearables do paciente — Oura Ring e WHOOP, qualquer paciente pode ter um ou os dois. Dois botões no topo alternam entre os provedores. Sincroniza readiness/recovery, sleep score, activity score/strain, sono total, FC de repouso e HRV dos últimos 90 dias (SpO2 só na Oura). Requer no Vercel: OURA_CLIENT_ID, OURA_CLIENT_SECRET, WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET e SITE_URL. ATENÇÃO na tela de autorização da Oura: os itens de permissão já vêm marcados por padrão — clicar neles DESMARCA, não marca. Escalas diferentes entre provedores (ex: Strain da WHOOP é 0-21, Activity Score da Oura é 0-100) — não comparar os dois diretamente no mesmo número.",
       },
       {
         titulo: "Faixa de segurança clínica (alergias e medicações)",

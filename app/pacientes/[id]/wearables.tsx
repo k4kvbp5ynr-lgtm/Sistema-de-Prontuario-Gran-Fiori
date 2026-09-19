@@ -17,6 +17,11 @@ type Metrica = {
   spo2: number | null;
 };
 
+const PROVEDORES = [
+  { id: "oura", nome: "Oura Ring" },
+  { id: "whoop", nome: "WHOOP" },
+];
+
 function GraficoWearable({ label, unidade, serie, decimal }: { label: string; unidade?: string; serie: { data: string; valor: number }[]; decimal?: boolean }) {
   if (serie.length < 2) return null;
   return (
@@ -39,7 +44,8 @@ function GraficoWearable({ label, unidade, serie, decimal }: { label: string; un
 export default function Wearables({ pacienteId }: { pacienteId: string }) {
   const supabase = createClient();
   const searchParams = useSearchParams();
-  const [conexao, setConexao] = useState<Conexao | null>(null);
+  const [provedorAtivo, setProvedorAtivo] = useState("oura");
+  const [conexoes, setConexoes] = useState<Record<string, Conexao | null>>({});
   const [metricas, setMetricas] = useState<Metrica[]>([]);
   const [carregado, setCarregado] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
@@ -48,20 +54,24 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
   const [janela, setJanela] = useState(30);
 
   async function carregar() {
-    const { data: conexaoData } = await supabase
-      .from("wearable_connections")
-      .select("provider, conectado_em, ultima_sincronizacao, ativo")
-      .eq("paciente_id", pacienteId)
-      .eq("provider", "oura")
-      .eq("ativo", true)
-      .maybeSingle();
-    setConexao(conexaoData ?? null);
+    const resultados: Record<string, Conexao | null> = {};
+    for (const p of PROVEDORES) {
+      const { data } = await supabase
+        .from("wearable_connections")
+        .select("provider, conectado_em, ultima_sincronizacao, ativo")
+        .eq("paciente_id", pacienteId)
+        .eq("provider", p.id)
+        .eq("ativo", true)
+        .maybeSingle();
+      resultados[p.id] = data ?? null;
+    }
+    setConexoes(resultados);
 
     const { data: metricasData } = await supabase
       .from("wearable_daily_metrics")
       .select("data, readiness_score, sleep_score, activity_score, sono_total_minutos, fc_repouso, hrv, spo2")
       .eq("paciente_id", pacienteId)
-      .eq("provider", "oura")
+      .eq("provider", provedorAtivo)
       .order("data", { ascending: true });
     setMetricas(metricasData ?? []);
     setCarregado(true);
@@ -70,17 +80,34 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
   useEffect(() => {
     carregar();
     if (searchParams.get("oura_conectado")) {
+      setProvedorAtivo("oura");
       setMensagem('Oura Ring conectado com sucesso! Clique em "Sincronizar agora" pra trazer os dados.');
     }
-    if (searchParams.get("erro_oura")) setErro(decodeURIComponent(searchParams.get("erro_oura")!));
+    if (searchParams.get("erro_oura")) {
+      setProvedorAtivo("oura");
+      setErro(decodeURIComponent(searchParams.get("erro_oura")!));
+    }
+    if (searchParams.get("whoop_conectado")) {
+      setProvedorAtivo("whoop");
+      setMensagem('WHOOP conectado com sucesso! Clique em "Sincronizar agora" pra trazer os dados.');
+    }
+    if (searchParams.get("erro_whoop")) {
+      setProvedorAtivo("whoop");
+      setErro(decodeURIComponent(searchParams.get("erro_whoop")!));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pacienteId]);
+
+  useEffect(() => {
+    carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provedorAtivo]);
 
   async function sincronizar() {
     setSincronizando(true);
     setErro(null);
     try {
-      const resposta = await fetch("/api/integracoes/oura/sincronizar", {
+      const resposta = await fetch(`/api/integracoes/${provedorAtivo}/sincronizar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pacienteId }),
@@ -100,8 +127,9 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
   }
 
   async function desconectar() {
-    if (!confirm("Desconectar o Oura Ring deste paciente? O histórico já sincronizado é mantido.")) return;
-    await supabase.from("wearable_connections").update({ ativo: false }).eq("paciente_id", pacienteId).eq("provider", "oura");
+    const nomeProvedor = PROVEDORES.find((p) => p.id === provedorAtivo)?.nome;
+    if (!confirm(`Desconectar o ${nomeProvedor} deste paciente? O histórico já sincronizado é mantido.`)) return;
+    await supabase.from("wearable_connections").update({ ativo: false }).eq("paciente_id", pacienteId).eq("provider", provedorAtivo);
     carregar();
   }
 
@@ -115,28 +143,50 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
     return metricasFiltradas.filter((m) => m[campo] != null).map((m) => ({ data: m.data, valor: m[campo] as number }));
   }
 
+  const conexao = conexoes[provedorAtivo];
+
   return (
     <div>
       <h2 style={{ fontSize: "1.1rem" }}>Sono e recuperação</h2>
       <p style={{ fontSize: "0.85rem", color: "var(--cor-texto-fraco)", marginBottom: 16 }}>
-        Dados sincronizados de wearables — hoje só Oura Ring, fase de validação com 1 paciente.
+        Dados sincronizados de wearables conectados pelo paciente.
       </p>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {PROVEDORES.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => {
+              setProvedorAtivo(p.id);
+              setErro(null);
+              setMensagem(null);
+            }}
+            className={provedorAtivo === p.id ? undefined : "botao-secundario"}
+            style={{ fontSize: 12, padding: "6px 14px" }}
+          >
+            {p.nome} {conexoes[p.id] && "🟢"}
+          </button>
+        ))}
+      </div>
 
       {erro && <p className="erro">{erro}</p>}
       {mensagem && <p style={{ color: "var(--cor-sucesso)", fontSize: 12, margin: "0 0 12px" }}>✓ {mensagem}</p>}
 
       <div style={{ border: "1px solid var(--cor-borda)", borderRadius: 12, padding: 14, marginBottom: 20 }}>
-        <p style={{ fontSize: 12, fontWeight: 700, margin: "0 0 10px" }}>Dispositivos conectados</p>
+        <p style={{ fontSize: 12, fontWeight: 700, margin: "0 0 10px" }}>
+          Dispositivo — {PROVEDORES.find((p) => p.id === provedorAtivo)?.nome}
+        </p>
 
         {!conexao ? (
-          <a href={`/api/integracoes/oura/conectar?pacienteId=${pacienteId}`}>
+          <a href={`/api/integracoes/${provedorAtivo}/conectar?pacienteId=${pacienteId}`}>
             <button type="button" style={{ fontSize: 12 }}>
-              Conectar Oura Ring
+              Conectar {PROVEDORES.find((p) => p.id === provedorAtivo)?.nome}
             </button>
           </a>
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>🟢 Oura Ring conectado</span>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>🟢 Conectado</span>
             <span style={{ fontSize: 11, color: "var(--cor-texto-fraco)" }}>
               Última sincronização:{" "}
               {conexao.ultima_sincronizacao ? new Date(conexao.ultima_sincronizacao).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "nunca"}
@@ -168,13 +218,13 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
-            <GraficoWearable label="Readiness (prontidão)" serie={serie("readiness_score")} />
+            <GraficoWearable label="Readiness / Recovery" serie={serie("readiness_score")} />
             <GraficoWearable label="Sleep Score" serie={serie("sleep_score")} />
-            <GraficoWearable label="Activity Score" serie={serie("activity_score")} />
+            <GraficoWearable label={provedorAtivo === "whoop" ? "Strain" : "Activity Score"} serie={serie("activity_score")} decimal={provedorAtivo === "whoop"} />
             <GraficoWearable label="Sono total" unidade="min" serie={serie("sono_total_minutos")} />
             <GraficoWearable label="FC de repouso" unidade="bpm" serie={serie("fc_repouso")} />
             <GraficoWearable label="HRV" unidade="ms" serie={serie("hrv")} decimal />
-            <GraficoWearable label="SpO2" unidade="%" serie={serie("spo2")} decimal />
+            {provedorAtivo === "oura" && <GraficoWearable label="SpO2" unidade="%" serie={serie("spo2")} decimal />}
           </div>
         </>
       )}
