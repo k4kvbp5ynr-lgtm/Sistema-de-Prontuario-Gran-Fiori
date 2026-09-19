@@ -40,7 +40,7 @@ const SECOES: Secao[] = [
       },
       {
         titulo: "Sono e recuperação (Oura Ring)",
-        texto: "Conecta o Oura Ring do paciente (fase de validação — 1 paciente por vez) e sincroniza readiness, sleep score, activity score, sono total, FC de repouso, HRV e SpO2 dos últimos 90 dias. Clique em \"Conectar Oura Ring\", autorize na tela da Oura, e depois em \"Sincronizar agora\" sempre que quiser atualizar. Requer as credenciais OURA_CLIENT_ID e OURA_CLIENT_SECRET configuradas no Vercel.",
+        texto: "Conecta o Oura Ring do paciente (fase de validação — 1 paciente por vez) e sincroniza readiness, sleep score, activity score, sono total, FC de repouso, HRV e SpO2 dos últimos 90 dias. Clique em \"Conectar Oura Ring\", autorize na tela da Oura, e depois em \"Sincronizar agora\" sempre que quiser atualizar. Requer as credenciais OURA_CLIENT_ID, OURA_CLIENT_SECRET e SITE_URL configuradas no Vercel. ATENÇÃO na tela de autorização da Oura: os itens de permissão já vêm marcados por padrão — clicar neles DESMARCA, não marca. Não toque em nada, só role até o botão de autorizar.",
       },
       {
         titulo: "Faixa de segurança clínica (alergias e medicações)",
