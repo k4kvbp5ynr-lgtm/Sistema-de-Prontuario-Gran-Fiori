@@ -53,8 +53,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const dadosToken = await respostaToken.json();
+    const textoTokenBruto = await respostaToken.text();
+    console.log("[oura] resposta CRUA do token:", textoTokenBruto);
+    const dadosToken = JSON.parse(textoTokenBruto);
     console.log("[oura] token recebido — escopo concedido:", dadosToken.scope, "| token_type:", dadosToken.token_type, "| expires_in:", dadosToken.expires_in);
+
+    // Teste de controle: personal_info não depende do escopo "daily", só de "personal".
+    // Se isso também falhar, o problema é o token inteiro, não um escopo específico.
+    let testePersonalResumo = "(não testado)";
+    try {
+      const testePersonal = await fetch("https://api.ouraring.com/v2/usercollection/personal_info", {
+        headers: { Authorization: `Bearer ${dadosToken.access_token}` },
+      });
+      const corpoPersonal = await testePersonal.text();
+      testePersonalResumo = `status ${testePersonal.status} — ${corpoPersonal.slice(0, 200)}`;
+      console.log(`[oura] teste de controle personal_info — status ${testePersonal.status}:`, corpoPersonal.slice(0, 300));
+    } catch (erroTeste: any) {
+      testePersonalResumo = "erro: " + erroTeste.message;
+      console.log("[oura] falha no teste de controle personal_info:", erroTeste.message);
+    }
+
     const expiresAt = new Date(Date.now() + dadosToken.expires_in * 1000).toISOString();
 
     const { error: erroSalvar } = await supabase.from("wearable_connections").upsert(
@@ -78,7 +96,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-      new URL(`/pacientes/${pacienteId}?oura_conectado=1&escopo=${encodeURIComponent(dadosToken.scope ?? "(vazio)")}`, request.url)
+      new URL(
+        `/pacientes/${pacienteId}?oura_conectado=1&escopo=${encodeURIComponent(dadosToken.scope ?? "(vazio)")}&teste_personal=${encodeURIComponent(
+          testePersonalResumo
+        )}`,
+        request.url
+      )
     );
   } catch (erro: any) {
     return NextResponse.redirect(new URL(`/pacientes/${pacienteId}?erro_oura=${encodeURIComponent(erro.message)}`, request.url));
