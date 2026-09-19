@@ -77,7 +77,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.redirect(new URL(`/pacientes/${pacienteId}?oura_conectado=1`, request.url));
+    return NextResponse.redirect(
+      new URL(`/pacientes/${pacienteId}?oura_conectado=1&escopo=${encodeURIComponent(dadosToken.scope ?? "(vazio)")}`, request.url)
+    );
   } catch (erro: any) {
     return NextResponse.redirect(new URL(`/pacientes/${pacienteId}?erro_oura=${encodeURIComponent(erro.message)}`, request.url));
   }

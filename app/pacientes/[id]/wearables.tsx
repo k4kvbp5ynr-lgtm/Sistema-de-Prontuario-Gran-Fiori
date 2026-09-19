@@ -69,7 +69,10 @@ export default function Wearables({ pacienteId }: { pacienteId: string }) {
 
   useEffect(() => {
     carregar();
-    if (searchParams.get("oura_conectado")) setMensagem('Oura Ring conectado com sucesso! Clique em "Sincronizar agora" pra trazer os dados.');
+    if (searchParams.get("oura_conectado")) {
+      const escopo = searchParams.get("escopo");
+      setMensagem(`Oura Ring conectado! Escopo concedido pela Oura: "${escopo}". Clique em "Sincronizar agora" pra trazer os dados.`);
+    }
     if (searchParams.get("erro_oura")) setErro(decodeURIComponent(searchParams.get("erro_oura")!));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pacienteId]);
